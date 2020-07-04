@@ -14,8 +14,9 @@ import java.util.Map;
  */
 public class EntryIndexFile {
 
-    private static final int ENTRY_INDEX_ITEM_LENGTH = 1 << 4;
-    private static final int INDEX_LENGTH = Integer.BYTES;
+    private static final long ENTRY_INDEX_ITEM_LENGTH = 1L << 4;
+    private static final long INDEX_LENGTH = Integer.BYTES;
+    private static final EntryFactory ENTRYFACTORY = EntryFactory.INSTANCE;
     private final RandomAccessFile file;
     private final FileChannel channel;
     private int minEntryIndex;
@@ -23,55 +24,74 @@ public class EntryIndexFile {
     private int count;
     private final Map<Integer, EntryIndex> entryIndexMap = new HashMap<>();
 
-    public EntryIndexFile(RandomAccessFile file) throws IOException {
+    public EntryIndexFile(RandomAccessFile file) {
         this.file = file;
         this.channel = this.file.getChannel();
         load();
     }
 
-    private void load() throws IOException {
-        if (size() == 0) {
+    private void load() {
+        if (isEmpty()) {
             return;
         }
-        minEntryIndex = file.readInt();
-        maxEntryIndex = file.readInt();
-        updateCount();
-        MappedByteBuffer byteBuffer;
-        for (int index = minEntryIndex, position = INDEX_LENGTH << 1; index <= maxEntryIndex; ++index) {
-            byteBuffer = channel.map(MapMode.READ_ONLY, position, ENTRY_INDEX_ITEM_LENGTH);
-            EntryIndex entryIndex = EntryFactory
-                .createEntryIndex(byteBuffer.getLong(), byteBuffer.getInt(), byteBuffer.getInt());
-            entryIndexMap.put(index, entryIndex);
-            position += ENTRY_INDEX_ITEM_LENGTH;
+        try {
+            minEntryIndex = file.readInt();
+            maxEntryIndex = file.readInt();
+            updateCount();
+            MappedByteBuffer byteBuffer;
+            long position = INDEX_LENGTH << 1;
+            for (int index = minEntryIndex; index <= maxEntryIndex; ++index) {
+                byteBuffer = channel.map(MapMode.READ_ONLY, position, ENTRY_INDEX_ITEM_LENGTH);
+                EntryIndex entryIndex = ENTRYFACTORY
+                    .createEntryIndex(byteBuffer.getLong(), byteBuffer.getInt(), byteBuffer.getInt());
+                entryIndexMap.put(index, entryIndex);
+                position += ENTRY_INDEX_ITEM_LENGTH;
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Read file error");
         }
+
+    }
+
+    public long getEntryOffset(int index) {
+        EntryIndex entryIndex = entryIndexMap.get(index);
+        return entryIndex != null ? entryIndex.getOffset() : -1L;
     }
 
     public void appendEntryIndex(int index, long offset, int type, int term) throws IOException {
-        if (size() == 0) {
+        if (isEmpty()) {
             file.seek(0L);
             file.writeInt(0);
         } else {
             if (index != maxEntryIndex + 1) {
                 throw new IllegalArgumentException(
-                    "index[" + index + "] is not correct, maxEntryIndex is " + maxEntryIndex);
+                    "index(" + index + ") is not correct, maxEntryIndex is " + maxEntryIndex);
             }
             file.seek(INDEX_LENGTH);
         }
         maxEntryIndex = index;
         file.writeInt(maxEntryIndex);
         updateCount();
-        int position = 2 * INDEX_LENGTH + (count - 1) * ENTRY_INDEX_ITEM_LENGTH;
+        long position = 2 * INDEX_LENGTH + (count - 1) * ENTRY_INDEX_ITEM_LENGTH;
         MappedByteBuffer byteBuffer = channel.map(MapMode.READ_WRITE, position, ENTRY_INDEX_ITEM_LENGTH);
         byteBuffer.putLong(offset);
         byteBuffer.putInt(type);
         byteBuffer.putInt(term);
     }
 
-    public long size() throws IOException {
-        return file.length();
+    public long size() {
+        try {
+            return file.length();
+        } catch (IOException e) {
+            throw new IllegalStateException("Get file length error");
+        }
     }
 
     public void updateCount() {
         count = maxEntryIndex - minEntryIndex + 1;
+    }
+
+    public boolean isEmpty() {
+        return size() == 0L;
     }
 }

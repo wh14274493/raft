@@ -1,6 +1,6 @@
 package cn.ttplatform.lc.schedule;
 
-import cn.ttplatform.lc.environment.SettingProperties;
+import cn.ttplatform.lc.environment.RaftProperties;
 import java.util.concurrent.ScheduledFuture;
 
 /**
@@ -9,7 +9,7 @@ import java.util.concurrent.ScheduledFuture;
  */
 public interface Scheduler {
 
-    default DefaultScheduler newDefaultScheduler(SettingProperties properties) {
+    default DefaultScheduler newDefaultScheduler(RaftProperties properties) {
         return new DefaultScheduler(properties);
     }
 

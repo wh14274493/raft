@@ -1,6 +1,6 @@
 package cn.ttplatform.lc.schedule;
 
-import cn.ttplatform.lc.environment.SettingProperties;
+import cn.ttplatform.lc.environment.RaftProperties;
 import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -13,10 +13,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class DefaultScheduler implements Scheduler {
 
-    private final SettingProperties properties;
+    private final RaftProperties properties;
     private final ScheduledExecutorService executor;
 
-    public DefaultScheduler(SettingProperties properties) {
+    public DefaultScheduler(RaftProperties properties) {
         this.properties = properties;
         executor = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "scheduler"));
     }

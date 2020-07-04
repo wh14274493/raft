@@ -1,4 +1,4 @@
-package cn.ttplatform.lc.core;
+package cn.ttplatform.lc.node;
 
 import cn.ttplatform.lc.rpc.Connector;
 import cn.ttplatform.lc.schedule.Scheduler;

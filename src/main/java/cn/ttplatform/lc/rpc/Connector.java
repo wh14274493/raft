@@ -1,6 +1,6 @@
 package cn.ttplatform.lc.rpc;
 
-import cn.ttplatform.lc.node.NodeEndpoint;
+import cn.ttplatform.lc.node.Endpoint;
 import cn.ttplatform.lc.rpc.message.AppendEntries;
 import cn.ttplatform.lc.rpc.message.AppendEntriesResult;
 import cn.ttplatform.lc.rpc.message.RequestVote;
@@ -13,11 +13,11 @@ import java.util.List;
  */
 public interface Connector {
 
-    void sendRequestVote(RequestVote msg, List<NodeEndpoint> endpoints);
+    void sendRequestVote(RequestVote msg, List<Endpoint> endpoints);
 
-    void replyRequestVote(RequestVoteResult msg, NodeEndpoint endpoint);
+    void replyRequestVote(RequestVoteResult msg, Endpoint endpoint);
 
-    void sendAppendEntries(AppendEntries msg, List<NodeEndpoint> endpoints);
+    void sendAppendEntries(AppendEntries msg, List<Endpoint> endpoints);
 
-    void replyAppendEntries(AppendEntriesResult msg, NodeEndpoint endpoint);
+    void replyAppendEntries(AppendEntriesResult msg, Endpoint endpoint);
 }

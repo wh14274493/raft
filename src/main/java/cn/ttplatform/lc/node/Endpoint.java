@@ -17,7 +17,7 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class NodeEndpoint {
+public class Endpoint {
 
     private String nodeId;
     private InetSocketAddress address;
@@ -32,9 +32,9 @@ public class NodeEndpoint {
         if (this == object) {
             return true;
         }
-        if (!(object instanceof NodeEndpoint)) {
+        if (!(object instanceof Endpoint)) {
             return false;
         }
-        return Objects.equals(this.nodeId, ((NodeEndpoint) object).nodeId);
+        return Objects.equals(this.nodeId, ((Endpoint) object).nodeId);
     }
 }

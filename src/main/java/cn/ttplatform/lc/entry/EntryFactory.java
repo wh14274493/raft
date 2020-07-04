@@ -6,7 +6,12 @@ package cn.ttplatform.lc.entry;
  */
 public class EntryFactory {
 
-    public static Entry createEntry(int type, int term, int index, byte[] command) {
+    public static final EntryFactory INSTANCE = new EntryFactory();
+
+    private EntryFactory() {
+    }
+
+    public Entry createEntry(int type, int term, int index, byte[] command) {
         switch (type) {
             case Entry.NO_OP_TYPE:
                 return new NoOpEntry(type, term, index);
@@ -17,7 +22,7 @@ public class EntryFactory {
         }
     }
 
-    public static EntryIndex createEntryIndex(long offset, int type, int term) {
+    public EntryIndex createEntryIndex(long offset, int type, int term) {
         return new EntryIndex(offset, type, term);
     }
 }

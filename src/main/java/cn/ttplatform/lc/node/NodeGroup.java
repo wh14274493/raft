@@ -15,34 +15,34 @@ import java.util.Objects;
 public class NodeGroup {
 
     private final String selfId;
-    private final Map<String, NodeEndpoint> nodeEndpointMap;
+    private final Map<String, Endpoint> nodeEndpointMap;
 
-    public NodeGroup(NodeEndpoint endpoint) {
+    public NodeGroup(Endpoint endpoint) {
         this(Collections.singleton(endpoint), endpoint.getNodeId());
     }
 
-    public NodeGroup(Collection<NodeEndpoint> endpoints, String selfId) {
+    public NodeGroup(Collection<Endpoint> endpoints, String selfId) {
         this.nodeEndpointMap = buildMap(endpoints);
         this.selfId = selfId;
     }
 
-    private Map<String, NodeEndpoint> buildMap(Collection<NodeEndpoint> endpoints) {
-        Map<String, NodeEndpoint> endpointMap = new HashMap<>((int) (endpoints.size() / 0.75f + 1));
+    private Map<String, Endpoint> buildMap(Collection<Endpoint> endpoints) {
+        Map<String, Endpoint> endpointMap = new HashMap<>((int) (endpoints.size() / 0.75f + 1));
         endpoints.forEach(endpoint -> endpointMap.put(endpoint.getNodeId(), endpoint));
         return endpointMap;
     }
 
-    public NodeEndpoint find(String nodeId) {
+    public Endpoint find(String nodeId) {
         return nodeEndpointMap.get(nodeId);
     }
 
     /**
-     * list all endpoint except self
+     * List all endpoint except self
      *
      * @return endpoint list
      */
-    public List<NodeEndpoint> listAll() {
-        List<NodeEndpoint> result = new ArrayList<>();
+    public List<Endpoint> listAllEndpointExceptSelf() {
+        List<Endpoint> result = new ArrayList<>();
         nodeEndpointMap.forEach((s, endpoint) -> {
             if (!Objects.equals(selfId, s)) {
                 result.add(endpoint);

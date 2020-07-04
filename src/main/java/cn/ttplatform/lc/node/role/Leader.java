@@ -1,4 +1,4 @@
-package cn.ttplatform.lc.role;
+package cn.ttplatform.lc.node.role;
 
 import java.util.concurrent.ScheduledFuture;
 

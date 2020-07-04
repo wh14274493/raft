@@ -12,7 +12,8 @@ import java.nio.channels.FileChannel.MapMode;
  */
 public class EntryFile {
 
-    private static final int FIXED_LENGTH = 1 << 4;
+    private static final EntryFactory ENTRYFACTORY = EntryFactory.INSTANCE;
+    private static final long FIXED_LENGTH = 1L << 4;
 
     private final RandomAccessFile file;
     private final FileChannel channel;
@@ -24,7 +25,7 @@ public class EntryFile {
 
     public long appendEntry(Entry entry) throws IOException {
         long offset = file.length();
-        int size = FIXED_LENGTH + entry.getCommand().length;
+        long size = FIXED_LENGTH + entry.getCommand().length;
         MappedByteBuffer mappedByteBuffer = channel.map(MapMode.READ_WRITE, offset, size);
         mappedByteBuffer.putInt(entry.getType());
         mappedByteBuffer.putInt(entry.getTerm());
@@ -34,19 +35,24 @@ public class EntryFile {
         return offset;
     }
 
-    public Entry loadEntry(int offset) throws IOException {
-        long size = file.length();
-        if (offset > size) {
-            throw new IllegalArgumentException("offset[" + offset + "] is not correct, and file size is " + size);
+    public Entry loadEntry(long offset) {
+        try {
+            long size = file.length();
+            if (offset > size) {
+                throw new IllegalArgumentException("offset(" + offset + ") is not correct, and file size is " + size);
+            }
+            file.seek(offset);
+            int type = file.readInt();
+            int term = file.readInt();
+            int index = file.readInt();
+            int commandSize = file.readInt();
+            byte[] command = new byte[commandSize];
+            file.read(command);
+            return ENTRYFACTORY.createEntry(type, term, index, command);
+        } catch (IOException e) {
+            throw new IllegalStateException("Read file error");
         }
-        file.seek(offset);
-        int type = file.readInt();
-        int term = file.readInt();
-        int index = file.readInt();
-        int commandSize = file.readInt();
-        byte[] command = new byte[commandSize];
-        file.read(command);
-        return EntryFactory.createEntry(type, term, index, command);
+
     }
 
     public void clear() throws IOException {
