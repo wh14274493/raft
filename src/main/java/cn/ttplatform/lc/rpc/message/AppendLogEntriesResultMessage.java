@@ -8,15 +8,15 @@ import lombok.ToString;
 
 /**
  * @author Wang Hao
- * @date 2020/6/30 下午9:21
+ * @date 2020/6/30 下午9:24
  */
 @Data
-@ToString
 @Builder
+@ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class RequestVoteResult {
+public class AppendLogEntriesResultMessage implements Message{
 
     private int term;
-    private boolean isVoted;
+    private boolean success;
 }

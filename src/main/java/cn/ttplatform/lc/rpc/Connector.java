@@ -1,11 +1,9 @@
 package cn.ttplatform.lc.rpc;
 
-import cn.ttplatform.lc.node.Endpoint;
-import cn.ttplatform.lc.rpc.message.AppendEntries;
-import cn.ttplatform.lc.rpc.message.AppendEntriesResult;
-import cn.ttplatform.lc.rpc.message.RequestVote;
-import cn.ttplatform.lc.rpc.message.RequestVoteResult;
-import java.util.List;
+import cn.ttplatform.lc.node.ClusterMember;
+import cn.ttplatform.lc.rpc.message.Message;
+import cn.ttplatform.lc.rpc.nio.NioChannel;
+import java.nio.channels.Channel;
 
 /**
  * @author Wang Hao
@@ -13,11 +11,22 @@ import java.util.List;
  */
 public interface Connector {
 
-    void sendRequestVote(RequestVote msg, List<Endpoint> endpoints);
+    /**
+     * @param member create a connection with remote address
+     * @return a socket channel
+     */
+    NioChannel connect(ClusterMember member);
 
-    void replyRequestVote(RequestVoteResult msg, Endpoint endpoint);
+    /**
+     * send a message to remote
+     *
+     * @param message rpc message
+     * @param channel remote address
+     */
+    void write(Message message, NioChannel channel);
 
-    void sendAppendEntries(AppendEntries msg, List<Endpoint> endpoints);
-
-    void replyAppendEntries(AppendEntriesResult msg, Endpoint endpoint);
+    /**
+     * free the resources
+     */
+    void close();
 }

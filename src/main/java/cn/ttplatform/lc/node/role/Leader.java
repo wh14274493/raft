@@ -1,5 +1,7 @@
 package cn.ttplatform.lc.node.role;
 
+import cn.ttplatform.lc.constant.RoleType;
+
 import java.util.concurrent.ScheduledFuture;
 
 /**
@@ -11,7 +13,7 @@ public class Leader extends AbstractRole {
     private final ScheduledFuture<?> logReplicationFuture;
 
     public Leader(int term, ScheduledFuture<?> future) {
-        super(term);
+        super(term, RoleType.LEADER);
         this.logReplicationFuture = future;
     }
 

@@ -1,5 +1,7 @@
 package cn.ttplatform.lc.node.role;
 
+import cn.ttplatform.lc.constant.RoleType;
+
 import java.util.concurrent.ScheduledFuture;
 
 /**
@@ -7,6 +9,7 @@ import java.util.concurrent.ScheduledFuture;
  * @date 2020/6/30 下午9:16
  */
 public class Candidate extends AbstractRole {
+
 
     private int voteCounts;
     private final ScheduledFuture<?> electionTimeoutFuture;
@@ -16,9 +19,13 @@ public class Candidate extends AbstractRole {
     }
 
     public Candidate(int term, int voteCounts, ScheduledFuture<?> future) {
-        super(term);
+        super(term, RoleType.CANDIDATE);
         this.voteCounts = voteCounts;
         this.electionTimeoutFuture = future;
+    }
+
+    public int getVoteCounts() {
+        return voteCounts;
     }
 
     @Override

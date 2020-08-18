@@ -15,7 +15,7 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class RequestVote {
+public class RequestVoteMessage {
 
     private int term;
     private int candidateId;

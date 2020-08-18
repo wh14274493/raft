@@ -1,5 +1,7 @@
 package cn.ttplatform.lc.node;
 
+import cn.ttplatform.lc.node.store.NodeState;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -13,14 +15,14 @@ import java.nio.charset.Charset;
  * @author Wang Hao
  * @date 2020/6/30 下午10:43
  */
-public class FileNodeStore implements NodeStore {
+public class FileNodeState implements NodeState {
 
     private static final long TERM_OFFSET = 0L;
     private static final long VOTE_TO_OFFSET = Integer.BYTES;
     private final RandomAccessFile storeFile;
     private final FileChannel channel;
 
-    public FileNodeStore(File file) {
+    public FileNodeState(File file) {
         try {
             this.storeFile = new RandomAccessFile(file, "rw");
             channel = storeFile.getChannel();

@@ -17,9 +17,12 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class AppendEntries {
+public class AppendLogEntriesMessage implements Message {
 
     private int term;
     private int leaderId;
+    private int preLogIndex;
+    private int preLogTerm;
+    private int leaderCommitIndex;
     private List<LogEntry> logEntries;
 }
