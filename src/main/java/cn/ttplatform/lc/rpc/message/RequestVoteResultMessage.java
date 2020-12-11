@@ -15,7 +15,7 @@ import lombok.ToString;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RequestVoteResultMessage implements Message {
+public class RequestVoteResultMessage extends AbstractMessage {
 
     private int term;
     private boolean isVoted;

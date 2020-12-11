@@ -14,7 +14,7 @@ import lombok.Setter;
 @Setter
 @Builder
 @AllArgsConstructor
-public class InstallSnapshotMessage implements Message {
+public class InstallSnapshotMessage extends AbstractMessage {
 
     private int term;
     private int lastIncludeIndex;

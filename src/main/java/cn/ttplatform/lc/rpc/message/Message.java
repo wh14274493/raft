@@ -6,4 +6,5 @@ package cn.ttplatform.lc.rpc.message;
  * @date :  2020/8/15 23:37
  **/
 public interface Message {
+    int getType();
 }

@@ -5,7 +5,7 @@ package cn.ttplatform.lc.constant;
  * @description : MessageType
  * @date :  2020/8/16 0:29
  **/
-public class MessageType {
+public class RpcMessageType {
 
     /**
      * AppendLogEntriesMessage

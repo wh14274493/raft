@@ -17,7 +17,7 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class AppendLogEntriesMessage implements Message {
+public class AppendLogEntriesMessage extends AbstractMessage {
 
     private int term;
     private int leaderId;

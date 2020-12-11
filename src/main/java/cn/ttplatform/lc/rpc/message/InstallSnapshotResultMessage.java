@@ -13,7 +13,7 @@ import lombok.Setter;
 @Setter
 @Builder
 @AllArgsConstructor
-public class InstallSnapshotResultMessage implements Message {
+public class InstallSnapshotResultMessage extends AbstractMessage{
 
     private int term;
     private boolean success;

@@ -15,7 +15,7 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class AppendLogEntriesResultMessage implements Message{
+public class AppendLogEntriesResultMessage extends AbstractMessage{
 
     private int term;
     private boolean success;

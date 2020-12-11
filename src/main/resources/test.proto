@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+option java_package = "cn.ttplatform.lc";
+option java_outer_classname = "Proto";
+
+message Test{
+  string s = 1;
+}

@@ -14,7 +14,7 @@ import lombok.Setter;
 @Setter
 @Builder
 @AllArgsConstructor
-public class NodeIdMessage implements Message {
+public class NodeIdMessage extends AbstractMessage {
 
     private String nodeId;
 }

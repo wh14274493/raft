@@ -1,6 +1,6 @@
 package cn.ttplatform.lc.rpc.nio;
 
-import cn.ttplatform.lc.constant.MessageType;
+import cn.ttplatform.lc.constant.RpcMessageType;
 import cn.ttplatform.lc.exception.UnknownTypeException;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -41,7 +41,7 @@ public class CoreProtoBufDecoder extends ByteToMessageDecoder {
         byte[] content = new byte[(int) contentLength];
         in.readBytes(content);
         switch (type) {
-            case MessageType.APPEND_LOG_ENTRIES:
+            case RpcMessageType.APPEND_LOG_ENTRIES:
                 break;
             default:
                 throw new UnknownTypeException("unknown message type[" + type + "]");
