@@ -1,4 +1,4 @@
-package cn.ttplatform.lc.event;
+package cn.ttplatform.lc.core.rpc.message.handler;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,12 +7,11 @@ import java.lang.annotation.Target;
 
 /**
  * @author : wang hao
- * @description : Subscribe
  * @date :  2020/8/16 12:50
  **/
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
+@Target(ElementType.TYPE)
 public @interface Subscribe {
 
-    Class<? extends Event> value();
+    int value();
 }
