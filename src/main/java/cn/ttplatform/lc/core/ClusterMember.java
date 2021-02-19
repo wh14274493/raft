@@ -1,6 +1,7 @@
-package cn.ttplatform.lc.node;
+package cn.ttplatform.lc.core;
 
 import java.net.InetSocketAddress;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,20 +9,20 @@ import lombok.ToString;
 
 /**
  * @author : wang hao
- * @description : ClusterMember
  * @date :  2020/8/15 21:41
  **/
 @Data
 @Builder
 @ToString
 @AllArgsConstructor
-public class ClusterMember {
+public class ClusterMember implements Comparable<ClusterMember> {
 
     private String nodeId;
     private String host;
     private int port;
     private int matchIndex;
     private int nextIndex;
+    private long snapshotOffset;
     private long lastHeartBeat;
     private boolean replicating;
 
@@ -33,25 +34,24 @@ public class ClusterMember {
         return new InetSocketAddress(host, port);
     }
 
-    public void startReplicate() {
-        setReplicating(true);
-    }
-
-    public void stopReplication() {
-        setReplicating(false);
-    }
-
-    public int getMatchIndex() {
-        return this.matchIndex;
-    }
-
-    public int getNextIndex() {
-        return this.nextIndex;
-    }
-
-    public void updateReplicationState(int matchIndex, int nextIndex) {
+    public void updateReplicationState(int matchIndex) {
         setMatchIndex(matchIndex);
-        setNextIndex(nextIndex);
+        setNextIndex(matchIndex + 1);
     }
 
+    public void backoffNextIndex() {
+        if (nextIndex > 0) {
+            nextIndex--;
+        }
+    }
+
+    public void resetReplicationState(int nextIndex) {
+        this.nextIndex = nextIndex;
+        this.matchIndex = 0;
+    }
+
+    @Override
+    public int compareTo(ClusterMember o) {
+        return this.getMatchIndex() - o.getMatchIndex();
+    }
 }

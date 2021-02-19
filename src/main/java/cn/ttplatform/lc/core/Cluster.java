@@ -1,4 +1,4 @@
-package cn.ttplatform.lc.node;
+package cn.ttplatform.lc.core;
 
 import cn.ttplatform.lc.constant.ExceptionMessage;
 import cn.ttplatform.lc.exception.ClusterConfigException;
@@ -11,9 +11,10 @@ import java.util.*;
  */
 public class Cluster {
 
-    private final int MIN_CLUSTER_SIZE = 3;
+    private static final int MIN_CLUSTER_SIZE = 3;
     private final String selfId;
     private final Map<String, ClusterMember> memberMap;
+    private int activeSize;
 
     public Cluster(ClusterMember member) {
         this(Collections.singleton(member), member.getNodeId());
@@ -21,7 +22,12 @@ public class Cluster {
 
     public Cluster(Collection<ClusterMember> members, String selfId) {
         this.memberMap = buildMap(members);
+        this.activeSize = memberMap.size();
         this.selfId = selfId;
+    }
+
+    public void resetReplicationStates(int nextIndex) {
+        memberMap.values().forEach(member -> member.resetReplicationState(nextIndex));
     }
 
     private Map<String, ClusterMember> buildMap(Collection<ClusterMember> members) {
@@ -32,6 +38,14 @@ public class Cluster {
 
     public ClusterMember find(String nodeId) {
         return memberMap.get(nodeId);
+    }
+
+    public int countAll() {
+        return memberMap.size();
+    }
+
+    public int countOfActive() {
+        return activeSize;
     }
 
     /**
@@ -51,25 +65,19 @@ public class Cluster {
 
     public void remove(String nodeId) {
         memberMap.remove(nodeId);
+        activeSize--;
+        if (activeSize < MIN_CLUSTER_SIZE) {
+            throw new ClusterConfigException(ExceptionMessage.CLUSTER_SIZE_ERROR);
+        }
     }
 
-    public int getNeedToCommitIndex() {
+    public int getNewCommitIndex() {
         List<ClusterMember> members = listAllEndpointExceptSelf();
         int size = members.size();
         if (size < MIN_CLUSTER_SIZE - 1) {
             throw new ClusterConfigException(ExceptionMessage.CLUSTER_SIZE_ERROR);
         }
-        members.sort(IndexComparator.INSTANCE);
-        return size % 2 == 0 ? members.get(size / 2 - 1).getMatchIndex() : members.get(size / 2).getMatchIndex();
-    }
-
-    public static class IndexComparator implements Comparator<ClusterMember> {
-
-        static final IndexComparator INSTANCE = new IndexComparator();
-
-        @Override
-        public int compare(ClusterMember o1, ClusterMember o2) {
-            return o2.getMatchIndex() - o1.getMatchIndex();
-        }
+        Collections.sort(members);
+        return members.get(size >> 1).getMatchIndex();
     }
 }

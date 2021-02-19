@@ -1,4 +1,4 @@
-package cn.ttplatform.lc.node.store;
+package cn.ttplatform.lc.core.store;
 
 /**
  * @author Wang Hao
@@ -21,7 +21,7 @@ public interface NodeState {
     int getCurrentTerm();
 
     /**
-     * if node's role is {@link cn.ttplatform.lc.node.role.Follower} then it's {@code voteTo} should be recorded， otherwise there may be a problem of repeating voting.
+     * if node's role is {@link cn.ttplatform.lc.core.role.Follower} then it's {@code voteTo} should be recorded， otherwise there may be a problem of repeating voting.
      *
      * @param voteTo the node id that vote for
      */
