@@ -1,14 +1,20 @@
-package cn.ttplatform.lc.entry;
+package cn.ttplatform.lc.core.store.log.entry;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 /**
  * @author Wang Hao
  * @date 2020/7/1 下午9:37
  */
-public class NoOpEntry extends AbstractEntry {
-
-    public NoOpEntry(int type, int term, int index) {
-        super(type, term, index);
-    }
+@Setter
+@Getter
+@SuperBuilder
+@NoArgsConstructor
+public class NoOpLogLogEntry extends AbstractLogEntry {
 
     @Override
     public String toString() {

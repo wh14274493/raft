@@ -1,4 +1,4 @@
-package cn.ttplatform.lc.node.store;
+package cn.ttplatform.lc.core.store;
 
 import cn.ttplatform.lc.constant.ExceptionMessage;
 import cn.ttplatform.lc.exception.OperateFileException;
@@ -9,12 +9,19 @@ import java.io.RandomAccessFile;
 
 /**
  * @author : wang hao
- * @description : RandomAccessFileWrapper
  * @date :  2020/8/15 22:50
  **/
 public class RandomAccessFileWrapper {
 
     private final RandomAccessFile randomAccessFile;
+
+    public RandomAccessFileWrapper(File file) {
+        try {
+            randomAccessFile = new RandomAccessFile(file, "rw");
+        } catch (IOException e) {
+            throw new OperateFileException(ExceptionMessage.CREATE_FILE_ERROR, e.getCause());
+        }
+    }
 
     public RandomAccessFileWrapper(String path) {
         File file = new File(path);
@@ -101,6 +108,10 @@ public class RandomAccessFileWrapper {
         writeBytes(data);
     }
 
+    public void append(byte[] data) {
+        writeBytesAt(size(), data);
+    }
+
     public byte[] readBytes(int size) {
         try {
             byte[] content = new byte[size];
@@ -114,6 +125,22 @@ public class RandomAccessFileWrapper {
     public byte[] readBytesAt(long position, int size) {
         seek(position);
         return readBytes(size);
+    }
+
+    public long size() {
+        try {
+            return randomAccessFile.length();
+        } catch (IOException e) {
+            throw new OperateFileException(ExceptionMessage.READ_FILE_LENGTH_ERROR, e.getCause());
+        }
+    }
+
+    public void truncate(long position) {
+        try {
+            randomAccessFile.setLength(position);
+        } catch (IOException e) {
+            throw new OperateFileException(ExceptionMessage.TRUNCATE_FILE_ERROR, e.getCause());
+        }
     }
 
     public void close() {

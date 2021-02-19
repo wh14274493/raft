@@ -1,19 +1,24 @@
-package cn.ttplatform.lc.entry;
+package cn.ttplatform.lc.core.store.log.entry;
 
 import java.nio.charset.Charset;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 /**
  * @author Wang Hao
  * @date 2020/7/1 下午9:39
  */
-public class OpEntry extends AbstractEntry {
+@Setter
+@Getter
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
+public class OpLogLogEntry extends AbstractLogEntry {
 
-    private final byte[] command;
-
-    public OpEntry(int type, int term, int index, byte[] command) {
-        super(type, term, index);
-        this.command = command;
-    }
+    private byte[] command;
 
     @Override
     public byte[] getCommand() {
