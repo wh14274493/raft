@@ -1,9 +1,8 @@
-package cn.ttplatform.lc.rpc;
+package cn.ttplatform.lc.core.rpc;
 
-import cn.ttplatform.lc.node.ClusterMember;
-import cn.ttplatform.lc.rpc.message.Message;
-import cn.ttplatform.lc.rpc.nio.NioChannel;
-import java.nio.channels.Channel;
+import cn.ttplatform.lc.core.ClusterMember;
+import cn.ttplatform.lc.core.rpc.message.domain.Message;
+import io.netty.channel.Channel;
 
 /**
  * @author Wang Hao
@@ -15,15 +14,15 @@ public interface Connector {
      * @param member create a connection with remote address
      * @return a socket channel
      */
-    NioChannel connect(ClusterMember member);
+    Channel connect(ClusterMember member);
 
     /**
      * send a message to remote
      *
      * @param message rpc message
-     * @param channel remote address
+     * @param member remote server
      */
-    void write(Message message, NioChannel channel);
+    void send(Message message, ClusterMember member);
 
     /**
      * free the resources
