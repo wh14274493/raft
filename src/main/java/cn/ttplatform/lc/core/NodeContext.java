@@ -1,9 +1,11 @@
-package cn.ttplatform.lc.node;
+package cn.ttplatform.lc.core;
 
-import cn.ttplatform.lc.node.store.Log;
-import cn.ttplatform.lc.rpc.Connector;
-import cn.ttplatform.lc.schedule.Scheduler;
-import cn.ttplatform.lc.task.TaskExecutor;
+import cn.ttplatform.lc.config.ServerProperties;
+import cn.ttplatform.lc.core.rpc.Connector;
+import cn.ttplatform.lc.support.Scheduler;
+import cn.ttplatform.lc.core.store.NodeState;
+import cn.ttplatform.lc.core.store.log.Log;
+import cn.ttplatform.lc.support.TaskExecutor;
 
 /**
  * @author Wang Hao
@@ -14,8 +16,10 @@ public class NodeContext {
     private Scheduler scheduler;
     private Connector connector;
     private TaskExecutor taskExecutor;
+    private NodeState nodeState;
     private Log log;
     private Cluster cluster;
+    private ServerProperties properties;
 
     public Scheduler scheduler() {
         return scheduler;
@@ -35,5 +39,13 @@ public class NodeContext {
 
     public Cluster cluster() {
         return cluster;
+    }
+
+    public NodeState nodeState() {
+        return nodeState;
+    }
+
+    public ServerProperties config() {
+        return properties;
     }
 }
