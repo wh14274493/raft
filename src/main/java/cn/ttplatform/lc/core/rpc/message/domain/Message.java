@@ -1,10 +1,13 @@
-package cn.ttplatform.lc.rpc.message;
+package cn.ttplatform.lc.core.rpc.message.domain;
 
 /**
  * @author : wang hao
- * @description : Message
  * @date :  2020/8/15 23:37
  **/
 public interface Message {
+
+    String getSourceId();
+
     int getType();
+
 }

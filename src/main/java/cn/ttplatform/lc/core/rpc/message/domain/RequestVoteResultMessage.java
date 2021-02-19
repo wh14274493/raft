@@ -1,22 +1,31 @@
-package cn.ttplatform.lc.rpc.message;
+package cn.ttplatform.lc.core.rpc.message.domain;
 
+import cn.ttplatform.lc.constant.RpcMessageType;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
  * @author Wang Hao
  * @date 2020/6/30 下午9:21
  */
-@Data
+@Getter
+@Setter
 @ToString
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 public class RequestVoteResultMessage extends AbstractMessage {
 
     private int term;
     private boolean isVoted;
+
+    @Override
+    public int getType() {
+        return RpcMessageType.REQUEST_VOTE_RESULT;
+    }
+
 }

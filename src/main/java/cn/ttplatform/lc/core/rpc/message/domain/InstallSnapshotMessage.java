@@ -1,18 +1,20 @@
-package cn.ttplatform.lc.rpc.message;
+package cn.ttplatform.lc.core.rpc.message.domain;
 
+import cn.ttplatform.lc.constant.RpcMessageType;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 /**
  * @author : wang hao
- * @description : InstallSnapshotMessage
  * @date :  2020/8/16 13:17
  **/
 @Getter
 @Setter
-@Builder
+@SuperBuilder
+@NoArgsConstructor
 @AllArgsConstructor
 public class InstallSnapshotMessage extends AbstractMessage {
 
@@ -22,5 +24,10 @@ public class InstallSnapshotMessage extends AbstractMessage {
     private long offset;
     private byte[] chunk;
     private boolean done;
+
+    @Override
+    public int getType() {
+        return RpcMessageType.INSTALL_SNAPSHOT;
+    }
 
 }

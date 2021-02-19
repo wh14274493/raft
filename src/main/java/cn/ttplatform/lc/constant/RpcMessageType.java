@@ -7,6 +7,9 @@ package cn.ttplatform.lc.constant;
  **/
 public class RpcMessageType {
 
+    private RpcMessageType() {
+    }
+
     /**
      * AppendLogEntriesMessage
      */
@@ -31,5 +34,25 @@ public class RpcMessageType {
      * NodeIdMessage
      */
     public static final int NODE_ID = 4;
+
+    /**
+     * PreVoteMessage
+     */
+    public static final int PRE_VOTE = 5;
+
+    /**
+     * PreVoteResultMessage
+     */
+    public static final int PRE_VOTE_RESULT = 6;
+
+    /**
+     * InstallSnapshotMessage
+     */
+    public static final int INSTALL_SNAPSHOT = 7;
+
+    /**
+     * InstallSnapshotResultMessage
+     */
+    public static final int INSTALL_SNAPSHOT_RESULT = 8;
 
 }
