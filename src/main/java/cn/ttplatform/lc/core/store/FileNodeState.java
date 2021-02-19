@@ -1,4 +1,4 @@
-package cn.ttplatform.lc.node.store;
+package cn.ttplatform.lc.core.store;
 
 import java.nio.charset.Charset;
 
