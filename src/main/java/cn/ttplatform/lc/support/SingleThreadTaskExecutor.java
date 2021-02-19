@@ -1,4 +1,4 @@
-package cn.ttplatform.lc.task;
+package cn.ttplatform.lc.support;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;

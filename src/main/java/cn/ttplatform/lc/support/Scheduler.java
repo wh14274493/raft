@@ -1,7 +1,6 @@
-package cn.ttplatform.lc.schedule;
+package cn.ttplatform.lc.support;
 
-import cn.ttplatform.lc.config.ServerConfig;
-
+import cn.ttplatform.lc.config.ServerProperties;
 import java.util.concurrent.ScheduledFuture;
 
 /**
@@ -10,11 +9,12 @@ import java.util.concurrent.ScheduledFuture;
  */
 public interface Scheduler {
 
-    default DefaultScheduler newDefaultScheduler(ServerConfig properties) {
+    default DefaultScheduler newDefaultScheduler(ServerProperties properties) {
         return new DefaultScheduler(properties);
     }
 
     ScheduledFuture<?> scheduleElectionTimeoutTask(Runnable task);
 
     ScheduledFuture<?> scheduleLogReplicationTask(Runnable task);
+
 }

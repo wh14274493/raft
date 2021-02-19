@@ -1,11 +1,10 @@
-package cn.ttplatform.lc.schedule;
+package cn.ttplatform.lc.support;
 
-import cn.ttplatform.lc.config.ServerConfig;
-
-import java.util.Random;
+import cn.ttplatform.lc.config.ServerProperties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -14,25 +13,27 @@ import java.util.concurrent.TimeUnit;
  */
 public class DefaultScheduler implements Scheduler {
 
-    private final ServerConfig properties;
+    private final ServerProperties properties;
     private final ScheduledExecutorService executor;
 
-    public DefaultScheduler(ServerConfig properties) {
+    public DefaultScheduler(ServerProperties properties) {
         this.properties = properties;
         executor = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "scheduler"));
     }
 
     @Override
     public ScheduledFuture<?> scheduleElectionTimeoutTask(Runnable task) {
-        int timeout = new Random().nextInt(properties.getMaxElectionTimeout() - properties.getMinElectionTimeout()) + properties
-                .getMinElectionTimeout();
+        int maxElectionTimeout = properties.getMaxElectionTimeout();
+        int minElectionTimeout = properties.getMinElectionTimeout();
+        int timeout = ThreadLocalRandom.current().nextInt(maxElectionTimeout - minElectionTimeout) + minElectionTimeout;
         return executor.schedule(task, timeout, TimeUnit.MILLISECONDS);
     }
 
     @Override
     public ScheduledFuture<?> scheduleLogReplicationTask(Runnable task) {
-        return executor
-                .scheduleWithFixedDelay(task, properties.getLogReplicationDelay(), properties.getLogReplicationInterval(),
-                        TimeUnit.MILLISECONDS);
+        long delay = properties.getLogReplicationDelay();
+        long interval = properties.getLogReplicationInterval();
+        return executor.scheduleWithFixedDelay(task, delay, interval, TimeUnit.MILLISECONDS);
     }
+
 }
