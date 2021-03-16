@@ -1,0 +1,54 @@
+syntax = "proto3";
+option java_outer_classname = "CoreProto";
+option java_package = "cn.ttplatform.cn.ttplatform.wh.proto";
+
+message AppendLogEntriesRpc{
+  int32 term = 1;
+  int32 leader_id = 2;
+  int32 pre_log_index = 3;
+  int32 pre_log_term = 4;
+  int32 leader_commit_index = 5;
+  repeated Entry log_entries = 6;
+
+  message Entry{
+    int32 type = 1;
+    int32 term = 2;
+    int32 index = 3;
+    bytes command = 4;
+  }
+}
+
+message AppendLogEntriesResultRpc{
+  int32 term = 1;
+  bool success = 2;
+}
+
+message InstallSnapshotRpc{
+  int32 term = 1;
+  int32 last_include_index = 2;
+  int32 last_include_term = 3;
+  uint32 offset = 4;
+  bytes chunk = 5;
+  bool done = 6;
+}
+
+message InstallSnapshotResultRpc{
+  int32 term = 1;
+  bool success = 2;
+}
+
+message RequestVoteRpc{
+  int32 term = 1;
+  int32 candidate_id = 2;
+  int32 last_log_index = 3;
+  int32 last_log_term = 4;
+}
+
+message RequestVoteResultRpc{
+  int32 term = 1;
+  bool is_voted = 2;
+}
+
+message NodeIdRpc{
+  string node_id = 1;
+}
