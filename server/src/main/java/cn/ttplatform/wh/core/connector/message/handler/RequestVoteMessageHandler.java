@@ -1,14 +1,14 @@
-package cn.ttplatform.lc.core.rpc.message.handler;
+package cn.ttplatform.wh.core.connector.message.handler;
 
-import cn.ttplatform.lc.core.ClusterMember;
-import cn.ttplatform.lc.core.Node;
-import cn.ttplatform.lc.core.NodeContext;
-import cn.ttplatform.lc.core.role.Follower;
-import cn.ttplatform.lc.core.role.Role;
-import cn.ttplatform.lc.core.rpc.message.domain.Message;
-import cn.ttplatform.lc.core.rpc.message.domain.RequestVoteMessage;
-import cn.ttplatform.lc.core.rpc.message.domain.RequestVoteResultMessage;
-import cn.ttplatform.lc.util.StringUtil;
+import cn.ttplatform.wh.core.ClusterMember;
+import cn.ttplatform.wh.core.Node;
+import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.common.AbstractMessageHandler;
+import cn.ttplatform.wh.core.role.Follower;
+import cn.ttplatform.wh.core.role.Role;
+import cn.ttplatform.wh.domain.message.Message;
+import cn.ttplatform.wh.domain.message.RequestVoteMessage;
+import cn.ttplatform.wh.domain.message.RequestVoteResultMessage;
 
 /**
  * @author Wang Hao
@@ -55,7 +55,7 @@ public class RequestVoteMessageHandler extends AbstractMessageHandler {
         }
         if (node.isFollower()) {
             boolean voted = !context.log().isNewerThan(lastLogIndex, lastLogTerm);
-            if (StringUtil.isEmpty(((Follower) role).getVoteTo()) && voted) {
+            if (isEmpty(((Follower) role).getVoteTo()) && voted) {
                 requestVoteResultMessage.setVoted(Boolean.TRUE);
                 Follower follower = Follower.builder()
                     .scheduledFuture(node.electionTimeoutTask())
@@ -66,5 +66,9 @@ public class RequestVoteMessageHandler extends AbstractMessageHandler {
             }
         }
         node.sendMessage(requestVoteResultMessage, member);
+    }
+
+    private boolean isEmpty(String s) {
+        return s == null || "".equals(s);
     }
 }
