@@ -5,19 +5,16 @@ import cn.ttplatform.wh.core.Cluster;
 import cn.ttplatform.wh.core.ClusterMember;
 import cn.ttplatform.wh.core.Node;
 import cn.ttplatform.wh.core.NodeContext;
-import cn.ttplatform.wh.core.Scheduler;
-import cn.ttplatform.wh.core.StateMachine;
-import cn.ttplatform.wh.core.TaskExecutor;
-import cn.ttplatform.wh.core.common.MessageContext;
-import cn.ttplatform.wh.core.connector.Connector;
-import cn.ttplatform.wh.core.connector.nio.NioConnector;
-import cn.ttplatform.wh.core.server.Listener;
-import cn.ttplatform.wh.core.server.nio.NioListener;
 import cn.ttplatform.wh.core.NodeState;
+import cn.ttplatform.wh.core.StateMachine;
+import cn.ttplatform.wh.core.common.DefaultScheduler;
+import cn.ttplatform.wh.core.common.Scheduler;
+import cn.ttplatform.wh.core.common.SingleThreadTaskExecutor;
+import cn.ttplatform.wh.core.common.TaskExecutor;
+import cn.ttplatform.wh.core.connector.nio.NioConnector;
 import cn.ttplatform.wh.core.log.FileLog;
 import cn.ttplatform.wh.core.log.Log;
-import cn.ttplatform.wh.support.DefaultScheduler;
-import cn.ttplatform.wh.support.SingleThreadTaskExecutor;
+import cn.ttplatform.wh.server.nio.NioListener;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Set;
@@ -58,18 +55,16 @@ public class Application {
             .log(log)
             .properties(properties)
             .build();
-        MessageContext messageContext = new MessageContext(properties);
-        Listener listener = new NioListener(messageContext);
-        Connector connector = new NioConnector(messageContext);
         StateMachine stateMachine = new StateMachine();
         Node node = Node.builder()
             .selfId(properties.getNodeId())
             .context(nodeContext)
-            .connector(connector)
-            .listener(listener)
-            .messageContext(messageContext)
+            .connector(new NioConnector(nodeContext))
+            .listener(new NioListener(nodeContext))
             .stateMachine(stateMachine)
             .build();
+        stateMachine.register(node);
+        nodeContext.register(node);
         node.start();
     }
 
@@ -79,7 +74,6 @@ public class Application {
             .longOpt("id")
             .hasArg()
             .argName("node-id")
-            .required()
             .desc("node id, required. must be unique in group. ")
             .build());
         options.addOption(Option.builder("h")
@@ -99,7 +93,6 @@ public class Application {
             .hasArg()
             .argName("port")
             .type(Number.class)
-            .required()
             .desc("port of connector, required")
             .build());
         options.addOption(Option.builder("d")

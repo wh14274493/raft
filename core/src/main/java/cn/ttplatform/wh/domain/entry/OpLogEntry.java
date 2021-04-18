@@ -1,6 +1,5 @@
 package cn.ttplatform.wh.domain.entry;
 
-import java.nio.charset.Charset;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,7 +26,6 @@ public class OpLogEntry extends AbstractLogEntry {
 
     @Override
     public String toString() {
-        return "OpEntry{type = " + this.getType() + ", term = " + this.getTerm() + ", index = " + this.getIndex()
-            + ", command = " + new String(command, Charset.defaultCharset()) + '}';
+        return "OpEntry{type = " + this.getType() + ", term = " + this.getTerm() + ", index = " + this.getIndex() + '}';
     }
 }

@@ -42,5 +42,10 @@ public class FileName {
     /**
      * directory name for empty old generation
      */
-    public static final String EMPTY_FILE_NAME = "log-0";
+    public static final String EMPTY_FILE_NAME = "log-0-0";
+
+    /**
+     * directory name prefix for generation dir
+     */
+    public static final String GENERATION_FILE_NAME_PREFIX = "log-";
 }

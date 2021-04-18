@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -17,7 +16,6 @@ import lombok.experimental.SuperBuilder;
 @Setter
 @Getter
 @SuperBuilder
-@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 public class AppendLogEntriesMessage extends AbstractMessage {
@@ -34,4 +32,15 @@ public class AppendLogEntriesMessage extends AbstractMessage {
         return MessageType.APPEND_LOG_ENTRIES;
     }
 
+    @Override
+    public String toString() {
+        return "AppendLogEntriesMessage{" +
+            "term=" + term +
+            ", leaderId='" + leaderId + '\'' +
+            ", preLogIndex=" + preLogIndex +
+            ", preLogTerm=" + preLogTerm +
+            ", leaderCommitIndex=" + leaderCommitIndex +
+            ", logEntries.size=" + (logEntries == null ? 0 : logEntries.size()) +
+            '}';
+    }
 }

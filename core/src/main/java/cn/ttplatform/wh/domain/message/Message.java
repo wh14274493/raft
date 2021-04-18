@@ -10,6 +10,8 @@ public interface Message {
         return null;
     }
 
+    default void setSourceId(String sourceId){}
+
     int getType();
 
 }

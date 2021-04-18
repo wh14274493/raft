@@ -21,4 +21,8 @@ public abstract class AbstractMessage implements Message {
         return sourceId;
     }
 
+    @Override
+    public void setSourceId(String sourceId) {
+        this.sourceId = sourceId;
+    }
 }

@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.constant;
 
-import cn.ttplatform.wh.domain.command.GetResponseCommand;
-import cn.ttplatform.wh.domain.command.SetResponseCommand;
+import cn.ttplatform.wh.domain.cmd.GetResponseCommand;
+import cn.ttplatform.wh.domain.cmd.SetResponseCommand;
 import cn.ttplatform.wh.domain.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.domain.message.AppendLogEntriesResultMessage;
 import cn.ttplatform.wh.domain.message.InstallSnapshotMessage;
@@ -67,7 +67,7 @@ public class MessageType {
     public static final int INSTALL_SNAPSHOT_RESULT = 8;
 
     /**
-     * {@link cn.ttplatform.wh.domain.command.SetCommand}
+     * {@link cn.ttplatform.wh.domain.cmd.SetCommand}
      */
     public static final int SET_COMMAND = 9;
 
@@ -77,7 +77,7 @@ public class MessageType {
     public static final int SET_COMMAND_RESPONSE = 10;
 
     /**
-     * {@link cn.ttplatform.wh.domain.command.GetCommand}
+     * {@link cn.ttplatform.wh.domain.cmd.GetCommand}
      */
     public static final int GET_COMMAND = 11;
 
