@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.core.connector;
 
 import cn.ttplatform.wh.core.ClusterMember;
-import cn.ttplatform.wh.domain.message.Message;
+import cn.ttplatform.wh.core.connector.message.Message;
 import io.netty.channel.Channel;
 
 /**

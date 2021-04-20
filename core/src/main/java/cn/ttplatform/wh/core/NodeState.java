@@ -2,7 +2,7 @@ package cn.ttplatform.wh.core;
 
 import cn.ttplatform.wh.constant.FileName;
 import cn.ttplatform.wh.core.role.Follower;
-import cn.ttplatform.wh.core.common.RandomAccessFileWrapper;
+import cn.ttplatform.wh.core.support.RandomAccessFileWrapper;
 import java.io.File;
 import java.nio.charset.Charset;
 

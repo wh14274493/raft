@@ -1,19 +1,19 @@
 package cn.ttplatform.wh.core;
 
 import cn.ttplatform.wh.config.ServerProperties;
-import cn.ttplatform.wh.core.common.Listener;
+import cn.ttplatform.wh.core.support.Listener;
 import cn.ttplatform.wh.core.connector.Connector;
 import cn.ttplatform.wh.core.role.Candidate;
 import cn.ttplatform.wh.core.role.Follower;
 import cn.ttplatform.wh.core.role.Leader;
 import cn.ttplatform.wh.core.role.Role;
-import cn.ttplatform.wh.domain.cmd.GetCommand;
-import cn.ttplatform.wh.domain.cmd.SetCommand;
-import cn.ttplatform.wh.domain.entry.LogEntry;
-import cn.ttplatform.wh.domain.entry.OpLogEntry;
-import cn.ttplatform.wh.domain.message.Message;
-import cn.ttplatform.wh.domain.message.PreVoteMessage;
-import cn.ttplatform.wh.domain.message.RequestVoteMessage;
+import cn.ttplatform.wh.cmd.GetCommand;
+import cn.ttplatform.wh.cmd.SetCommand;
+import cn.ttplatform.wh.core.log.entry.LogEntry;
+import cn.ttplatform.wh.core.log.entry.OpLogEntry;
+import cn.ttplatform.wh.core.connector.message.Message;
+import cn.ttplatform.wh.core.connector.message.PreVoteMessage;
+import cn.ttplatform.wh.core.connector.message.RequestVoteMessage;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -189,6 +189,7 @@ public class Node {
     public List<GetCommand> getPendingGetTasks(int index) {
         return pendingGetCommandMap.remove(index);
     }
+
     public SetCommand getPendingSetTasks(int index) {
         return pendingSetCommandMap.remove(index);
     }

@@ -1,22 +1,21 @@
 package cn.ttplatform.wh;
 
 import cn.ttplatform.wh.constant.MessageType;
-import cn.ttplatform.wh.core.common.BufferPool;
-import cn.ttplatform.wh.core.common.FixedSizeLinkedBufferPool;
-import cn.ttplatform.wh.core.common.MessageFactoryManager;
-import cn.ttplatform.wh.core.common.ProtostuffDecoder;
-import cn.ttplatform.wh.core.common.ProtostuffEncoder;
-import cn.ttplatform.wh.domain.cmd.GetCommand;
-import cn.ttplatform.wh.domain.cmd.SetCommand;
-import cn.ttplatform.wh.domain.cmd.factory.GetCommandFactory;
-import cn.ttplatform.wh.domain.cmd.factory.GetResponseCommandFactory;
-import cn.ttplatform.wh.domain.cmd.factory.SetCommandFactory;
-import cn.ttplatform.wh.domain.cmd.factory.SetResponseCommandFactory;
-import cn.ttplatform.wh.domain.message.Message;
+import cn.ttplatform.wh.core.support.BufferPool;
+import cn.ttplatform.wh.core.support.FixedSizeLinkedBufferPool;
+import cn.ttplatform.wh.core.support.MessageFactoryManager;
+import cn.ttplatform.wh.core.support.ProtostuffDecoder;
+import cn.ttplatform.wh.core.support.ProtostuffEncoder;
+import cn.ttplatform.wh.cmd.GetCommand;
+import cn.ttplatform.wh.cmd.SetCommand;
+import cn.ttplatform.wh.cmd.factory.GetCommandFactory;
+import cn.ttplatform.wh.cmd.factory.GetResponseCommandFactory;
+import cn.ttplatform.wh.cmd.factory.SetCommandFactory;
+import cn.ttplatform.wh.cmd.factory.SetResponseCommandFactory;
+import cn.ttplatform.wh.core.connector.message.Message;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -25,7 +24,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.protostuff.LinkedBuffer;
 import java.net.InetSocketAddress;
 import java.util.UUID;
@@ -68,7 +66,7 @@ public class Client {
                 .connect(new InetSocketAddress("127.0.0.1", 6666))
                 .sync();
             Channel channel = channelFuture.channel();
-            IntStream.range(0, 1000)
+            IntStream.range(0, 10000)
                 .forEach(index -> channel.writeAndFlush(SetCommand.builder().id(UUID.randomUUID().toString())
                     .key("WANGHAO" + index)
                     .value(String.valueOf(index))

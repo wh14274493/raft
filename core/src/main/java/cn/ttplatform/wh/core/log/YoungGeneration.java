@@ -2,13 +2,15 @@ package cn.ttplatform.wh.core.log;
 
 import cn.ttplatform.wh.constant.ExceptionMessage;
 import cn.ttplatform.wh.constant.FileName;
-import cn.ttplatform.wh.domain.entry.LogEntry;
-import cn.ttplatform.wh.domain.entry.LogEntryIndex;
+import cn.ttplatform.wh.core.support.DirectByteBufferPool;
+import cn.ttplatform.wh.core.log.entry.FileLogEntry;
+import cn.ttplatform.wh.core.log.entry.FileLogEntryIndex;
+import cn.ttplatform.wh.core.log.entry.LogEntry;
+import cn.ttplatform.wh.core.log.entry.LogEntryIndex;
 import cn.ttplatform.wh.exception.OperateFileException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +26,14 @@ public class YoungGeneration extends AbstractGeneration {
 
     public YoungGeneration(File parent) {
         super(new File(parent, FileName.GENERATING_FILE_NAME));
+        this.fileLogEntry = new FileLogEntry(file);
+        this.fileLogEntryIndex = new FileLogEntryIndex(file);
+    }
+
+    public YoungGeneration(File parent, DirectByteBufferPool pool) {
+        super(new File(parent, FileName.GENERATING_FILE_NAME), pool);
+        this.fileLogEntry = new FileLogEntry(file, pool);
+        this.fileLogEntryIndex = new FileLogEntryIndex(file, pool);
     }
 
     /**
@@ -81,11 +91,21 @@ public class YoungGeneration extends AbstractGeneration {
     /**
      * Save the log to a file and update the index file at the same time.
      *
-     * @param logEntry Logs to be submitted
+     * @param logEntry Log to be submitted
      */
     public void appendLogEntry(LogEntry logEntry) {
         long offset = fileLogEntry.append(logEntry);
-        fileLogEntryIndex.append(logEntry.getIndex(), offset, logEntry.getType(), logEntry.getTerm());
+        fileLogEntryIndex.append(logEntry, offset);
+    }
+
+    /**
+     * Save the logs to a file and update the index file at the same time.
+     *
+     * @param logEntries Logs to be submitted
+     */
+    public void appendLogEntries(List<LogEntry> logEntries) {
+        List<Long> offsetList = fileLogEntry.append(logEntries);
+        fileLogEntryIndex.append(logEntries, offsetList);
     }
 
     /**
@@ -99,15 +119,10 @@ public class YoungGeneration extends AbstractGeneration {
         int maxLogIndex = fileLogEntryIndex.getMaxLogIndex();
         int size = commitIndex - maxLogIndex;
         List<LogEntry> committedEntries = new ArrayList<>(size);
-        Iterator<LogEntry> iterator = pending.iterator();
-        while (iterator.hasNext()) {
-            LogEntry logEntry = iterator.next();
-            if (logEntry.getIndex() <= commitIndex) {
-                appendLogEntry(logEntry);
-                committedEntries.add(logEntry);
-                iterator.remove();
-            }
+        while (!pending.isEmpty() && pending.peekFirst().getIndex() <= commitIndex) {
+            committedEntries.add(pending.pollFirst());
         }
+        appendLogEntries(committedEntries);
         return committedEntries;
     }
 
@@ -134,8 +149,9 @@ public class YoungGeneration extends AbstractGeneration {
             log.debug("index[{}] > maxEntryIndex[{}]", index, fileLogEntryIndex.getMaxLogIndex());
             return pending.get(index - fileLogEntryIndex.getMaxLogIndex() - 1);
         }
-        long entryOffset = fileLogEntryIndex.getEntryOffset(index);
-        return fileLogEntry.getEntry(entryOffset);
+        long startOffset = fileLogEntryIndex.getEntryOffset(index);
+        long endOffset = fileLogEntryIndex.getEntryOffset(index + 1);
+        return fileLogEntry.getEntry(startOffset, endOffset);
     }
 
     /**

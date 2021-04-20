@@ -7,10 +7,11 @@ import cn.ttplatform.wh.core.Node;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.NodeState;
 import cn.ttplatform.wh.core.StateMachine;
-import cn.ttplatform.wh.core.common.DefaultScheduler;
-import cn.ttplatform.wh.core.common.Scheduler;
-import cn.ttplatform.wh.core.common.SingleThreadTaskExecutor;
-import cn.ttplatform.wh.core.common.TaskExecutor;
+import cn.ttplatform.wh.core.support.DefaultScheduler;
+import cn.ttplatform.wh.core.support.DirectByteBufferPool;
+import cn.ttplatform.wh.core.support.Scheduler;
+import cn.ttplatform.wh.core.support.SingleThreadTaskExecutor;
+import cn.ttplatform.wh.core.support.TaskExecutor;
 import cn.ttplatform.wh.core.connector.nio.NioConnector;
 import cn.ttplatform.wh.core.log.FileLog;
 import cn.ttplatform.wh.core.log.Log;
@@ -46,7 +47,7 @@ public class Application {
         TaskExecutor taskExecutor = new SingleThreadTaskExecutor();
         File base = new File(properties.getBasePath());
         NodeState nodeState = new NodeState(base);
-        Log log = new FileLog(base);
+        Log log = new FileLog(base, new DirectByteBufferPool(20, 10 * 1024 * 1024));
         NodeContext nodeContext = NodeContext.builder()
             .cluster(cluster)
             .scheduler(scheduler)

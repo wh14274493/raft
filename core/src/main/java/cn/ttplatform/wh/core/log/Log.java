@@ -1,9 +1,9 @@
 package cn.ttplatform.wh.core.log;
 
 
-import cn.ttplatform.wh.domain.entry.LogEntry;
-import cn.ttplatform.wh.domain.message.InstallSnapshotMessage;
-import cn.ttplatform.wh.domain.message.Message;
+import cn.ttplatform.wh.core.log.entry.LogEntry;
+import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
+import cn.ttplatform.wh.core.connector.message.Message;
 import java.util.List;
 
 /**

@@ -18,4 +18,5 @@ public class ExceptionMessage {
     public static final String READ_FILE_LENGTH_ERROR = "read file length error";
     public static final String TRUNCATE_FILE_ERROR = "truncate file error";
     public static final String LOAD_ENTRY_ERROR = "load entry error";
+    public static final String READ_FAILED = "not enough content to read";
 }

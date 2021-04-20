@@ -1,21 +1,24 @@
 package cn.ttplatform.wh.core.log;
 
 import cn.ttplatform.wh.constant.FileName;
-import cn.ttplatform.wh.domain.entry.LogEntry;
-import cn.ttplatform.wh.domain.message.AppendLogEntriesMessage;
-import cn.ttplatform.wh.domain.message.InstallSnapshotMessage;
-import cn.ttplatform.wh.domain.message.Message;
+import cn.ttplatform.wh.core.support.DirectByteBufferPool;
+import cn.ttplatform.wh.core.log.entry.LogEntry;
+import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
+import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
+import cn.ttplatform.wh.core.connector.message.Message;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Wang Hao
  * @date 2021/2/4 16:55
  */
+@Slf4j
 public class FileLog implements Log {
 
     private static final Pattern DIR_NAME_PATTERN = Pattern.compile("log-(\\d+)");
@@ -27,6 +30,16 @@ public class FileLog implements Log {
     public FileLog(File parent) {
         youngGeneration = new YoungGeneration(parent);
         oldGeneration = new OldGeneration(getLatestGeneration(parent));
+        initialize();
+    }
+
+    public FileLog(File parent, DirectByteBufferPool pool) {
+        youngGeneration = new YoungGeneration(parent, pool);
+        oldGeneration = new OldGeneration(getLatestGeneration(parent), pool);
+        initialize();
+    }
+
+    private void initialize() {
         if (youngGeneration.isEmpty()) {
             commitIndex = oldGeneration.getLastIncludeIndex();
         } else {
@@ -108,9 +121,11 @@ public class FileLog implements Log {
             youngGeneration.removeAfter(index);
             if (entries != null && !entries.isEmpty()) {
                 appendEntries(entries);
+                log.debug("append {} log entries to pending list", entries.size());
             }
             return true;
         }
+        log.debug("append log entries to pending list failed");
         return false;
     }
 
@@ -143,10 +158,11 @@ public class FileLog implements Log {
 
     private void updateNextIndex() {
         if (youngGeneration.isEmpty()) {
-            this.nextIndex = oldGeneration.getLastIncludeIndex() + 1;
+            nextIndex = oldGeneration.getLastIncludeIndex() + 1;
         } else {
-            this.nextIndex = youngGeneration.getLastLogMetaData().getIndex() + 1;
+            nextIndex = youngGeneration.getLastLogMetaData().getIndex() + 1;
         }
+        log.debug("update nextIndex[{}]", nextIndex);
     }
 
     @Override

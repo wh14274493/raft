@@ -2,12 +2,12 @@ package cn.ttplatform.wh.core;
 
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.constant.MessageType;
-import cn.ttplatform.wh.core.common.BufferPool;
-import cn.ttplatform.wh.core.common.FixedSizeLinkedBufferPool;
-import cn.ttplatform.wh.core.common.MessageDispatcher;
-import cn.ttplatform.wh.core.common.MessageFactoryManager;
-import cn.ttplatform.wh.core.common.Scheduler;
-import cn.ttplatform.wh.core.common.TaskExecutor;
+import cn.ttplatform.wh.core.support.BufferPool;
+import cn.ttplatform.wh.core.support.FixedSizeLinkedBufferPool;
+import cn.ttplatform.wh.core.support.MessageDispatcher;
+import cn.ttplatform.wh.core.support.MessageFactoryManager;
+import cn.ttplatform.wh.core.support.Scheduler;
+import cn.ttplatform.wh.core.support.TaskExecutor;
 import cn.ttplatform.wh.core.connector.message.factory.AppendLogEntriesMessageFactory;
 import cn.ttplatform.wh.core.connector.message.factory.AppendLogEntriesResultMessageFactory;
 import cn.ttplatform.wh.core.connector.message.factory.InstallSnapshotMessageFactory;

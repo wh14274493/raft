@@ -1,5 +1,6 @@
 package cn.ttplatform.wh.core.log;
 
+import cn.ttplatform.wh.core.support.DirectByteBufferPool;
 import cn.ttplatform.wh.core.log.entry.FileLogEntry;
 import cn.ttplatform.wh.core.log.entry.FileLogEntryIndex;
 import cn.ttplatform.wh.core.log.snapshot.FileSnapshot;
@@ -18,28 +19,34 @@ public abstract class AbstractGeneration implements Generation {
     FileLogEntryIndex fileLogEntryIndex;
 
     AbstractGeneration(File file) {
-        if (!file.exists()&&!file.mkdir()) {
-            throw new OperateFileException("create file["+file.getPath()+"] error");
+        if (!file.exists() && !file.mkdir()) {
+            throw new OperateFileException("create file[" + file.getPath() + "] error");
         }
         this.file = file;
         this.fileSnapshot = new FileSnapshot(file);
-        this.fileLogEntry = new FileLogEntry(file);
-        this.fileLogEntryIndex = new FileLogEntryIndex(file);
     }
 
-    public int getLastIncludeIndex(){
-        return fileSnapshot.getLastIncludeIndex();
+    AbstractGeneration(File file, DirectByteBufferPool pool) {
+        if (!file.exists() && !file.mkdir()) {
+            throw new OperateFileException("create file[" + file.getPath() + "] error");
+        }
+        this.file = file;
+        this.fileSnapshot = new FileSnapshot(file, pool);
     }
 
-    public int getLastIncludeTerm(){
-        return fileSnapshot.getLastIncludeTerm();
+    public int getLastIncludeIndex() {
+        return fileSnapshot.getSnapshotHeader().getLastIncludeIndex();
     }
 
-    public long getSnapshotSize(){
-        return fileSnapshot.getSize();
+    public int getLastIncludeTerm() {
+        return fileSnapshot.getSnapshotHeader().getLastIncludeTerm();
     }
 
-    public long getLogEntryFileSize(){
+    public long getSnapshotSize() {
+        return fileSnapshot.getSnapshotHeader().getSize();
+    }
+
+    public long getLogEntryFileSize() {
         return fileLogEntry.size();
     }
 

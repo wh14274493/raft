@@ -3,13 +3,13 @@ package cn.ttplatform.wh.core.connector.message.handler;
 import cn.ttplatform.wh.core.ClusterMember;
 import cn.ttplatform.wh.core.Node;
 import cn.ttplatform.wh.core.NodeContext;
-import cn.ttplatform.wh.core.common.AbstractMessageHandler;
+import cn.ttplatform.wh.core.support.AbstractMessageHandler;
 import cn.ttplatform.wh.core.role.Follower;
 import cn.ttplatform.wh.core.role.Role;
-import cn.ttplatform.wh.domain.entry.LogEntry;
-import cn.ttplatform.wh.domain.message.AppendLogEntriesMessage;
-import cn.ttplatform.wh.domain.message.AppendLogEntriesResultMessage;
-import cn.ttplatform.wh.domain.message.Message;
+import cn.ttplatform.wh.core.log.entry.LogEntry;
+import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
+import cn.ttplatform.wh.core.connector.message.AppendLogEntriesResultMessage;
+import cn.ttplatform.wh.core.connector.message.Message;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 

@@ -1,8 +1,8 @@
 package cn.ttplatform.wh.server.nio;
 
-import cn.ttplatform.wh.core.common.ChannelCache;
-import cn.ttplatform.wh.core.common.MessageDispatcher;
-import cn.ttplatform.wh.domain.cmd.Command;
+import cn.ttplatform.wh.core.support.ChannelCache;
+import cn.ttplatform.wh.core.support.MessageDispatcher;
+import cn.ttplatform.wh.cmd.Command;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -24,7 +24,6 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<Command> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Command cmd) {
         Channel channel = ctx.channel();
-        log.info("receive cmd[{}] from {}",cmd,channel);
         channel.closeFuture().addListener(future -> ChannelCache.removeChannel(cmd.getId()));
         ChannelCache.cacheChannel(cmd.getId(), channel);
         commandDispatcher.dispatch(cmd);

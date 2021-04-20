@@ -1,11 +1,11 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.core.Node;
-import cn.ttplatform.wh.core.common.AbstractMessageHandler;
+import cn.ttplatform.wh.core.support.AbstractMessageHandler;
 import cn.ttplatform.wh.core.role.Follower;
 import cn.ttplatform.wh.core.role.Role;
-import cn.ttplatform.wh.domain.message.Message;
-import cn.ttplatform.wh.domain.message.PreVoteResultMessage;
+import cn.ttplatform.wh.core.connector.message.Message;
+import cn.ttplatform.wh.core.connector.message.PreVoteResultMessage;
 
 /**
  * @author Wang Hao
