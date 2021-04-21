@@ -2,8 +2,11 @@ package cn.ttplatform.wh.core;
 
 import cn.ttplatform.wh.constant.FileName;
 import cn.ttplatform.wh.core.role.Follower;
-import cn.ttplatform.wh.core.support.RandomAccessFileWrapper;
+import cn.ttplatform.wh.core.support.BufferPool;
+import cn.ttplatform.wh.core.support.ByteBufferWriter;
+import cn.ttplatform.wh.core.support.ReadableAndWriteableFile;
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 /**
@@ -12,10 +15,10 @@ import java.nio.charset.Charset;
  */
 public class NodeState {
 
-    private final RandomAccessFileWrapper file;
+    private final ReadableAndWriteableFile file;
 
-    public NodeState(File parent) {
-        this.file = new RandomAccessFileWrapper(new File(parent, FileName.NODE_STATE_FILE_NAME));
+    public NodeState(File parent, BufferPool<ByteBuffer> pool) {
+        this.file = new ByteBufferWriter(new File(parent, FileName.NODE_STATE_FILE_NAME), pool);
     }
 
     /**
@@ -33,7 +36,7 @@ public class NodeState {
      * @return currentTerm
      */
     public int getCurrentTerm() {
-        if (file.isEmpty()){
+        if (file.isEmpty()) {
             return 0;
         }
         return file.readIntAt(0L);
@@ -46,7 +49,7 @@ public class NodeState {
      * @param voteTo the node id that vote for
      */
     public void setVoteTo(String voteTo) {
-        if (voteTo==null){
+        if (voteTo == null) {
             voteTo = "";
         }
         byte[] content = voteTo.getBytes(Charset.defaultCharset());
@@ -60,11 +63,11 @@ public class NodeState {
      * @return the node id that vote for
      */
     public String getVoteTo() {
-        if (file.isEmpty()){
+        if (file.isEmpty()) {
             return null;
         }
         int size = file.readIntAt(Integer.BYTES);
-        return new String(file.readBytesAt(Integer.BYTES * 2, size), Charset.defaultCharset());
+        return new String(file.readBytesAt((long) Integer.BYTES * 2, size), Charset.defaultCharset());
     }
 
 }

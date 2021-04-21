@@ -16,9 +16,7 @@ import lombok.ToString;
 @AllArgsConstructor
 public class ClusterMember implements Comparable<ClusterMember> {
 
-    private String nodeId;
-    private String host;
-    private int port;
+    private MemberInfo memberInfo;
     private int matchIndex;
     private int nextIndex;
     private long snapshotOffset;
@@ -26,11 +24,11 @@ public class ClusterMember implements Comparable<ClusterMember> {
     private boolean replicating;
 
     public String getNodeId() {
-        return this.nodeId;
+        return memberInfo.getNodeId();
     }
 
     public InetSocketAddress getAddress() {
-        return new InetSocketAddress(host, port);
+        return memberInfo.getAddress();
     }
 
     public void updateReplicationState(int matchIndex) {

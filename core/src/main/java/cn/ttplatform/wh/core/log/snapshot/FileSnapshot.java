@@ -1,12 +1,12 @@
 package cn.ttplatform.wh.core.log.snapshot;
 
 import cn.ttplatform.wh.constant.FileName;
-import cn.ttplatform.wh.core.support.DirectAccessFile;
-import cn.ttplatform.wh.core.support.DirectByteBufferPool;
-import cn.ttplatform.wh.core.support.RandomAccessFileWrapper;
-import cn.ttplatform.wh.core.support.ReadableAndWriteableFile;
 import cn.ttplatform.wh.core.log.LogFactory;
+import cn.ttplatform.wh.core.support.BufferPool;
+import cn.ttplatform.wh.core.support.ByteBufferWriter;
+import cn.ttplatform.wh.core.support.ReadableAndWriteableFile;
 import java.io.File;
+import java.nio.ByteBuffer;
 import lombok.Getter;
 
 /**
@@ -21,13 +21,8 @@ public class FileSnapshot {
     private final LogFactory logFactory = LogFactory.getInstance();
     private SnapshotHeader snapshotHeader;
 
-    public FileSnapshot(File parent) {
-        this.file = new RandomAccessFileWrapper(new File(parent, FileName.SNAPSHOT_FILE_NAME));
-        initialize();
-    }
-
-    public FileSnapshot(File parent, DirectByteBufferPool pool) {
-        this.file = new DirectAccessFile(new File(parent, FileName.SNAPSHOT_FILE_NAME), pool);
+    public FileSnapshot(File parent, BufferPool<ByteBuffer> pool) {
+        this.file = new ByteBufferWriter(new File(parent, FileName.SNAPSHOT_FILE_NAME), pool);
         initialize();
     }
 

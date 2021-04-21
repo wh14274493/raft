@@ -1,12 +1,13 @@
 package cn.ttplatform.wh.core.log;
 
 import cn.ttplatform.wh.constant.FileName;
-import cn.ttplatform.wh.core.support.DirectByteBufferPool;
-import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.core.connector.message.Message;
+import cn.ttplatform.wh.core.log.entry.LogEntry;
+import cn.ttplatform.wh.core.support.BufferPool;
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -26,14 +27,10 @@ public class FileLog implements Log {
     private OldGeneration oldGeneration;
     private int commitIndex;
     private int nextIndex;
+    private BufferPool<ByteBuffer> pool;
 
-    public FileLog(File parent) {
-        youngGeneration = new YoungGeneration(parent);
-        oldGeneration = new OldGeneration(getLatestGeneration(parent));
-        initialize();
-    }
-
-    public FileLog(File parent, DirectByteBufferPool pool) {
+    public FileLog(File parent, BufferPool<ByteBuffer> pool) {
+        this.pool = pool;
         youngGeneration = new YoungGeneration(parent, pool);
         oldGeneration = new OldGeneration(getLatestGeneration(parent), pool);
         initialize();
@@ -246,8 +243,8 @@ public class FileLog implements Log {
         oldGeneration.close();
         youngGeneration.close();
         File file = youngGeneration.rename(lastIncludeIndex, lastIncludeTerm);
-        oldGeneration = new OldGeneration(file);
-        youngGeneration = new YoungGeneration(file.getParentFile());
+        oldGeneration = new OldGeneration(file, pool);
+        youngGeneration = new YoungGeneration(file.getParentFile(), pool);
         appendEntries(logEntries);
     }
 

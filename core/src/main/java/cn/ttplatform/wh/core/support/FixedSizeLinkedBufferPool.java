@@ -24,8 +24,8 @@ public class FixedSizeLinkedBufferPool implements BufferPool<LinkedBuffer> {
         LinkedBuffer buffer = null;
         try {
             buffer = bufferQueue.poll(500L, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            log.warn("poll LinkedBuffer timeout.");
+        } catch (Exception e) {
+            log.warn("failed to poll LinkedBuffer.");
         }
         return buffer == null ? LinkedBuffer.allocate() : buffer;
     }

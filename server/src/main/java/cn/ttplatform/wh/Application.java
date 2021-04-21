@@ -1,22 +1,24 @@
 package cn.ttplatform.wh;
 
 import cn.ttplatform.wh.config.ServerProperties;
+import cn.ttplatform.wh.constant.ReadWriteFileStrategy;
 import cn.ttplatform.wh.core.Cluster;
 import cn.ttplatform.wh.core.ClusterMember;
+import cn.ttplatform.wh.core.MemberInfo;
 import cn.ttplatform.wh.core.Node;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.NodeState;
 import cn.ttplatform.wh.core.StateMachine;
-import cn.ttplatform.wh.core.support.DefaultScheduler;
-import cn.ttplatform.wh.core.support.DirectByteBufferPool;
-import cn.ttplatform.wh.core.support.Scheduler;
-import cn.ttplatform.wh.core.support.SingleThreadTaskExecutor;
-import cn.ttplatform.wh.core.support.TaskExecutor;
 import cn.ttplatform.wh.core.connector.nio.NioConnector;
 import cn.ttplatform.wh.core.log.FileLog;
-import cn.ttplatform.wh.core.log.Log;
+import cn.ttplatform.wh.core.support.BufferPool;
+import cn.ttplatform.wh.core.support.DefaultScheduler;
+import cn.ttplatform.wh.core.support.DirectByteBufferPool;
+import cn.ttplatform.wh.core.support.IndirectByteBufferPool;
+import cn.ttplatform.wh.core.support.SingleThreadTaskExecutor;
 import cn.ttplatform.wh.server.nio.NioListener;
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -40,22 +42,8 @@ public class Application {
             return;
         }
         ServerProperties properties = initConfig(commandLine);
-        Set<ClusterMember> members = initClusterMembers(properties);
+        NodeContext nodeContext = buildContext(properties);
 
-        Cluster cluster = new Cluster(members, properties.getNodeId());
-        Scheduler scheduler = new DefaultScheduler(properties);
-        TaskExecutor taskExecutor = new SingleThreadTaskExecutor();
-        File base = new File(properties.getBasePath());
-        NodeState nodeState = new NodeState(base);
-        Log log = new FileLog(base, new DirectByteBufferPool(20, 10 * 1024 * 1024));
-        NodeContext nodeContext = NodeContext.builder()
-            .cluster(cluster)
-            .scheduler(scheduler)
-            .taskExecutor(taskExecutor)
-            .nodeState(nodeState)
-            .log(log)
-            .properties(properties)
-            .build();
         StateMachine stateMachine = new StateMachine();
         Node node = Node.builder()
             .selfId(properties.getNodeId())
@@ -67,6 +55,25 @@ public class Application {
         stateMachine.register(node);
         nodeContext.register(node);
         node.start();
+    }
+
+    private NodeContext buildContext(ServerProperties properties) {
+        Set<ClusterMember> members = initClusterMembers(properties);
+        File base = new File(properties.getBasePath());
+        BufferPool<ByteBuffer> pool;
+        if (ReadWriteFileStrategy.DIRECT.equals(properties.getReadWriteFileStrategy())) {
+            pool = new DirectByteBufferPool(properties.getByteBufferPoolSize(), properties.getByteBufferSizeLimit());
+        } else {
+            pool = new IndirectByteBufferPool(properties.getByteBufferPoolSize(), properties.getByteBufferSizeLimit());
+        }
+        return NodeContext.builder()
+            .cluster(new Cluster(members, properties.getNodeId()))
+            .scheduler(new DefaultScheduler(properties))
+            .taskExecutor(new SingleThreadTaskExecutor())
+            .nodeState(new NodeState(base, pool))
+            .log(new FileLog(base, pool))
+            .properties(properties)
+            .build();
     }
 
     private CommandLine parseOptions(String[] args) throws ParseException {
@@ -122,8 +129,12 @@ public class Application {
     }
 
     public ServerProperties initConfig(CommandLine commandLine) {
-        String configPath = commandLine.getOptionValue('c');
-        ServerProperties properties = new ServerProperties(configPath);
+        ServerProperties properties;
+        if (commandLine.hasOption("c")) {
+            properties = new ServerProperties(commandLine.getOptionValue('c'));
+        } else {
+            properties = new ServerProperties();
+        }
         if (commandLine.hasOption("C")) {
             properties.setClusterInfo(commandLine.getOptionValue("C"));
         }
@@ -157,7 +168,8 @@ public class Application {
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("illegal port in node info [" + memberInfo + "]");
             }
-            return ClusterMember.builder().nodeId(nodeId).host(host).port(port).build();
+            return ClusterMember.builder().memberInfo(MemberInfo.builder().nodeId(nodeId).host(host).port(port).build())
+                .build();
         }).collect(Collectors.toSet());
     }
 

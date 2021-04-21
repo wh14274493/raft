@@ -10,6 +10,7 @@ import java.io.RandomAccessFile;
  * @author : wang hao
  * @date :  2020/8/15 22:50
  **/
+@Deprecated
 public class RandomAccessFileWrapper implements ReadableAndWriteableFile {
 
     RandomAccessFile randomAccessFile;

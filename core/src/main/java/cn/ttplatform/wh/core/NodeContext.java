@@ -109,7 +109,7 @@ public class NodeContext {
 
     private void initMessageFactory() {
         factoryManager = new MessageFactoryManager();
-        pool = new FixedSizeLinkedBufferPool(properties.getBuffPollSize());
+        pool = new FixedSizeLinkedBufferPool(properties.getLinkedBuffPollSize());
         factoryManager.register(MessageType.APPEND_LOG_ENTRIES, new AppendLogEntriesMessageFactory(pool));
         factoryManager.register(MessageType.APPEND_LOG_ENTRIES_RESULT, new AppendLogEntriesResultMessageFactory(pool));
         factoryManager.register(MessageType.INSTALL_SNAPSHOT, new InstallSnapshotMessageFactory(pool));

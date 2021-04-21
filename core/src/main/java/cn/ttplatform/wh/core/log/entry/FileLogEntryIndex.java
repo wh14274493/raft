@@ -4,12 +4,12 @@ import static cn.ttplatform.wh.core.support.ByteConvertor.fillIntBytes;
 import static cn.ttplatform.wh.core.support.ByteConvertor.fillLongBytes;
 
 import cn.ttplatform.wh.constant.FileName;
-import cn.ttplatform.wh.core.support.DirectAccessFile;
-import cn.ttplatform.wh.core.support.DirectByteBufferPool;
-import cn.ttplatform.wh.core.support.RandomAccessFileWrapper;
-import cn.ttplatform.wh.core.support.ReadableAndWriteableFile;
 import cn.ttplatform.wh.core.log.LogFactory;
+import cn.ttplatform.wh.core.support.BufferPool;
+import cn.ttplatform.wh.core.support.ByteBufferWriter;
+import cn.ttplatform.wh.core.support.ReadableAndWriteableFile;
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,13 +32,8 @@ public class FileLogEntryIndex {
     private final Map<Integer, LogEntryIndex> entryIndexMap = new HashMap<>();
     private final LogFactory logFactory = LogFactory.getInstance();
 
-    public FileLogEntryIndex(File parent) {
-        file = new RandomAccessFileWrapper(new File(parent, FileName.INDEX_FILE_NAME));
-        initialize();
-    }
-
-    public FileLogEntryIndex(File parent, DirectByteBufferPool pool) {
-        file = new DirectAccessFile(new File(parent, FileName.INDEX_FILE_NAME), pool);
+    public FileLogEntryIndex(File parent, BufferPool<ByteBuffer> pool) {
+        file = new ByteBufferWriter(new File(parent, FileName.INDEX_FILE_NAME), pool);
         initialize();
     }
 

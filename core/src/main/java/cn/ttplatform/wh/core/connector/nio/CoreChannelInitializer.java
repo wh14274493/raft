@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.core.connector.nio;
 
 import cn.ttplatform.wh.core.NodeContext;
-import cn.ttplatform.wh.core.support.IdleStateHandler;
+import cn.ttplatform.wh.core.support.KeepAliveCheckHandler;
 import cn.ttplatform.wh.core.support.ProtostuffDecoder;
 import cn.ttplatform.wh.core.support.ProtostuffEncoder;
 import io.netty.channel.ChannelInitializer;
@@ -28,7 +28,7 @@ public class CoreChannelInitializer extends ChannelInitializer<SocketChannel> {
         int readIdleTimeout = context.config().getReadIdleTimeout();
         int writeIdleTimeout = context.config().getWriteIdleTimeout();
         int allIdleTimeout = context.config().getAllIdleTimeout();
-        pipeline.addLast(new IdleStateHandler(readIdleTimeout, writeIdleTimeout, allIdleTimeout));
+        pipeline.addLast(new KeepAliveCheckHandler(readIdleTimeout, writeIdleTimeout, allIdleTimeout));
         pipeline.addLast(new MessageInboundHandler(context));
         pipeline.addLast(new MessageOutboundHandler(context));
     }

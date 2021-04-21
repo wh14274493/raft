@@ -3,12 +3,12 @@ package cn.ttplatform.wh.core.log.entry;
 import static cn.ttplatform.wh.core.support.ByteConvertor.fillIntBytes;
 
 import cn.ttplatform.wh.constant.FileName;
-import cn.ttplatform.wh.core.support.DirectAccessFile;
-import cn.ttplatform.wh.core.support.DirectByteBufferPool;
-import cn.ttplatform.wh.core.support.RandomAccessFileWrapper;
-import cn.ttplatform.wh.core.support.ReadableAndWriteableFile;
 import cn.ttplatform.wh.core.log.LogFactory;
+import cn.ttplatform.wh.core.support.BufferPool;
+import cn.ttplatform.wh.core.support.ByteBufferWriter;
+import cn.ttplatform.wh.core.support.ReadableAndWriteableFile;
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -24,12 +24,8 @@ public class FileLogEntry {
     private final LogFactory logFactory = LogFactory.getInstance();
     private final ReadableAndWriteableFile file;
 
-    public FileLogEntry(File parent) {
-        this.file = new RandomAccessFileWrapper(new File(parent, FileName.LOG_ENTRY_FILE_NAME));
-    }
-
-    public FileLogEntry(File parent, DirectByteBufferPool pool) {
-        this.file = new DirectAccessFile(new File(parent, FileName.LOG_ENTRY_FILE_NAME), pool);
+    public FileLogEntry(File parent, BufferPool<ByteBuffer> pool) {
+        this.file = new ByteBufferWriter(new File(parent, FileName.LOG_ENTRY_FILE_NAME), pool);
     }
 
     public long append(LogEntry logEntry) {

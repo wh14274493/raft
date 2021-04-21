@@ -1,7 +1,8 @@
 package cn.ttplatform.wh.core.log;
 
-import cn.ttplatform.wh.core.support.DirectByteBufferPool;
+import cn.ttplatform.wh.core.support.BufferPool;
 import java.io.File;
+import java.nio.ByteBuffer;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -11,11 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OldGeneration extends AbstractGeneration {
 
-    public OldGeneration(File file) {
-        super(file);
-    }
-
-    public OldGeneration(File file, DirectByteBufferPool pool) {
+    public OldGeneration(File file, BufferPool<ByteBuffer> pool) {
         super(file, pool);
     }
 

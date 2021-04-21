@@ -2,13 +2,14 @@ package cn.ttplatform.wh.core.log;
 
 import cn.ttplatform.wh.constant.ExceptionMessage;
 import cn.ttplatform.wh.constant.FileName;
-import cn.ttplatform.wh.core.support.DirectByteBufferPool;
 import cn.ttplatform.wh.core.log.entry.FileLogEntry;
 import cn.ttplatform.wh.core.log.entry.FileLogEntryIndex;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.core.log.entry.LogEntryIndex;
+import cn.ttplatform.wh.core.support.BufferPool;
 import cn.ttplatform.wh.exception.OperateFileException;
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -24,13 +25,7 @@ public class YoungGeneration extends AbstractGeneration {
 
     private final LinkedList<LogEntry> pending = new LinkedList<>();
 
-    public YoungGeneration(File parent) {
-        super(new File(parent, FileName.GENERATING_FILE_NAME));
-        this.fileLogEntry = new FileLogEntry(file);
-        this.fileLogEntryIndex = new FileLogEntryIndex(file);
-    }
-
-    public YoungGeneration(File parent, DirectByteBufferPool pool) {
+    public YoungGeneration(File parent, BufferPool<ByteBuffer> pool) {
         super(new File(parent, FileName.GENERATING_FILE_NAME), pool);
         this.fileLogEntry = new FileLogEntry(file, pool);
         this.fileLogEntryIndex = new FileLogEntryIndex(file, pool);

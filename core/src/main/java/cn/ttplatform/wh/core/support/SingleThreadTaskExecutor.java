@@ -17,7 +17,7 @@ public class SingleThreadTaskExecutor implements TaskExecutor {
 
     public SingleThreadTaskExecutor() {
         this.executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(),
-            r -> new Thread(r, "raft-core"));
+            r -> new Thread(r, "core"));
     }
 
     @Override

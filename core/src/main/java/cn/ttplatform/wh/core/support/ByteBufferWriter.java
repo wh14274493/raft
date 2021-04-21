@@ -14,12 +14,12 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2021/4/19 13:02
  */
 @Slf4j
-public class DirectAccessFile implements ReadableAndWriteableFile {
+public class ByteBufferWriter implements ReadableAndWriteableFile {
 
     FileChannel channel;
-    DirectByteBufferPool bufferPool;
+    BufferPool<ByteBuffer> bufferPool;
 
-    public DirectAccessFile(File file, DirectByteBufferPool bufferPool) {
+    public ByteBufferWriter(File file, BufferPool<ByteBuffer> bufferPool) {
         try {
             this.bufferPool = bufferPool;
             channel = FileChannel

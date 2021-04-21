@@ -1,11 +1,12 @@
 package cn.ttplatform.wh.core.log;
 
-import cn.ttplatform.wh.core.support.DirectByteBufferPool;
 import cn.ttplatform.wh.core.log.entry.FileLogEntry;
 import cn.ttplatform.wh.core.log.entry.FileLogEntryIndex;
 import cn.ttplatform.wh.core.log.snapshot.FileSnapshot;
+import cn.ttplatform.wh.core.support.BufferPool;
 import cn.ttplatform.wh.exception.OperateFileException;
 import java.io.File;
+import java.nio.ByteBuffer;
 
 /**
  * @author Wang Hao
@@ -18,15 +19,7 @@ public abstract class AbstractGeneration implements Generation {
     FileLogEntry fileLogEntry;
     FileLogEntryIndex fileLogEntryIndex;
 
-    AbstractGeneration(File file) {
-        if (!file.exists() && !file.mkdir()) {
-            throw new OperateFileException("create file[" + file.getPath() + "] error");
-        }
-        this.file = file;
-        this.fileSnapshot = new FileSnapshot(file);
-    }
-
-    AbstractGeneration(File file, DirectByteBufferPool pool) {
+    AbstractGeneration(File file, BufferPool<ByteBuffer> pool) {
         if (!file.exists() && !file.mkdir()) {
             throw new OperateFileException("create file[" + file.getPath() + "] error");
         }

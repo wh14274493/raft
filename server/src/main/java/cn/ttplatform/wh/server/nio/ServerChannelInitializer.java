@@ -2,7 +2,7 @@ package cn.ttplatform.wh.server.nio;
 
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.core.NodeContext;
-import cn.ttplatform.wh.core.support.IdleStateHandler;
+import cn.ttplatform.wh.core.support.KeepAliveCheckHandler;
 import cn.ttplatform.wh.core.support.MessageDispatcher;
 import cn.ttplatform.wh.core.support.MessageFactoryManager;
 import cn.ttplatform.wh.core.support.ProtostuffDecoder;
@@ -35,7 +35,7 @@ public class ServerChannelInitializer extends ChannelInitializer<SocketChannel> 
         int readIdleTimeout = properties.getReadIdleTimeout();
         int writeIdleTimeout = properties.getWriteIdleTimeout();
         int allIdleTimeout = properties.getAllIdleTimeout();
-        pipeline.addLast(new IdleStateHandler(readIdleTimeout, writeIdleTimeout, allIdleTimeout));
+        pipeline.addLast(new KeepAliveCheckHandler(readIdleTimeout, writeIdleTimeout, allIdleTimeout));
         pipeline.addLast(new ServerInboundHandler(commandDispatcher));
     }
 }

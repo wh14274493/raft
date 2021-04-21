@@ -5,6 +5,7 @@ import io.netty.channel.EventLoopGroup;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 import java.util.UUID;
 import lombok.Data;
@@ -96,7 +97,10 @@ public class ServerProperties {
      */
     private int maxTransferSize;
 
-    private int buffPollSize;
+    /**
+     * {@code linkedBuffPollSize} used for serialize/deserialize obj
+     */
+    private int linkedBuffPollSize;
 
     private int readIdleTimeout;
 
@@ -106,38 +110,70 @@ public class ServerProperties {
 
     private String clusterInfo;
 
+    /**
+     * random access / direct access / indirect access
+     */
+    private String readWriteFileStrategy;
+
+    /**
+     * only used when readWriteFileStrategy is direct access / indirect access. see {@link
+     * cn.ttplatform.wh.constant.ReadWriteFileStrategy}
+     */
+    private int byteBufferPoolSize;
+
+    /**
+     * only used when readWriteFileStrategy is direct access / indirect access
+     */
+    private int byteBufferSizeLimit;
+
     public ServerProperties(String configPath) {
-        if (configPath == null || "".equals(configPath)) {
-            configPath = System.getProperty("user.home");
-        }
         Properties properties = new Properties();
         File file = new File(configPath, "server.properties");
         try (FileInputStream fis = new FileInputStream(file)) {
             properties.load(fis);
-            nodeId = properties.getProperty("nodeId", UUID.randomUUID().toString());
-            listeningPort = Integer.parseInt(properties.getProperty("listeningPort", "8888"));
-            serverListenThreads = Integer.parseInt(properties.getProperty("serverListenThreads", "1"));
-            serverWorkerThreads = Integer.parseInt(properties.getProperty("serverWorkerThreads", "1"));
-            communicationPort = Integer.parseInt(properties.getProperty("communicationPort", "8889"));
-            clientListenThreads = Integer.parseInt(properties.getProperty("clientListenThreads", "1"));
-            clientWorkerThreads = Integer.parseInt(properties.getProperty("clientWorkerThreads", "1"));
-            minElectionTimeout = Integer.parseInt(properties.getProperty("minElectionTimeout", "3000"));
-            maxElectionTimeout = Integer.parseInt(properties.getProperty("maxElectionTimeout", "4000"));
-            logReplicationDelay = Long.parseLong(properties.getProperty("logReplicationDelay", "1000"));
-            logReplicationInterval = Long.parseLong(properties.getProperty("logReplicationInterval", "1000"));
-            replicationHeartBeat = Long.parseLong(properties.getProperty("replicationHeartBeat","800"));
-            basePath = properties.getProperty("basePath", System.getProperty("user.home"));
-            snapshotGenerateThreshold = Integer.parseInt(properties.getProperty("snapshotGenerateThreshold", String.valueOf(1024*1024*10)));
-            maxTransferLogs = Integer.parseInt(properties.getProperty("maxTransferLogs", "50"));
-            maxTransferSize = Integer.parseInt(properties.getProperty("maxTransferSize","10240"));
-            buffPollSize = Integer.parseInt(properties.getProperty("buffPollSize", "16"));
-            readIdleTimeout = Integer.parseInt(properties.getProperty("readIdleTimeout", "10"));
-            writeIdleTimeout = Integer.parseInt(properties.getProperty("writeIdleTimeout", "10"));
-            allIdleTimeout = Integer.parseInt(properties.getProperty("allIdleTimeout", "10"));
-            clusterInfo = properties.getProperty("clusterInfo");
+            loadProperties(properties);
         } catch (IOException e) {
             throw new OperateFileException(e.getMessage());
         }
+    }
+
+    public ServerProperties() {
+        Properties properties = new Properties();
+        try (InputStream fis = this.getClass().getResourceAsStream("server.properties")) {
+            properties.load(fis);
+            loadProperties(properties);
+        } catch (IOException e) {
+            throw new OperateFileException(e.getMessage());
+        }
+    }
+
+    private void loadProperties(Properties properties) {
+        nodeId = properties.getProperty("nodeId", UUID.randomUUID().toString());
+        listeningPort = Integer.parseInt(properties.getProperty("listeningPort", "8888"));
+        serverListenThreads = Integer.parseInt(properties.getProperty("serverListenThreads", "1"));
+        serverWorkerThreads = Integer.parseInt(properties.getProperty("serverWorkerThreads", "1"));
+        communicationPort = Integer.parseInt(properties.getProperty("communicationPort", "8889"));
+        clientListenThreads = Integer.parseInt(properties.getProperty("clientListenThreads", "1"));
+        clientWorkerThreads = Integer.parseInt(properties.getProperty("clientWorkerThreads", "1"));
+        minElectionTimeout = Integer.parseInt(properties.getProperty("minElectionTimeout", "3000"));
+        maxElectionTimeout = Integer.parseInt(properties.getProperty("maxElectionTimeout", "4000"));
+        logReplicationDelay = Long.parseLong(properties.getProperty("logReplicationDelay", "1000"));
+        logReplicationInterval = Long.parseLong(properties.getProperty("logReplicationInterval", "1000"));
+        replicationHeartBeat = Long.parseLong(properties.getProperty("replicationHeartBeat", "800"));
+        basePath = properties.getProperty("basePath", System.getProperty("user.home"));
+        snapshotGenerateThreshold = Integer
+            .parseInt(properties.getProperty("snapshotGenerateThreshold", String.valueOf(1024 * 1024 * 10)));
+        maxTransferLogs = Integer.parseInt(properties.getProperty("maxTransferLogs", "500"));
+        maxTransferSize = Integer.parseInt(properties.getProperty("maxTransferSize", "10240"));
+        linkedBuffPollSize = Integer.parseInt(properties.getProperty("linkedBuffPollSize", "16"));
+        readIdleTimeout = Integer.parseInt(properties.getProperty("readIdleTimeout", "10"));
+        writeIdleTimeout = Integer.parseInt(properties.getProperty("writeIdleTimeout", "10"));
+        allIdleTimeout = Integer.parseInt(properties.getProperty("allIdleTimeout", "10"));
+        clusterInfo = properties.getProperty("clusterInfo");
+        readWriteFileStrategy = properties.getProperty("readWriteFileStrategy", "direct access");
+        byteBufferPoolSize = Integer.parseInt(properties.getProperty("byteBufferPoolSize", "10"));
+        byteBufferSizeLimit = Integer
+            .parseInt(properties.getProperty("byteBufferSizeLimit", String.valueOf(1024 * 1024 * 10)));
     }
 
 }

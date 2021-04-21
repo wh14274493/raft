@@ -34,9 +34,9 @@ public class FlexibleLinkedBufferPool implements BufferPool<LinkedBuffer> {
             }
             SoftReference<LinkedBuffer> softReference = null;
             try {
-                softReference = pool.poll(500, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                log.warn("poll LinkedBuffer timeout.");
+                softReference = pool.poll(500L, TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                log.warn("failed to poll LinkedBuffer.");
             }
             buffer = softReference == null ? LinkedBuffer.allocate() : softReference.get();
         }
@@ -48,8 +48,8 @@ public class FlexibleLinkedBufferPool implements BufferPool<LinkedBuffer> {
         buffer.clear();
         SoftReference<LinkedBuffer> softReference = new SoftReference<>(buffer, referenceQueue);
         try {
-            pool.offer(softReference, 500, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
+            pool.offer(softReference, 500L, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
             log.warn("offer LinkedBuffer timeout.");
         }
     }
