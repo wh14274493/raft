@@ -1,9 +1,9 @@
-package cn.ttplatform.wh.server.command.handler;
+package cn.ttplatform.wh.cmd.handler;
 
-import cn.ttplatform.wh.core.Node;
-import cn.ttplatform.wh.core.support.AbstractMessageHandler;
 import cn.ttplatform.wh.cmd.SetCommand;
+import cn.ttplatform.wh.core.Node;
 import cn.ttplatform.wh.core.connector.message.Message;
+import cn.ttplatform.wh.core.support.AbstractMessageHandler;
 
 /**
  * @author Wang Hao

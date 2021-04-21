@@ -31,8 +31,8 @@ public class FileLog implements Log {
 
     public FileLog(File parent, BufferPool<ByteBuffer> pool) {
         this.pool = pool;
-        youngGeneration = new YoungGeneration(parent, pool);
         oldGeneration = new OldGeneration(getLatestGeneration(parent), pool);
+        youngGeneration = new YoungGeneration(parent, pool, oldGeneration.getLastIncludeIndex());
         initialize();
     }
 
@@ -244,7 +244,7 @@ public class FileLog implements Log {
         youngGeneration.close();
         File file = youngGeneration.rename(lastIncludeIndex, lastIncludeTerm);
         oldGeneration = new OldGeneration(file, pool);
-        youngGeneration = new YoungGeneration(file.getParentFile(), pool);
+        youngGeneration = new YoungGeneration(file.getParentFile(), pool,oldGeneration.getLastIncludeIndex());
         appendEntries(logEntries);
     }
 

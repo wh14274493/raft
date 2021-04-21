@@ -32,7 +32,7 @@ public class AppendLogEntriesMessageHandler extends AbstractMessageHandler {
         int currentTerm = role.getTerm();
         String leaderId = message.getLeaderId();
         NodeContext context = node.getContext();
-        ClusterMember member = context.cluster().find(leaderId);
+        ClusterMember member = context.getCluster().find(leaderId);
         List<LogEntry> logEntries = message.getLogEntries();
         int lastLogIndex = logEntries == null || logEntries.isEmpty() ? message.getPreLogIndex()
             : logEntries.get(logEntries.size() - 1).getIndex();
@@ -51,7 +51,7 @@ public class AppendLogEntriesMessageHandler extends AbstractMessageHandler {
                 .leaderId(leaderId)
                 .build();
             node.changeToRole(follower);
-            boolean result = context.log()
+            boolean result = context.getLog()
                 .appendEntries(message.getPreLogIndex(), message.getPreLogTerm(), logEntries);
             appendLogEntriesResultMessage.setSuccess(result);
             node.sendMessage(appendLogEntriesResultMessage, member);
@@ -70,10 +70,10 @@ public class AppendLogEntriesMessageHandler extends AbstractMessageHandler {
                     .lastHeartBeat(System.currentTimeMillis())
                     .build();
                 node.changeToRole(follower);
-                boolean result = context.log()
+                boolean result = context.getLog()
                     .appendEntries(message.getPreLogIndex(), message.getPreLogTerm(), logEntries);
                 if (result){
-                    context.log().advanceCommitIndex(message.getLeaderCommitIndex(),term);
+                    context.getLog().advanceCommitIndex(message.getLeaderCommitIndex(),term);
                 }
                 appendLogEntriesResultMessage.setSuccess(result);
                 node.sendMessage(appendLogEntriesResultMessage, member);

@@ -25,32 +25,17 @@ public class ServerProperties {
     /**
      * The service will listen for connections from this port
      */
-    private int listeningPort;
+    private int port;
 
     /**
      * the number of thread used in server side {@link EventLoopGroup}
      */
-    private int serverListenThreads;
+    private int bossThreads;
 
     /**
      * the number of thread used in server side {@link EventLoopGroup}
      */
-    private int serverWorkerThreads;
-
-    /**
-     * The service communicates with other nodes through this port number
-     */
-    private int communicationPort;
-
-    /**
-     * the number of thread used in client side {@link EventLoopGroup}
-     */
-    private int clientListenThreads;
-
-    /**
-     * the number of thread used in client side {@link EventLoopGroup}
-     */
-    private int clientWorkerThreads;
+    private int workerThreads;
 
     /**
      * Minimum election timeout
@@ -149,12 +134,9 @@ public class ServerProperties {
 
     private void loadProperties(Properties properties) {
         nodeId = properties.getProperty("nodeId", UUID.randomUUID().toString());
-        listeningPort = Integer.parseInt(properties.getProperty("listeningPort", "8888"));
-        serverListenThreads = Integer.parseInt(properties.getProperty("serverListenThreads", "1"));
-        serverWorkerThreads = Integer.parseInt(properties.getProperty("serverWorkerThreads", "1"));
-        communicationPort = Integer.parseInt(properties.getProperty("communicationPort", "8889"));
-        clientListenThreads = Integer.parseInt(properties.getProperty("clientListenThreads", "1"));
-        clientWorkerThreads = Integer.parseInt(properties.getProperty("clientWorkerThreads", "1"));
+        port = Integer.parseInt(properties.getProperty("port", "8888"));
+        bossThreads = Integer.parseInt(properties.getProperty("bossThreads", "1"));
+        workerThreads = Integer.parseInt(properties.getProperty("workerThreads", "1"));
         minElectionTimeout = Integer.parseInt(properties.getProperty("minElectionTimeout", "3000"));
         maxElectionTimeout = Integer.parseInt(properties.getProperty("maxElectionTimeout", "4000"));
         logReplicationDelay = Long.parseLong(properties.getProperty("logReplicationDelay", "1000"));

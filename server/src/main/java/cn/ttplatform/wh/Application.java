@@ -16,12 +16,15 @@ import cn.ttplatform.wh.core.support.DefaultScheduler;
 import cn.ttplatform.wh.core.support.DirectByteBufferPool;
 import cn.ttplatform.wh.core.support.IndirectByteBufferPool;
 import cn.ttplatform.wh.core.support.SingleThreadTaskExecutor;
-import cn.ttplatform.wh.server.nio.NioListener;
+import cn.ttplatform.wh.server.NioListener;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -34,6 +37,7 @@ import org.apache.commons.cli.ParseException;
  * @author Wang Hao
  * @date 2021/3/15 15:25
  */
+@Slf4j
 public class Application {
 
     private void run(String[] args) throws ParseException {
@@ -43,18 +47,25 @@ public class Application {
         }
         ServerProperties properties = initConfig(commandLine);
         NodeContext nodeContext = buildContext(properties);
+        Node node = buildNode(nodeContext);
+        nodeContext.register(node);
+        node.start();
+    }
 
+    private Node buildNode(NodeContext context) {
+        ServerProperties properties = context.getProperties();
+        EventLoopGroup boss = new NioEventLoopGroup(properties.getBossThreads());
+        EventLoopGroup worker = new NioEventLoopGroup(properties.getWorkerThreads());
         StateMachine stateMachine = new StateMachine();
         Node node = Node.builder()
             .selfId(properties.getNodeId())
-            .context(nodeContext)
-            .connector(new NioConnector(nodeContext))
-            .listener(new NioListener(nodeContext))
+            .context(context)
+            .connector(new NioConnector(context, worker))
+            .listener(new NioListener(context, boss, worker))
             .stateMachine(stateMachine)
             .build();
         stateMachine.register(node);
-        nodeContext.register(node);
-        node.start();
+        return node;
     }
 
     private NodeContext buildContext(ServerProperties properties) {
@@ -62,14 +73,16 @@ public class Application {
         File base = new File(properties.getBasePath());
         BufferPool<ByteBuffer> pool;
         if (ReadWriteFileStrategy.DIRECT.equals(properties.getReadWriteFileStrategy())) {
+            log.debug("use DirectBufferAllocator");
             pool = new DirectByteBufferPool(properties.getByteBufferPoolSize(), properties.getByteBufferSizeLimit());
         } else {
+            log.debug("use BufferAllocator");
             pool = new IndirectByteBufferPool(properties.getByteBufferPoolSize(), properties.getByteBufferSizeLimit());
         }
         return NodeContext.builder()
             .cluster(new Cluster(members, properties.getNodeId()))
             .scheduler(new DefaultScheduler(properties))
-            .taskExecutor(new SingleThreadTaskExecutor())
+            .executor(new SingleThreadTaskExecutor())
             .nodeState(new NodeState(base, pool))
             .log(new FileLog(base, pool))
             .properties(properties)
@@ -142,10 +155,7 @@ public class Application {
             properties.setNodeId(commandLine.getOptionValue('i'));
         }
         if (commandLine.hasOption("p")) {
-            properties.setListeningPort(Integer.parseInt(commandLine.getOptionValue('p')));
-        }
-        if (commandLine.hasOption("P")) {
-            properties.setCommunicationPort(Integer.parseInt(commandLine.getOptionValue('p')));
+            properties.setPort(Integer.parseInt(commandLine.getOptionValue('p')));
         }
         if (commandLine.hasOption("d")) {
             properties.setBasePath(commandLine.getOptionValue('d'));

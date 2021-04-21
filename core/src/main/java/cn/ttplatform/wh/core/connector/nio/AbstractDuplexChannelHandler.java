@@ -16,8 +16,8 @@ public abstract class AbstractDuplexChannelHandler extends ChannelDuplexHandler 
 
     private final MessageDispatcher dispatcher;
 
-    AbstractDuplexChannelHandler(NodeContext context) {
-        this.dispatcher = context.messageDispatcher();
+    public AbstractDuplexChannelHandler(NodeContext context) {
+        this.dispatcher = context.getDispatcher();
     }
 
     @Override

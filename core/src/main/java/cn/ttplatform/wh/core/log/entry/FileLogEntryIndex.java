@@ -32,8 +32,10 @@ public class FileLogEntryIndex {
     private final Map<Integer, LogEntryIndex> entryIndexMap = new HashMap<>();
     private final LogFactory logFactory = LogFactory.getInstance();
 
-    public FileLogEntryIndex(File parent, BufferPool<ByteBuffer> pool) {
+    public FileLogEntryIndex(File parent, BufferPool<ByteBuffer> pool, int lastIncludeIndex) {
         file = new ByteBufferWriter(new File(parent, FileName.INDEX_FILE_NAME), pool);
+        minLogIndex = lastIncludeIndex;
+        maxLogIndex = lastIncludeIndex;
         initialize();
     }
 

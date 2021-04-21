@@ -9,7 +9,9 @@ import cn.ttplatform.wh.core.role.Follower;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesResultMessage;
 import cn.ttplatform.wh.core.connector.message.Message;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -37,28 +39,33 @@ public class AppendLogEntriesResultMessageHandler extends AbstractMessageHandler
         }
         if (node.isLeader()) {
             NodeContext context = node.getContext();
-            ClusterMember member = context.cluster().find(message.getSourceId());
+            ClusterMember member = context.getCluster().find(message.getSourceId());
             if (message.isSuccess()) {
                 member.updateReplicationState(message.getLastLogIndex());
-                int newCommitIndex = context.cluster().getNewCommitIndex();
-                List<LogEntry> logEntries = context.log().advanceCommitIndex(newCommitIndex, currentTerm);
+                int newCommitIndex = context.getCluster().getNewCommitIndex();
+                List<LogEntry> logEntries = context.getLog().advanceCommitIndex(newCommitIndex, currentTerm);
                 StateMachine stateMachine = node.getStateMachine();
                 int lastApplied = stateMachine.getLastApplied();
-                int lastIncludeIndex = context.log().getLastIncludeIndex();
+                int lastIncludeIndex = context.getLog().getLastIncludeIndex();
                 if (lastApplied == 0 && lastIncludeIndex > 0) {
-                    stateMachine.applySnapshotData(context.log().getSnapshotData(), lastIncludeIndex);
+                    stateMachine.applySnapshotData(context.getLog().getSnapshotData(), lastIncludeIndex);
+                    lastApplied = lastIncludeIndex;
                 }
+                Optional.ofNullable(context.getLog().subList(lastApplied+1, newCommitIndex + 1))
+                    .orElse(Collections.emptyList()).forEach(stateMachine::apply);
                 if (!logEntries.isEmpty()) {
                     logEntries.forEach(stateMachine::apply);
-                    if (context.log().shouldGenerateSnapshot(context.config().getSnapshotGenerateThreshold())) {
+                    if (context.getLog()
+                        .shouldGenerateSnapshot(context.getProperties().getSnapshotGenerateThreshold())) {
                         // if entry file size more than SnapshotGenerateThreshold then generate snapshot
                         byte[] snapshotData = stateMachine.generateSnapshotData();
-                        LogEntry entry = context.log().getEntry(lastApplied);
-                        context.log().generateSnapshot(lastApplied, entry.getTerm(), snapshotData);
+                        LogEntry entry = context.getLog().getEntry(lastApplied);
+                        context.getLog().generateSnapshot(lastApplied, entry.getTerm(), snapshotData);
                     }
                 }
             } else {
                 member.backoffNextIndex();
+                member.setLastHeartBeat(0L);
             }
             node.doLogReplication();
         }

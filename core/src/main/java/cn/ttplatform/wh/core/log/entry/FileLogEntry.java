@@ -1,6 +1,7 @@
 package cn.ttplatform.wh.core.log.entry;
 
 import static cn.ttplatform.wh.core.support.ByteConvertor.fillIntBytes;
+import static cn.ttplatform.wh.core.support.ByteConvertor.fillLongBytes;
 
 import cn.ttplatform.wh.constant.FileName;
 import cn.ttplatform.wh.core.log.LogFactory;
@@ -20,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FileLogEntry {
 
-    public static final int LOG_ENTRY_HEADER_SIZE = 12;
+    public static final int LOG_ENTRY_HEADER_SIZE = 16;
     private final LogFactory logFactory = LogFactory.getInstance();
     private final ReadableAndWriteableFile file;
 
@@ -57,8 +58,11 @@ public class FileLogEntry {
             fillIntBytes(logEntry.getTerm(), content, index);
             index += 4;
             fillIntBytes(logEntry.getType(), content, index);
+            index += 4;
+            byte[] command = logEntry.getCommand();
+            fillLongBytes(command.length, content, index);
             index++;
-            for (byte b : logEntry.getCommand()) {
+            for (byte b : command) {
                 content[index++] = b;
             }
         }
@@ -77,6 +81,13 @@ public class FileLogEntry {
         }
         byte[] content = file.readBytesAt(start, readLength);
         return logFactory.transferBytesToLogEntry(content, 0);
+    }
+
+    public byte[] loadEntriesFromFile(long start, long end) {
+        if (end == -1L) {
+            end = file.size();
+        }
+        return file.readBytesAt(start, (int) (end - start));
     }
 
     public void removeAfter(long offset) {

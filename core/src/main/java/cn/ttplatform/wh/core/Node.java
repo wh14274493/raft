@@ -48,7 +48,7 @@ public class Node {
 
     public synchronized void start() {
         if (!start) {
-            NodeState nodeState = context.nodeState();
+            NodeState nodeState = context.getNodeState();
             this.role = Follower.builder()
                 .scheduledFuture(electionTimeoutTask())
                 .term(nodeState.getCurrentTerm())
@@ -61,20 +61,20 @@ public class Node {
     }
 
     public void applySnapshot(int lastIncludeIndex) {
-        byte[] snapshotData = context.log().getSnapshotData();
+        byte[] snapshotData = context.getLog().getSnapshotData();
         stateMachine.applySnapshotData(snapshotData, lastIncludeIndex);
     }
 
     public ScheduledFuture<?> electionTimeoutTask() {
-        return context.scheduler().scheduleElectionTimeoutTask(this::election);
+        return context.getScheduler().scheduleElectionTimeoutTask(this::election);
     }
 
     public ScheduledFuture<?> logReplicationTask() {
-        return context.scheduler().scheduleLogReplicationTask(this::logReplication);
+        return context.getScheduler().scheduleLogReplicationTask(this::logReplication);
     }
 
     private void election() {
-        context.executor().execute(this::prepareElection);
+        context.getExecutor().execute(this::prepareElection);
     }
 
     private void prepareElection() {
@@ -95,8 +95,8 @@ public class Node {
             changeToRole(follower);
             PreVoteMessage preVoteMessage = PreVoteMessage.builder()
                 .nodeId(selfId)
-                .lastLogTerm(context.log().getLastLogTerm())
-                .lastLogIndex(context.log().getLastLogIndex())
+                .lastLogTerm(context.getLog().getLastLogTerm())
+                .lastLogIndex(context.getLog().getLastLogIndex())
                 .build();
             sendMessageToOtherActiveEndpoint(preVoteMessage);
         }
@@ -110,28 +110,28 @@ public class Node {
         changeToRole(candidate);
         RequestVoteMessage requestVoteMessage = RequestVoteMessage.builder()
             .candidateId(selfId)
-            .lastLogIndex(context.log().getLastLogIndex())
-            .lastLogTerm(context.log().getLastLogTerm())
+            .lastLogIndex(context.getLog().getLastLogIndex())
+            .lastLogTerm(context.getLog().getLastLogTerm())
             .term(term)
             .build();
         sendMessageToOtherActiveEndpoint(requestVoteMessage);
     }
 
     private void logReplication() {
-        context.executor().execute(this::doLogReplication);
+        context.getExecutor().execute(this::doLogReplication);
     }
 
     public void doLogReplication() {
         log.debug("start log replication.");
         int term = role.getTerm();
-        ServerProperties config = context.config();
-        context.cluster().listAllEndpointExceptSelf().forEach(member -> {
+        ServerProperties config = context.getProperties();
+        context.getCluster().listAllEndpointExceptSelf().forEach(member -> {
             long now = System.currentTimeMillis();
-            if (!member.isReplicating() || now - member.getLastHeartBeat() >= 900) {
-                Message message = context.log()
+            if (!member.isReplicating() || now - member.getLastHeartBeat() >= config.getReplicationHeartBeat()) {
+                Message message = context.getLog()
                     .createAppendLogEntriesMessage(selfId, term, member.getNextIndex(), config.getMaxTransferLogs());
                 sendMessage(
-                    message == null ? context.log()
+                    message == null ? context.getLog()
                         .createInstallSnapshotMessage(term, member.getSnapshotOffset(), config.getMaxTransferSize())
                         : message, member);
                 member.setLastHeartBeat(now);
@@ -141,31 +141,31 @@ public class Node {
     }
 
     public void sendMessageToOtherActiveEndpoint(Message message) {
-        context.cluster().listAllEndpointExceptSelf().forEach(member -> sendMessage(message, member));
+        context.getCluster().listAllEndpointExceptSelf().forEach(member -> sendMessage(message, member));
     }
 
     public void sendMessage(Message message, ClusterMember member) {
         log.debug("send message to {}", member);
         message.setSourceId(selfId);
-        connector.send(message, member);
+        connector.send(message, member.getMemberInfo());
     }
 
     public void changeToRole(Role newRole) {
         role.cancelTask();
         if (newRole.compareState(role)) {
-            NodeState nodeState = context.nodeState();
+            NodeState nodeState = context.getNodeState();
             nodeState.setCurrentTerm(newRole.getTerm());
             nodeState.setVoteTo(newRole instanceof Follower ? ((Follower) newRole).getVoteTo() : null);
         }
         if (newRole instanceof Leader) {
-            context.cluster().resetReplicationStates(context.log().getNextIndex());
+            context.getCluster().resetReplicationStates(context.getLog().getNextIndex());
         }
         this.role = newRole;
     }
 
     public void handleGetCommand(GetCommand command) {
-        context.executor().execute(() -> {
-            int nextIndex = context.log().getNextIndex();
+        context.getExecutor().execute(() -> {
+            int nextIndex = context.getLog().getNextIndex();
             int key = nextIndex - 1;
             List<GetCommand> getCommands = pendingGetCommandMap.computeIfAbsent(key, k -> new ArrayList<>());
             getCommands.add(command);
@@ -173,16 +173,16 @@ public class Node {
     }
 
     public void pendingEntry(SetCommand command) {
-        context.executor().execute(() -> {
+        context.getExecutor().execute(() -> {
             OpLogEntry logEntry = OpLogEntry.builder()
                 .type(LogEntry.OP_TYPE)
                 .term(role.getTerm())
-                .index(context.log().getNextIndex())
+                .index(context.getLog().getNextIndex())
                 .command(command.getCmd())
                 .build();
             command.setCmd(null);
             pendingSetCommandMap.put(logEntry.getIndex(), command);
-            context.log().appendEntry(logEntry);
+            context.getLog().appendEntry(logEntry);
         });
     }
 

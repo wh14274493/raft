@@ -40,14 +40,14 @@ public class RequestVoteResultMessageHandler extends AbstractMessageHandler {
         if (node.isCandidate() && voted) {
             NodeContext context = node.getContext();
             int voteCounts = ((Candidate) role).getVoteCounts() + 1;
-            int countOfActive = context.cluster().countOfActive();
+            int countOfActive = context.getCluster().countOfActive();
             if (voteCounts > countOfActive / 2) {
                 Leader leader = Leader.builder().term(currentTerm).scheduledFuture(node.logReplicationTask()).build();
                 node.changeToRole(leader);
-                log.debug("voteCounts[{}] > countOfActive/2[{}], become leader.", voteCounts, countOfActive / 2);
-                int nextIndex = context.log().getNextIndex();
-                context.cluster().resetReplicationStates(nextIndex);
-                log.debug("reset all node replication state by nextIndex[{}]", nextIndex);
+                log.info("voteCounts[{}] > countOfActive/2[{}], become leader.", voteCounts, countOfActive / 2);
+                int nextIndex = context.getLog().getNextIndex();
+                context.getCluster().resetReplicationStates(nextIndex);
+                log.info("reset all node replication state by nextIndex[{}]", nextIndex);
                 node.doLogReplication();
             } else {
                 Candidate candidate = Candidate.builder()

@@ -49,12 +49,11 @@ public class NodeState {
      * @param voteTo the node id that vote for
      */
     public void setVoteTo(String voteTo) {
-        if (voteTo == null) {
-            voteTo = "";
+        if (voteTo == null || "".equals(voteTo)) {
+            return;
         }
         byte[] content = voteTo.getBytes(Charset.defaultCharset());
-        file.writeIntAt(Integer.BYTES, content.length);
-        file.writeBytes(content);
+        file.writeBytesAt(Integer.BYTES, content);
     }
 
     /**
@@ -66,8 +65,12 @@ public class NodeState {
         if (file.isEmpty()) {
             return null;
         }
-        int size = file.readIntAt(Integer.BYTES);
-        return new String(file.readBytesAt((long) Integer.BYTES * 2, size), Charset.defaultCharset());
+        long offset = Integer.BYTES;
+        int size = (int) (file.size() - offset);
+        if (size == 0) {
+            return "";
+        }
+        return new String(file.readBytesAt(offset, size), Charset.defaultCharset());
     }
 
 }

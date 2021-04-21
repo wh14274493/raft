@@ -46,7 +46,5 @@ public abstract class AbstractGeneration implements Generation {
     @Override
     public void close() {
         fileSnapshot.close();
-        fileLogEntry.close();
-        fileLogEntryIndex.close();
     }
 }

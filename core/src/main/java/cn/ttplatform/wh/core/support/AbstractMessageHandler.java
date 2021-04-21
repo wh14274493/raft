@@ -17,7 +17,7 @@ public abstract class AbstractMessageHandler implements MessageHandler {
 
     @Override
     public void handle(Message message) {
-        node.getContext().executor().execute(() -> doHandle(message));
+        node.getContext().getExecutor().execute(() -> doHandle(message));
     }
 
     /**

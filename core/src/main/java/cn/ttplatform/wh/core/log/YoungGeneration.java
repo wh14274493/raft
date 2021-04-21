@@ -1,5 +1,7 @@
 package cn.ttplatform.wh.core.log;
 
+import static cn.ttplatform.wh.core.support.ByteConvertor.bytesToInt;
+
 import cn.ttplatform.wh.constant.ExceptionMessage;
 import cn.ttplatform.wh.constant.FileName;
 import cn.ttplatform.wh.core.log.entry.FileLogEntry;
@@ -11,6 +13,7 @@ import cn.ttplatform.wh.exception.OperateFileException;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -25,10 +28,10 @@ public class YoungGeneration extends AbstractGeneration {
 
     private final LinkedList<LogEntry> pending = new LinkedList<>();
 
-    public YoungGeneration(File parent, BufferPool<ByteBuffer> pool) {
+    public YoungGeneration(File parent, BufferPool<ByteBuffer> pool, int lastIncludeIndex) {
         super(new File(parent, FileName.GENERATING_FILE_NAME), pool);
         this.fileLogEntry = new FileLogEntry(file, pool);
-        this.fileLogEntryIndex = new FileLogEntryIndex(file, pool);
+        this.fileLogEntryIndex = new FileLogEntryIndex(file, pool, lastIncludeIndex);
     }
 
     /**
@@ -158,18 +161,52 @@ public class YoungGeneration extends AbstractGeneration {
      * @return result list
      */
     public List<LogEntry> subList(int from, int to) {
+        log.info("sublist from {} to {}", from, to);
         if (isEmpty()) {
             return Collections.emptyList();
         }
-        int lastEntryIndex = getLastLogMetaData().getIndex();
-        if (from >= to || from > lastEntryIndex) {
+        int lastIndex = getLastLogMetaData().getIndex();
+        if (from >= to || from > lastIndex) {
             return Collections.emptyList();
         }
-        from = Math.max(from, fileLogEntryIndex.getMinLogIndex());
-        to = Math.min(to, lastEntryIndex + 1);
-        List<LogEntry> res = new ArrayList<>(to - from);
-        while (from < to) {
-            res.add(getEntry(from++));
+        from = Math.max(fileLogEntryIndex.getMinLogIndex(), from);
+        to = Math.min(to, lastIndex);
+        List<LogEntry> res = new ArrayList<>();
+        int maxLogIndex = fileLogEntryIndex.getMaxLogIndex();
+        if (from > maxLogIndex) {
+            from = from - maxLogIndex - 1;
+            to = to - maxLogIndex - 1;
+            for (int i = from; i < to; i++) {
+                res.add(pending.get(i));
+            }
+            return res;
+        }
+        long start = fileLogEntryIndex.getEntryOffset(from);
+        long end;
+        if (to <= maxLogIndex) {
+            end = fileLogEntryIndex.getEntryOffset(to);
+        } else {
+            end = -1L;
+        }
+        byte[] entries = fileLogEntry.loadEntriesFromFile(start, end);
+        LogFactory logFactory = LogFactory.getInstance();
+        int offset = 0;
+        while (offset < entries.length) {
+            int index = bytesToInt(entries, offset);
+            offset += 4;
+            int term = bytesToInt(entries, offset);
+            offset += 4;
+            int type = bytesToInt(entries, offset);
+            offset += 4;
+            int cmdLength = bytesToInt(entries, offset);
+            offset += 4;
+            byte[] cmd = Arrays.copyOfRange(entries, offset, offset + cmdLength);
+            offset += cmdLength;
+            res.add(logFactory.createEntry(type, term, index, cmd));
+        }
+        offset = to - maxLogIndex - 1;
+        for (int i = 0; i < offset; i++) {
+            res.add(pending.get(i));
         }
         return res;
     }
@@ -201,5 +238,12 @@ public class YoungGeneration extends AbstractGeneration {
 
     public boolean isEmpty() {
         return pending.isEmpty() && (fileLogEntryIndex.isEmpty() || fileLogEntry.isEmpty());
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        fileLogEntry.close();
+        fileLogEntryIndex.close();
     }
 }

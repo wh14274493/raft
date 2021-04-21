@@ -86,7 +86,7 @@ public class LogFactory {
         int index = bytesToInt(content, start);
         int term = bytesToInt(content, start + 4);
         int type = bytesToInt(content, start + 8);
-        byte[] cmd = Arrays.copyOfRange(content, 12, content.length);
+        byte[] cmd = Arrays.copyOfRange(content, start+16, content.length);
         return createEntry(type, term, index, cmd);
     }
 
@@ -116,7 +116,8 @@ public class LogFactory {
         fillIntBytes(logEntry.getIndex(), res, 3);
         fillIntBytes(logEntry.getTerm(), res, 7);
         fillIntBytes(logEntry.getType(), res, 11);
-        int index = 12;
+        fillIntBytes(command.length, res, 15);
+        int index = 16;
         for (byte b : command) {
             res[index++] = b;
         }
@@ -137,7 +138,6 @@ public class LogFactory {
         fillLongBytes(logEntryIndex.getOffset(), res, 19);
         return res;
     }
-
 
 
 }

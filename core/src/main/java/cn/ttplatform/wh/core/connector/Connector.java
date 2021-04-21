@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.connector;
 
-import cn.ttplatform.wh.core.ClusterMember;
+import cn.ttplatform.wh.core.MemberInfo;
 import cn.ttplatform.wh.core.connector.message.Message;
 import io.netty.channel.Channel;
 
@@ -11,21 +11,19 @@ import io.netty.channel.Channel;
 public interface Connector {
 
     /**
-     * @param member create a connection with remote address
+     * create a connection with remote address
+     *
+     * @param memberInfo remote address
      * @return a socket channel
      */
-    Channel connect(ClusterMember member);
+    Channel connect(MemberInfo memberInfo);
 
     /**
      * send a message to remote
      *
-     * @param message rpc message
-     * @param member remote server
+     * @param message    rpc message
+     * @param memberInfo remote server
      */
-    void send(Message message, ClusterMember member);
+    void send(Message message, MemberInfo memberInfo);
 
-    /**
-     * free the resources
-     */
-    void close();
 }

@@ -26,7 +26,7 @@ public class InstallSnapshotResultMessageHandler extends AbstractMessageHandler 
         int term = message.getTerm();
         int currentTerm = node.getRole().getTerm();
         NodeContext context = node.getContext();
-        ClusterMember member = context.cluster().find(message.getSourceId());
+        ClusterMember member = context.getCluster().find(message.getSourceId());
         if (!node.isLeader()) {
             log.warn("role is not a leader, ignore this message.");
             return;
@@ -47,13 +47,13 @@ public class InstallSnapshotResultMessageHandler extends AbstractMessageHandler 
             } else {
                 long snapshotOffset = message.getOffset();
                 member.setSnapshotOffset(snapshotOffset);
-                Message installSnapshotMessage = context.log()
+                Message installSnapshotMessage = context.getLog()
                     .createInstallSnapshotMessage(currentTerm, snapshotOffset, 1024);
                 node.sendMessage(installSnapshotMessage, member);
             }
         } else {
             member.setSnapshotOffset(0L);
-            Message installSnapshotMessage = context.log().createInstallSnapshotMessage(currentTerm, 0L, 1024);
+            Message installSnapshotMessage = context.getLog().createInstallSnapshotMessage(currentTerm, 0L, 1024);
             node.sendMessage(installSnapshotMessage, member);
         }
     }

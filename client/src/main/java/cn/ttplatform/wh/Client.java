@@ -56,9 +56,16 @@ public class Client {
                         pipeline.addLast(new ProtostuffDecoder(factoryManager));
                         pipeline.addLast(new ProtostuffEncoder(factoryManager));
                         pipeline.addLast(new SimpleChannelInboundHandler<Message>() {
+                            int i = 1;
                             @Override
                             protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
-                                log.debug("{}", msg);
+                                if (i==1){
+                                    log.debug("{}", System.currentTimeMillis());
+                                }
+                                if (i==10000){
+                                    log.debug("{}", System.currentTimeMillis());
+                                }
+                                i++;
                             }
                         });
                     }
@@ -66,14 +73,19 @@ public class Client {
                 .connect(new InetSocketAddress("127.0.0.1", 6666))
                 .sync();
             Channel channel = channelFuture.channel();
-            IntStream.range(0, 10000)
+            String s = "";
+            while (s.length()<256){
+                s+=UUID.randomUUID().toString();
+            }
+            String finalS = s;
+            IntStream.range(0, 20000)
                 .forEach(index -> channel.writeAndFlush(SetCommand.builder().id(UUID.randomUUID().toString())
                     .key("WANGHAO" + index)
-                    .value(String.valueOf(index))
+                    .value(finalS)
                     .build()));
-            IntStream.range(0, 1000).forEach(index -> channel
-                .writeAndFlush(GetCommand.builder().id(UUID.randomUUID().toString()).key("WANGHAO" + index).build()));
-
+//            IntStream.range(0, 1000).forEach(index -> channel
+//                .writeAndFlush(GetCommand.builder().id(UUID.randomUUID().toString()).key("WANGHAO" + index).build()));
+            Thread.sleep(9999999);
         } catch (Exception e) {
         }
     }

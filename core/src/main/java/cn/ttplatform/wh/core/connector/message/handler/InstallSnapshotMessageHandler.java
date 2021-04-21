@@ -27,7 +27,7 @@ public class InstallSnapshotMessageHandler extends AbstractMessageHandler {
         InstallSnapshotMessage message = (InstallSnapshotMessage) e;
         String sourceId = message.getSourceId();
         NodeContext context = node.getContext();
-        ClusterMember member = context.cluster().find(sourceId);
+        ClusterMember member = context.getCluster().find(sourceId);
         int term = message.getTerm();
         Role role = node.getRole();
         int currentTerm = role.getTerm();
@@ -63,7 +63,7 @@ public class InstallSnapshotMessageHandler extends AbstractMessageHandler {
     }
 
     private void installSnapshot(InstallSnapshotMessage message){
-        node.getContext().log().installSnapshot(message);
+        node.getContext().getLog().installSnapshot(message);
         if (message.isDone()){
             node.applySnapshot(message.getLastIncludeIndex());
         }
