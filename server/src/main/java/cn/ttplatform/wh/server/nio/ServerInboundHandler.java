@@ -1,11 +1,11 @@
 package cn.ttplatform.wh.server.nio;
 
+import cn.ttplatform.wh.cmd.Command;
+import cn.ttplatform.wh.core.connector.nio.AbstractDuplexChannelHandler;
 import cn.ttplatform.wh.core.support.ChannelCache;
 import cn.ttplatform.wh.core.support.MessageDispatcher;
-import cn.ttplatform.wh.cmd.Command;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -13,19 +13,23 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2021/2/21 20:10
  */
 @Slf4j
-public class ServerInboundHandler extends SimpleChannelInboundHandler<Command> {
+public class ServerInboundHandler extends AbstractDuplexChannelHandler {
 
-    private final MessageDispatcher commandDispatcher;
 
-    public ServerInboundHandler(MessageDispatcher commandDispatcher) {
-        this.commandDispatcher = commandDispatcher;
+    public ServerInboundHandler(MessageDispatcher dispatcher) {
+        super(dispatcher);
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Command cmd) {
-        Channel channel = ctx.channel();
-        channel.closeFuture().addListener(future -> ChannelCache.removeChannel(cmd.getId()));
-        ChannelCache.cacheChannel(cmd.getId(), channel);
-        commandDispatcher.dispatch(cmd);
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
+        if (msg instanceof Command) {
+            Channel channel = ctx.channel();
+            Command cmd = (Command) msg;
+            channel.closeFuture().addListener(future -> ChannelCache.removeChannel(cmd.getId()));
+            ChannelCache.cacheChannel(cmd.getId(), channel);
+            super.channelRead(ctx, msg);
+        }else {
+            ctx.fireChannelRead(msg);
+        }
     }
 }

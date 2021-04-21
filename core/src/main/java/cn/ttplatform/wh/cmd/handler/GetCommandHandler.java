@@ -1,23 +1,23 @@
-package cn.ttplatform.wh.server.command.handler;
+package cn.ttplatform.wh.cmd.handler;
 
 import cn.ttplatform.wh.core.Node;
 import cn.ttplatform.wh.core.support.AbstractMessageHandler;
-import cn.ttplatform.wh.cmd.SetCommand;
+import cn.ttplatform.wh.cmd.GetCommand;
 import cn.ttplatform.wh.core.connector.message.Message;
 
 /**
  * @author Wang Hao
- * @date 2021/2/21 15:56
+ * @date 2021/2/21 16:01
  */
-public class SetCommandHandler extends AbstractMessageHandler {
+public class GetCommandHandler extends AbstractMessageHandler {
 
-    public SetCommandHandler(Node node) {
+    public GetCommandHandler(Node node) {
         super(node);
     }
 
     @Override
     public void doHandle(Message e) {
-        node.pendingEntry((SetCommand) e);
+        node.handleGetCommand((GetCommand) e);
     }
 
 }

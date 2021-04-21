@@ -15,9 +15,9 @@ public class MessageOutboundHandler extends AbstractDuplexChannelHandler {
 
     String nodeId;
 
-    MessageOutboundHandler(NodeContext context) {
-        super(context);
-        this.nodeId = context.node().getSelfId();
+    public MessageOutboundHandler(NodeContext context) {
+        super(context.getDispatcher());
+        this.nodeId = context.getNode().getSelfId();
     }
 
     @Override

@@ -26,7 +26,7 @@ public class PreVoteResultMessageHandler extends AbstractMessageHandler {
         }
         Role role = node.getRole();
         int preVoteCounts = ((Follower) role).getPreVoteCounts() + 1;
-        int countOfActive = node.getContext().cluster().countOfActive();
+        int countOfActive = node.getContext().getCluster().countOfActive();
         int currentTerm = role.getTerm();
         if (preVoteCounts > countOfActive / 2) {
             node.startElection(currentTerm + 1);

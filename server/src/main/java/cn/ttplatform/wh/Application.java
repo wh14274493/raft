@@ -3,19 +3,25 @@ package cn.ttplatform.wh;
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.core.Cluster;
 import cn.ttplatform.wh.core.ClusterMember;
+import cn.ttplatform.wh.core.MemberInfo;
 import cn.ttplatform.wh.core.Node;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.NodeState;
 import cn.ttplatform.wh.core.StateMachine;
-import cn.ttplatform.wh.core.support.DefaultScheduler;
-import cn.ttplatform.wh.core.support.DirectByteBufferPool;
-import cn.ttplatform.wh.core.support.Scheduler;
-import cn.ttplatform.wh.core.support.SingleThreadTaskExecutor;
-import cn.ttplatform.wh.core.support.TaskExecutor;
 import cn.ttplatform.wh.core.connector.nio.NioConnector;
 import cn.ttplatform.wh.core.log.FileLog;
 import cn.ttplatform.wh.core.log.Log;
+import cn.ttplatform.wh.core.support.DefaultScheduler;
+import cn.ttplatform.wh.core.support.DirectByteBufferPool;
+import cn.ttplatform.wh.core.support.FixedSizeLinkedBufferPool;
+import cn.ttplatform.wh.core.support.MessageDispatcher;
+import cn.ttplatform.wh.core.support.MessageFactoryManager;
+import cn.ttplatform.wh.core.support.Scheduler;
+import cn.ttplatform.wh.core.support.SingleThreadTaskExecutor;
+import cn.ttplatform.wh.core.support.TaskExecutor;
 import cn.ttplatform.wh.server.nio.NioListener;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Set;
@@ -51,17 +57,22 @@ public class Application {
         NodeContext nodeContext = NodeContext.builder()
             .cluster(cluster)
             .scheduler(scheduler)
-            .taskExecutor(taskExecutor)
+            .executor(taskExecutor)
             .nodeState(nodeState)
             .log(log)
             .properties(properties)
+            .dispatcher(new MessageDispatcher())
+            .factoryManager(new MessageFactoryManager())
+            .pool(new FixedSizeLinkedBufferPool(properties.getLinkedBuffPollSize()))
             .build();
         StateMachine stateMachine = new StateMachine();
+        EventLoopGroup boss = new NioEventLoopGroup(properties.getBossThreads());
+        EventLoopGroup worker = new NioEventLoopGroup(properties.getWorkerThreads());
         Node node = Node.builder()
             .selfId(properties.getNodeId())
             .context(nodeContext)
-            .connector(new NioConnector(nodeContext))
-            .listener(new NioListener(nodeContext))
+            .connector(new NioConnector(nodeContext, worker))
+            .listener(new NioListener(nodeContext, boss, worker))
             .stateMachine(stateMachine)
             .build();
         stateMachine.register(node);
@@ -122,8 +133,12 @@ public class Application {
     }
 
     public ServerProperties initConfig(CommandLine commandLine) {
-        String configPath = commandLine.getOptionValue('c');
-        ServerProperties properties = new ServerProperties(configPath);
+        ServerProperties properties;
+        if (commandLine.hasOption('c')) {
+            properties = new ServerProperties(commandLine.getOptionValue('c'));
+        } else {
+            properties = new ServerProperties();
+        }
         if (commandLine.hasOption("C")) {
             properties.setClusterInfo(commandLine.getOptionValue("C"));
         }
@@ -131,10 +146,7 @@ public class Application {
             properties.setNodeId(commandLine.getOptionValue('i'));
         }
         if (commandLine.hasOption("p")) {
-            properties.setListeningPort(Integer.parseInt(commandLine.getOptionValue('p')));
-        }
-        if (commandLine.hasOption("P")) {
-            properties.setCommunicationPort(Integer.parseInt(commandLine.getOptionValue('p')));
+            properties.setPort(Integer.parseInt(commandLine.getOptionValue('p')));
         }
         if (commandLine.hasOption("d")) {
             properties.setBasePath(commandLine.getOptionValue('d'));
@@ -157,7 +169,8 @@ public class Application {
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("illegal port in node info [" + memberInfo + "]");
             }
-            return ClusterMember.builder().nodeId(nodeId).host(host).port(port).build();
+            return ClusterMember.builder().info(MemberInfo.builder().nodeId(nodeId).host(host).port(port).build())
+                .build();
         }).collect(Collectors.toSet());
     }
 

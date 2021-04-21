@@ -23,18 +23,17 @@ public class PreVoteMessageHandler extends AbstractMessageHandler {
     public void doHandle(Message e) {
         NodeContext context = node.getContext();
         if (!node.isFollower() || System.currentTimeMillis() - ((Follower) node.getRole()).getLastHeartBeat() < context
-            .config()
-            .getMinElectionTimeout()) {
+            .getProperties().getMinElectionTimeout()) {
             return;
         }
         PreVoteMessage message = (PreVoteMessage) e;
-        ClusterMember clusterMember = context.cluster().find(message.getNodeId());
+        ClusterMember clusterMember = context.getCluster().find(message.getNodeId());
         int lastLogIndex = message.getLastLogIndex();
         int lastLogTerm = message.getLastLogTerm();
         PreVoteResultMessage preVoteResultMessage = PreVoteResultMessage.builder()
             .isVoted(Boolean.TRUE)
             .build();
-        if (context.log().isNewerThan(lastLogIndex, lastLogTerm)) {
+        if (context.getLog().isNewerThan(lastLogIndex, lastLogTerm)) {
             preVoteResultMessage.setVoted(Boolean.FALSE);
         }
         node.sendMessage(preVoteResultMessage, clusterMember);

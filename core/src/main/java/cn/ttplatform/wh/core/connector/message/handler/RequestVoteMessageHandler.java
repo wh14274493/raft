@@ -25,7 +25,7 @@ public class RequestVoteMessageHandler extends AbstractMessageHandler {
         RequestVoteMessage message = (RequestVoteMessage) e;
         String candidateId = message.getCandidateId();
         NodeContext context = node.getContext();
-        ClusterMember member = context.cluster().find(candidateId);
+        ClusterMember member = context.getCluster().find(candidateId);
         int term = message.getTerm();
         Role role = node.getRole();
         int currentTerm = role.getTerm();
@@ -39,7 +39,7 @@ public class RequestVoteMessageHandler extends AbstractMessageHandler {
             return;
         }
         if (term > currentTerm) {
-            boolean voted = !context.log().isNewerThan(lastLogIndex, lastLogTerm);
+            boolean voted = !context.getLog().isNewerThan(lastLogIndex, lastLogTerm);
             requestVoteResultMessage.setTerm(term);
             if (voted) {
                 requestVoteResultMessage.setVoted(Boolean.TRUE);
@@ -54,7 +54,7 @@ public class RequestVoteMessageHandler extends AbstractMessageHandler {
             return;
         }
         if (node.isFollower()) {
-            boolean voted = !context.log().isNewerThan(lastLogIndex, lastLogTerm);
+            boolean voted = !context.getLog().isNewerThan(lastLogIndex, lastLogTerm);
             if (isEmpty(((Follower) role).getVoteTo()) && voted) {
                 requestVoteResultMessage.setVoted(Boolean.TRUE);
                 Follower follower = Follower.builder()

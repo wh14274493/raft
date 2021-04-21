@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * @author Wang Hao
@@ -63,6 +62,16 @@ public class Cluster {
         memberMap.forEach((s, member) -> {
             if (!selfId.equals(s)) {
                 result.add(member);
+            }
+        });
+        return result;
+    }
+
+    public List<MemberInfo> listAllMemberInfo() {
+        List<MemberInfo> result = new ArrayList<>();
+        memberMap.forEach((s, member) -> {
+            if (!selfId.equals(s)) {
+                result.add(member.getInfo());
             }
         });
         return result;

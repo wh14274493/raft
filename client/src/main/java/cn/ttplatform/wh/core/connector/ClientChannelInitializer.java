@@ -1,6 +1,6 @@
-package cn.ttplatform.wh.core.connector.nio;
+package cn.ttplatform.wh.core.connector;
 
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.ClientContext;
 import cn.ttplatform.wh.core.support.IdleStateHandler;
 import cn.ttplatform.wh.core.support.ProtostuffDecoder;
 import cn.ttplatform.wh.core.support.ProtostuffEncoder;
@@ -12,11 +12,11 @@ import io.netty.channel.socket.SocketChannel;
  * @author : Wang Hao
  * @date :  2020/8/16 18:22
  **/
-public class CoreChannelInitializer extends ChannelInitializer<SocketChannel> {
+public class ClientChannelInitializer extends ChannelInitializer<SocketChannel> {
 
-    private final NodeContext context;
+    private final ClientContext context;
 
-    public CoreChannelInitializer(NodeContext context) {
+    public ClientChannelInitializer(ClientContext context) {
         this.context = context;
     }
 
@@ -29,7 +29,6 @@ public class CoreChannelInitializer extends ChannelInitializer<SocketChannel> {
         int writeIdleTimeout = context.getProperties().getWriteIdleTimeout();
         int allIdleTimeout = context.getProperties().getAllIdleTimeout();
         pipeline.addLast(new IdleStateHandler(readIdleTimeout, writeIdleTimeout, allIdleTimeout));
-        pipeline.addLast(new MessageInboundHandler(context.getDispatcher()));
-        pipeline.addLast(new MessageOutboundHandler(context));
+        pipeline.addLast(new CommandDuplexChannelHandler(context));
     }
 }

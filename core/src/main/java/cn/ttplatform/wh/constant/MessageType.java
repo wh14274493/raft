@@ -86,4 +86,14 @@ public class MessageType {
      */
     public static final int GET_COMMAND_RESPONSE = 12;
 
+    /**
+     * {@link cn.ttplatform.wh.cmd.RedirectCommand}
+     */
+    public static final int REDIRECT_COMMAND = 13;
+
+    /**
+     * {@link cn.ttplatform.wh.cmd.RequestFailedCommand}
+     */
+    public static final int REQUEST_FAILED_COMMAND = 14;
+
 }
