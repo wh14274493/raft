@@ -4,3 +4,5 @@
 /server/target/
 /server/src/main/resources/config/
 /server/src/main/resources/LOG/
+/client/target/
+/core/target/
