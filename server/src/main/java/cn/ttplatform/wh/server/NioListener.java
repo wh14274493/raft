@@ -15,15 +15,14 @@ import lombok.extern.slf4j.Slf4j;
 public class NioListener implements Listener {
 
     private final NodeContext nodeContext;
-
     private final EventLoopGroup boss;
     private final EventLoopGroup worker;
     private final int port;
 
-    public NioListener(NodeContext nodeContext,EventLoopGroup boss,EventLoopGroup worker) {
+    public NioListener(NodeContext nodeContext) {
         this.nodeContext = nodeContext;
-        this.boss = boss;
-        this.worker = worker;
+        this.boss = nodeContext.getBoss();
+        this.worker = nodeContext.getWorker();
         this.port = nodeContext.getProperties().getPort();
     }
 

@@ -1,29 +1,8 @@
 package cn.ttplatform.wh;
 
 import cn.ttplatform.wh.config.ServerProperties;
-import cn.ttplatform.wh.constant.ReadWriteFileStrategy;
-import cn.ttplatform.wh.core.Cluster;
-import cn.ttplatform.wh.core.ClusterMember;
-import cn.ttplatform.wh.core.MemberInfo;
 import cn.ttplatform.wh.core.Node;
 import cn.ttplatform.wh.core.NodeContext;
-import cn.ttplatform.wh.core.NodeState;
-import cn.ttplatform.wh.core.StateMachine;
-import cn.ttplatform.wh.core.connector.nio.NioConnector;
-import cn.ttplatform.wh.core.log.FileLog;
-import cn.ttplatform.wh.core.support.BufferPool;
-import cn.ttplatform.wh.core.support.DefaultScheduler;
-import cn.ttplatform.wh.core.support.DirectByteBufferPool;
-import cn.ttplatform.wh.core.support.IndirectByteBufferPool;
-import cn.ttplatform.wh.core.support.SingleThreadTaskExecutor;
-import cn.ttplatform.wh.server.NioListener;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import java.io.File;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -46,47 +25,10 @@ public class Application {
             return;
         }
         ServerProperties properties = initConfig(commandLine);
-        NodeContext nodeContext = buildContext(properties);
-        Node node = buildNode(nodeContext);
-        nodeContext.register(node);
+        NodeContext context = new NodeContext(properties);
+        Node node = new Node(context);
+        context.register(node);
         node.start();
-    }
-
-    private Node buildNode(NodeContext context) {
-        ServerProperties properties = context.getProperties();
-        EventLoopGroup boss = new NioEventLoopGroup(properties.getBossThreads());
-        EventLoopGroup worker = new NioEventLoopGroup(properties.getWorkerThreads());
-        StateMachine stateMachine = new StateMachine();
-        Node node = Node.builder()
-            .selfId(properties.getNodeId())
-            .context(context)
-            .connector(new NioConnector(context, worker))
-            .listener(new NioListener(context, boss, worker))
-            .stateMachine(stateMachine)
-            .build();
-        stateMachine.register(node);
-        return node;
-    }
-
-    private NodeContext buildContext(ServerProperties properties) {
-        Set<ClusterMember> members = initClusterMembers(properties);
-        File base = new File(properties.getBasePath());
-        BufferPool<ByteBuffer> pool;
-        if (ReadWriteFileStrategy.DIRECT.equals(properties.getReadWriteFileStrategy())) {
-            log.debug("use DirectBufferAllocator");
-            pool = new DirectByteBufferPool(properties.getByteBufferPoolSize(), properties.getByteBufferSizeLimit());
-        } else {
-            log.debug("use BufferAllocator");
-            pool = new IndirectByteBufferPool(properties.getByteBufferPoolSize(), properties.getByteBufferSizeLimit());
-        }
-        return NodeContext.builder()
-            .cluster(new Cluster(members, properties.getNodeId()))
-            .scheduler(new DefaultScheduler(properties))
-            .executor(new SingleThreadTaskExecutor())
-            .nodeState(new NodeState(base, pool))
-            .log(new FileLog(base, pool))
-            .properties(properties)
-            .build();
     }
 
     private CommandLine parseOptions(String[] args) throws ParseException {
@@ -161,26 +103,6 @@ public class Application {
             properties.setBasePath(commandLine.getOptionValue('d'));
         }
         return properties;
-    }
-
-    private Set<ClusterMember> initClusterMembers(ServerProperties properties) {
-        String[] clusterConfig = properties.getClusterInfo().split(" ");
-        return Arrays.stream(clusterConfig).map(memberInfo -> {
-            String[] pieces = memberInfo.split(",");
-            if (pieces.length != 3) {
-                throw new IllegalArgumentException("illegal node info [" + memberInfo + "]");
-            }
-            String nodeId = pieces[0];
-            String host = pieces[1];
-            int port;
-            try {
-                port = Integer.parseInt(pieces[2]);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("illegal port in node info [" + memberInfo + "]");
-            }
-            return ClusterMember.builder().memberInfo(MemberInfo.builder().nodeId(nodeId).host(host).port(port).build())
-                .build();
-        }).collect(Collectors.toSet());
     }
 
     public static void main(String[] args) throws Exception {
