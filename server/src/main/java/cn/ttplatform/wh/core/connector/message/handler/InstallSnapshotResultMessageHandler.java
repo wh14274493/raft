@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.cmd.Message;
-import cn.ttplatform.wh.core.ClusterMember;
+import cn.ttplatform.wh.core.Endpoint;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotResultMessage;
 import cn.ttplatform.wh.core.support.AbstractMessageHandler;
@@ -23,7 +23,7 @@ public class InstallSnapshotResultMessageHandler extends AbstractMessageHandler 
         InstallSnapshotResultMessage message = (InstallSnapshotResultMessage) e;
         int term = message.getTerm();
         int currentTerm = context.getNode().getTerm();
-        ClusterMember member = context.getCluster().find(message.getSourceId());
+        Endpoint endpoint = context.getCluster().find(message.getSourceId());
         if (term > currentTerm) {
             context.changeToFollower(term, null, null, 0);
             return;
@@ -37,22 +37,22 @@ public class InstallSnapshotResultMessageHandler extends AbstractMessageHandler 
         }
         if (message.isSuccess()) {
             if (message.isDone()) {
-                member.setReplicating(false);
-                member.updateReplicationState(context.getLog().getLastIncludeIndex());
+                endpoint.setReplicating(false);
+                endpoint.updateReplicationState(context.getLog().getLastIncludeIndex());
                 context.doLogReplication();
             } else {
                 long snapshotOffset = message.getOffset();
-                member.setSnapshotOffset(snapshotOffset);
+                endpoint.setSnapshotOffset(snapshotOffset);
                 Message installSnapshotMessage = context.getLog()
                     .createInstallSnapshotMessage(currentTerm, snapshotOffset,
                         context.getProperties().getMaxTransferSize());
-                context.sendMessage(installSnapshotMessage, member);
+                context.sendMessage(installSnapshotMessage, endpoint);
             }
         } else {
-            member.setSnapshotOffset(0L);
+            endpoint.setSnapshotOffset(0L);
             Message installSnapshotMessage = context.getLog()
                 .createInstallSnapshotMessage(currentTerm, 0L, context.getProperties().getMaxTransferSize());
-            context.sendMessage(installSnapshotMessage, member);
+            context.sendMessage(installSnapshotMessage, endpoint);
         }
     }
 }

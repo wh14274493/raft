@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.cmd.Message;
-import cn.ttplatform.wh.core.ClusterMember;
+import cn.ttplatform.wh.core.Endpoint;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.RequestVoteMessage;
 import cn.ttplatform.wh.core.connector.message.RequestVoteResultMessage;
@@ -22,8 +22,8 @@ public class RequestVoteMessageHandler extends AbstractMessageHandler {
     @Override
     public void doHandle(Message e) {
         RequestVoteMessage message = (RequestVoteMessage) e;
-        ClusterMember member = context.getCluster().find(message.getCandidateId());
-        context.sendMessage(process(message), member);
+        Endpoint endpoint = context.getCluster().find(message.getCandidateId());
+        context.sendMessage(process(message), endpoint);
     }
 
     private RequestVoteResultMessage process(RequestVoteMessage message) {

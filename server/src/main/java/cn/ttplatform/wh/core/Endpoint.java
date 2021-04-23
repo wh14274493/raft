@@ -1,5 +1,6 @@
 package cn.ttplatform.wh.core;
 
+import cn.ttplatform.wh.common.EndpointMetaData;
 import java.net.InetSocketAddress;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,9 +15,9 @@ import lombok.ToString;
 @Builder
 @ToString
 @AllArgsConstructor
-public class ClusterMember implements Comparable<ClusterMember> {
+public class Endpoint implements Comparable<Endpoint> {
 
-    private MemberInfo memberInfo;
+    private EndpointMetaData endpointMetaData;
     private int matchIndex;
     private int nextIndex;
     private long snapshotOffset;
@@ -24,11 +25,11 @@ public class ClusterMember implements Comparable<ClusterMember> {
     private boolean replicating;
 
     public String getNodeId() {
-        return memberInfo.getNodeId();
+        return endpointMetaData.getNodeId();
     }
 
     public InetSocketAddress getAddress() {
-        return memberInfo.getAddress();
+        return endpointMetaData.getAddress();
     }
 
     public void updateReplicationState(int matchIndex) {
@@ -48,7 +49,7 @@ public class ClusterMember implements Comparable<ClusterMember> {
     }
 
     @Override
-    public int compareTo(ClusterMember o) {
+    public int compareTo(Endpoint o) {
         return this.getMatchIndex() - o.getMatchIndex();
     }
 }

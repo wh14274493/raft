@@ -9,9 +9,9 @@ import cn.ttplatform.wh.core.support.AbstractMessageHandler;
  * @author Wang Hao
  * @date 2021/2/21 16:01
  */
-public class GetCommandHandler extends AbstractMessageHandler {
+public class GetCommandMessageHandler extends AbstractMessageHandler {
 
-    public GetCommandHandler(NodeContext context) {
+    public GetCommandMessageHandler(NodeContext context) {
         super(context);
     }
 

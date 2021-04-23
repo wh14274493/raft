@@ -89,7 +89,7 @@ public interface Log {
     boolean installSnapshot(InstallSnapshotMessage message);
 
     /**
-     * create an AppendLogEntriesMessage with the nextIndex of a member replication state
+     * create an AppendLogEntriesMessage with the nextIndex of a endpoint replication state
      *
      * @param leaderId  self id
      * @param term      current term
@@ -100,10 +100,10 @@ public interface Log {
     Message createAppendLogEntriesMessage(String leaderId, int term, int nextIndex, int size);
 
     /**
-     * create an InstallSnapshotMessage with the offset of a member replication state
+     * create an InstallSnapshotMessage with the offset of a endpoint replication state
      *
      * @param term   current term
-     * @param offset the offset of a member replication state
+     * @param offset the offset of a endpoint replication state
      * @param size   The size of the transfer log
      * @return an InstallSnapshotMessage
      */

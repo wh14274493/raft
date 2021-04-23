@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.connector.nio;
 
-import cn.ttplatform.wh.core.MemberInfo;
+import cn.ttplatform.wh.common.EndpointMetaData;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.Connector;
 import cn.ttplatform.wh.cmd.Message;
@@ -41,9 +41,9 @@ public class NioConnector implements Connector {
     }
 
     @Override
-    public Channel connect(MemberInfo memberInfo) {
-        InetSocketAddress socketAddress = memberInfo.getAddress();
-        String remoteId = memberInfo.getNodeId();
+    public Channel connect(EndpointMetaData endpointMetaData) {
+        InetSocketAddress socketAddress = endpointMetaData.getAddress();
+        String remoteId = endpointMetaData.getNodeId();
         Channel channel = ChannelCache.getChannel(remoteId);
         if (channel != null && channel.isOpen()) {
             return channel;
@@ -65,8 +65,8 @@ public class NioConnector implements Connector {
     }
 
     @Override
-    public ChannelFuture send(Message message, MemberInfo memberInfo) {
-        Channel channel = connect(memberInfo);
+    public ChannelFuture send(Message message, EndpointMetaData endpointMetaData) {
+        Channel channel = connect(endpointMetaData);
         return channel.writeAndFlush(message);
     }
 

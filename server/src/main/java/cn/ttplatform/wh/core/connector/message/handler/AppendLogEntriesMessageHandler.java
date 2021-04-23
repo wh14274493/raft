@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.cmd.Message;
-import cn.ttplatform.wh.core.ClusterMember;
+import cn.ttplatform.wh.core.Endpoint;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesResultMessage;
@@ -25,8 +25,8 @@ public class AppendLogEntriesMessageHandler extends AbstractMessageHandler {
     @Override
     public void doHandle(Message e) {
         AppendLogEntriesMessage message = (AppendLogEntriesMessage) e;
-        ClusterMember member = context.getCluster().find(message.getLeaderId());
-        context.sendMessage(process(message), member);
+        Endpoint endpoint = context.getCluster().find(message.getLeaderId());
+        context.sendMessage(process(message), endpoint);
     }
 
     private AppendLogEntriesResultMessage process(AppendLogEntriesMessage message) {

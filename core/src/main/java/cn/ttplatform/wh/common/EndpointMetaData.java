@@ -1,4 +1,4 @@
-package cn.ttplatform.wh.core;
+package cn.ttplatform.wh.common;
 
 import java.net.InetSocketAddress;
 import lombok.AllArgsConstructor;
@@ -14,7 +14,7 @@ import lombok.ToString;
 @Builder
 @ToString
 @AllArgsConstructor
-public class MemberInfo {
+public class EndpointMetaData {
 
     private String nodeId;
     private String host;

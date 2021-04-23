@@ -22,7 +22,7 @@ public abstract class AbstractMessageHandler implements MessageHandler {
 
     /**
      * process a message
-     * @param e message
+     * @param message message
      */
-    public abstract void doHandle(Message e);
+    public abstract void doHandle(Message message);
 }

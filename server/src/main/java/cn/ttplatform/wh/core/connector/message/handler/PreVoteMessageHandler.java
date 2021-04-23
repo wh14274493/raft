@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.cmd.Message;
-import cn.ttplatform.wh.core.ClusterMember;
+import cn.ttplatform.wh.core.Endpoint;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.PreVoteMessage;
 import cn.ttplatform.wh.core.connector.message.PreVoteResultMessage;
@@ -20,7 +20,7 @@ public class PreVoteMessageHandler extends AbstractMessageHandler {
     @Override
     public void doHandle(Message e) {
         PreVoteMessage message = (PreVoteMessage) e;
-        ClusterMember clusterMember = context.getCluster().find(message.getNodeId());
+        Endpoint endpoint = context.getCluster().find(message.getNodeId());
         int lastLogIndex = message.getLastLogIndex();
         int lastLogTerm = message.getLastLogTerm();
         PreVoteResultMessage preVoteResultMessage = PreVoteResultMessage.builder()
@@ -29,6 +29,6 @@ public class PreVoteMessageHandler extends AbstractMessageHandler {
         if (context.getLog().isNewerThan(lastLogIndex, lastLogTerm)) {
             preVoteResultMessage.setVoted(Boolean.FALSE);
         }
-        context.sendMessage(preVoteResultMessage, clusterMember);
+        context.sendMessage(preVoteResultMessage, endpoint);
     }
 }

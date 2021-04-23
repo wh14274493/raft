@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.connector;
 
-import cn.ttplatform.wh.core.MemberInfo;
+import cn.ttplatform.wh.common.EndpointMetaData;
 import cn.ttplatform.wh.cmd.Message;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -14,17 +14,17 @@ public interface Connector {
     /**
      * create a connection with remote address
      *
-     * @param memberInfo remote address
+     * @param endpointMetaData remote address
      * @return a socket channel
      */
-    Channel connect(MemberInfo memberInfo);
+    Channel connect(EndpointMetaData endpointMetaData);
 
     /**
      * send a message to remote
      *  @param message    rpc message
-     * @param memberInfo remote server
+     * @param endpointMetaData remote server
      * @return a ChannelFuture
      */
-    ChannelFuture send(Message message, MemberInfo memberInfo);
+    ChannelFuture send(Message message, EndpointMetaData endpointMetaData);
 
 }

@@ -5,8 +5,10 @@ import cn.ttplatform.wh.cmd.Message;
 import cn.ttplatform.wh.cmd.SetCommand;
 import cn.ttplatform.wh.cmd.factory.GetCommandMessageFactory;
 import cn.ttplatform.wh.cmd.factory.GetResponseCommandMessageFactory;
+import cn.ttplatform.wh.cmd.factory.RedirectCommandMessageFactory;
 import cn.ttplatform.wh.cmd.factory.SetCommandMessageFactory;
 import cn.ttplatform.wh.cmd.factory.SetResponseCommandMessageFactory;
+import cn.ttplatform.wh.common.EndpointMetaData;
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.constant.MessageType;
 import cn.ttplatform.wh.constant.ReadWriteFileStrategy;
@@ -47,8 +49,9 @@ import cn.ttplatform.wh.core.support.MessageFactoryManager;
 import cn.ttplatform.wh.core.support.Scheduler;
 import cn.ttplatform.wh.core.support.SingleThreadTaskExecutor;
 import cn.ttplatform.wh.core.support.TaskExecutor;
-import cn.ttplatform.wh.server.handler.GetCommandHandler;
-import cn.ttplatform.wh.server.handler.SetCommandHandler;
+import cn.ttplatform.wh.server.handler.ClusterNodeChangeCommandMessageHandler;
+import cn.ttplatform.wh.server.handler.GetCommandMessageHandler;
+import cn.ttplatform.wh.server.handler.SetCommandMessageHandler;
 import cn.ttplatform.wh.support.BufferPool;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -93,7 +96,7 @@ public class NodeContext {
 
     public NodeContext(ServerProperties properties) {
         this.properties = properties;
-        Set<ClusterMember> members = initClusterMembers(properties);
+        Set<Endpoint> endpoints = initClusterEndpoints(properties);
         File base = new File(properties.getBasePath());
         this.linkedBufferPool = new FixedSizeLinkedBufferPool(properties.getLinkedBuffPollSize());
         if (ReadWriteFileStrategy.DIRECT.equals(properties.getReadWriteFileStrategy())) {
@@ -110,7 +113,7 @@ public class NodeContext {
         this.scheduler = new DefaultScheduler(properties);
         this.executor = new SingleThreadTaskExecutor();
         this.nodeState = new NodeState(base, bufferBufferPool);
-        this.cluster = new Cluster(members, properties.getNodeId());
+        this.cluster = new Cluster(endpoints, properties.getNodeId());
         this.connector = new NioConnector(this);
         this.log = new FileLog(base, bufferBufferPool);
         this.stateMachine = new StateMachine(this);
@@ -118,12 +121,12 @@ public class NodeContext {
         this.factoryManager = new MessageFactoryManager();
     }
 
-    private Set<ClusterMember> initClusterMembers(ServerProperties properties) {
+    private Set<Endpoint> initClusterEndpoints(ServerProperties properties) {
         String[] clusterConfig = properties.getClusterInfo().split(" ");
-        return Arrays.stream(clusterConfig).map(memberInfo -> {
-            String[] pieces = memberInfo.split(",");
+        return Arrays.stream(clusterConfig).map(endpointMetaData -> {
+            String[] pieces = endpointMetaData.split(",");
             if (pieces.length != 3) {
-                throw new IllegalArgumentException("illegal node info [" + memberInfo + "]");
+                throw new IllegalArgumentException("illegal node info [" + endpointMetaData + "]");
             }
             String nodeId = pieces[0];
             String host = pieces[1];
@@ -131,9 +134,10 @@ public class NodeContext {
             try {
                 port = Integer.parseInt(pieces[2]);
             } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("illegal port in node info [" + memberInfo + "]");
+                throw new IllegalArgumentException("illegal port in node info [" + endpointMetaData + "]");
             }
-            return ClusterMember.builder().memberInfo(MemberInfo.builder().nodeId(nodeId).host(host).port(port).build())
+            return Endpoint.builder().endpointMetaData(
+                EndpointMetaData.builder().nodeId(nodeId).host(host).port(port).build())
                 .build();
         }).collect(Collectors.toSet());
     }
@@ -145,8 +149,9 @@ public class NodeContext {
     }
 
     private void initMessageHandler() {
-        dispatcher.register(MessageType.SET_COMMAND, new SetCommandHandler(this));
-        dispatcher.register(MessageType.GET_COMMAND, new GetCommandHandler(this));
+        dispatcher.register(MessageType.CLUSTER_NODE_CHANGE_COMMAND, new ClusterNodeChangeCommandMessageHandler(this));
+        dispatcher.register(MessageType.SET_COMMAND, new SetCommandMessageHandler(this));
+        dispatcher.register(MessageType.GET_COMMAND, new GetCommandMessageHandler(this));
         dispatcher.register(MessageType.APPEND_LOG_ENTRIES, new AppendLogEntriesMessageHandler(this));
         dispatcher
             .register(MessageType.APPEND_LOG_ENTRIES_RESULT, new AppendLogEntriesResultMessageHandler(this));
@@ -159,6 +164,7 @@ public class NodeContext {
     }
 
     private void initMessageFactory() {
+        factoryManager.register(MessageType.REDIRECT_COMMAND, new RedirectCommandMessageFactory(linkedBufferPool));
         factoryManager
             .register(MessageType.SET_COMMAND_RESPONSE, new SetResponseCommandMessageFactory(linkedBufferPool));
         factoryManager
@@ -219,24 +225,25 @@ public class NodeContext {
     public void doLogReplication() {
         logger.debug("log replication task scheduled.");
         int currentTerm = node.getTerm();
-        cluster.listAllEndpointExceptSelf().forEach(member -> {
+        cluster.getAllEndpointExceptSelf().forEach(endpoint -> {
             long now = System.currentTimeMillis();
             // If the log snapshot is not being transmitted, the heartbeat detection information will be sent every time
             // the scheduled task is executed, otherwise the message will be sent only when a certain time has passed.
             // Doing so will cause a problem that the results of the slave processing log snapshot messages may not be
             // returned in time, causing the master to resend the last message because it does not receive a reply. If
             // the slave does not handle it, an unknown error will occur.
-            if (!member.isReplicating() || now - member.getLastHeartBeat() >= properties.getReplicationHeartBeat()) {
+            if (!endpoint.isReplicating() || now - endpoint.getLastHeartBeat() >= properties
+                .getReplicationHeartBeat()) {
                 Message message = log
-                    .createAppendLogEntriesMessage(node.getSelfId(), currentTerm, member.getNextIndex(),
+                    .createAppendLogEntriesMessage(node.getSelfId(), currentTerm, endpoint.getNextIndex(),
                         properties.getMaxTransferLogs());
                 if (message == null) {
-                    message = log.createInstallSnapshotMessage(currentTerm, member.getSnapshotOffset(),
+                    message = log.createInstallSnapshotMessage(currentTerm, endpoint.getSnapshotOffset(),
                         properties.getMaxTransferSize());
                     // start snapshot replication
-                    member.setReplicating(true);
+                    endpoint.setReplicating(true);
                 }
-                sendMessage(message, member);
+                sendMessage(message, endpoint);
             }
         });
     }
@@ -251,15 +258,15 @@ public class NodeContext {
     }
 
     public void sendMessageToOthers(Message message) {
-        cluster.listAllEndpointExceptSelf().forEach(member -> sendMessage(message, member));
+        cluster.getAllEndpointExceptSelf().forEach(endpoint -> sendMessage(message, endpoint));
     }
 
-    public void sendMessage(Message message, ClusterMember member) {
-        logger.debug("send message to {}", member);
+    public void sendMessage(Message message, Endpoint endpoints) {
+        logger.debug("send message to {}", endpoints);
         message.setSourceId(properties.getNodeId());
-        connector.send(message, member.getMemberInfo()).addListener(future -> {
+        connector.send(message, endpoints.getEndpointMetaData()).addListener(future -> {
             if (future.isSuccess()) {
-                member.setLastHeartBeat(System.currentTimeMillis());
+                endpoints.setLastHeartBeat(System.currentTimeMillis());
                 logger.debug("send message {} success", message);
             } else {
                 logger.debug("send message {} failed", message);

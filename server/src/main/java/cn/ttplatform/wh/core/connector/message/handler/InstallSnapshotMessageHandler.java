@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.cmd.Message;
-import cn.ttplatform.wh.core.ClusterMember;
+import cn.ttplatform.wh.core.Endpoint;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotResultMessage;
@@ -24,10 +24,10 @@ public class InstallSnapshotMessageHandler extends AbstractMessageHandler {
     public void doHandle(Message e) {
         InstallSnapshotMessage message = (InstallSnapshotMessage) e;
         String sourceId = message.getSourceId();
-        ClusterMember member = context.getCluster().find(sourceId);
+        Endpoint endpoint = context.getCluster().find(sourceId);
         InstallSnapshotResultMessage resultMessage = process(message);
         if (resultMessage != null) {
-            context.sendMessage(resultMessage, member);
+            context.sendMessage(resultMessage, endpoint);
         }
     }
 
