@@ -1,15 +1,13 @@
 package cn.ttplatform.wh.core.log;
 
-import cn.ttplatform.wh.cmd.Message;
+import cn.ttplatform.wh.common.Message;
 import cn.ttplatform.wh.constant.FileName;
+import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
-import cn.ttplatform.wh.support.BufferPool;
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -23,16 +21,17 @@ import lombok.extern.slf4j.Slf4j;
 public class FileLog implements Log {
 
     private static final Pattern DIR_NAME_PATTERN = Pattern.compile("log-(\\d+)");
+    private final NodeContext context;
     private YoungGeneration youngGeneration;
     private OldGeneration oldGeneration;
     private int commitIndex;
     private int nextIndex;
-    private BufferPool<ByteBuffer> pool;
 
-    public FileLog(File parent, BufferPool<ByteBuffer> pool) {
-        this.pool = pool;
-        oldGeneration = new OldGeneration(getLatestGeneration(parent), pool);
-        youngGeneration = new YoungGeneration(parent, pool, oldGeneration.getLastIncludeIndex());
+    public FileLog(NodeContext context) {
+        this.context = context;
+        oldGeneration = new OldGeneration(getLatestGeneration(context.getBasePath()), context.getByteBufferPool());
+        youngGeneration = new YoungGeneration(context.getBasePath(), context.getByteBufferPool(),
+            oldGeneration.getLastIncludeIndex());
         initialize();
     }
 
@@ -64,6 +63,12 @@ public class FileLog implements Log {
     @Override
     public int getLastIncludeIndex() {
         return oldGeneration.getLastIncludeIndex();
+    }
+
+    @Override
+    public void close() {
+        youngGeneration.close();
+        oldGeneration.close();
     }
 
     @Override
@@ -108,12 +113,22 @@ public class FileLog implements Log {
     }
 
     @Override
-    public boolean appendEntries(int index, int term, List<LogEntry> entries) {
+    public boolean pendingEntries(int index, int term, List<LogEntry> entries) {
         if (checkIndexAndTermIfMatched(index, term)) {
             youngGeneration.removeAfter(index);
             if (entries != null && !entries.isEmpty()) {
-                appendEntries(entries);
-                log.debug("append {} log entries to pending list", entries.size());
+                entries.forEach(logEntry -> {
+                    if (logEntry.getType() == LogEntry.OLD_NEW) {
+                        context.getCluster().enterOldNewPhase();
+                        context.getCluster().applyOldNewConfig(logEntry.getCommand());
+                    } else if (logEntry.getType() == LogEntry.NEW) {
+                        context.getCluster().enterNewPhase();
+                        context.getCluster().applyNewConfig(logEntry.getCommand());
+                    }
+                    youngGeneration.pendingEntry(logEntry);
+                });
+                nextIndex = entries.get(entries.size() - 1).getIndex() + 1;
+                log.debug("update nextIndex[{}]", nextIndex);
             }
             return true;
         }
@@ -136,23 +151,10 @@ public class FileLog implements Log {
         return term == logEntry.getTerm();
     }
 
-    private void appendEntries(List<LogEntry> entries) {
-        entries.forEach(entry -> youngGeneration.pendingLogEntry(entry));
-        updateNextIndex();
-    }
-
     @Override
-    public void appendEntry(LogEntry entry) {
-        youngGeneration.pendingLogEntry(entry);
-        updateNextIndex();
-    }
-
-    private void updateNextIndex() {
-        if (youngGeneration.isEmpty()) {
-            nextIndex = oldGeneration.getLastIncludeIndex() + 1;
-        } else {
-            nextIndex = youngGeneration.getLastLogMetaData().getIndex() + 1;
-        }
+    public void pendingEntry(LogEntry entry) {
+        youngGeneration.pendingEntry(entry);
+        nextIndex = entry.getIndex() + 1;
         log.debug("update nextIndex[{}]", nextIndex);
     }
 
@@ -192,16 +194,17 @@ public class FileLog implements Log {
     }
 
     @Override
-    public List<LogEntry> advanceCommitIndex(int newCommitIndex, int term) {
+    public boolean advanceCommitIndex(int newCommitIndex, int term) {
         if (newCommitIndex <= commitIndex) {
-            return Collections.emptyList();
+            return false;
         }
         LogEntry entry = getEntry(newCommitIndex);
         if (entry == null || entry.getTerm() < term) {
-            return Collections.emptyList();
+            return false;
         }
         commitIndex = newCommitIndex;
-        return youngGeneration.commit(commitIndex);
+        youngGeneration.commit(commitIndex);
+        return true;
     }
 
     @Override
@@ -259,9 +262,10 @@ public class FileLog implements Log {
         oldGeneration.close();
         youngGeneration.close();
         File file = youngGeneration.rename(lastIncludeIndex, lastIncludeTerm);
-        oldGeneration = new OldGeneration(file, pool);
+        oldGeneration = new OldGeneration(file, context.getByteBufferPool());
         log.info("The new generation successfully promoted to the old generation and re-created the new generation ");
-        youngGeneration = new YoungGeneration(file.getParentFile(), pool, oldGeneration.getLastIncludeIndex());
+        youngGeneration = new YoungGeneration(file.getParentFile(), context.getByteBufferPool(),
+            oldGeneration.getLastIncludeIndex());
         youngGeneration.appendLogEntries(logEntries);
     }
 

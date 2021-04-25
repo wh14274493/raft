@@ -2,7 +2,7 @@ package cn.ttplatform.wh.core.log;
 
 import static cn.ttplatform.wh.core.support.ByteConvertor.bytesToInt;
 
-import cn.ttplatform.wh.constant.ExceptionMessage;
+import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.constant.FileName;
 import cn.ttplatform.wh.core.log.entry.FileLogEntry;
 import cn.ttplatform.wh.core.log.entry.FileLogEntryIndex;
@@ -62,7 +62,7 @@ public class YoungGeneration extends AbstractGeneration {
         File newFile = new File(this.file.getParent(), newFileName);
         log.info("prepare to rename oldFileName[{}] to newFileName[{}]", this.file.getPath(), newFile.getPath());
         if (!this.file.renameTo(newFile)) {
-            throw new OperateFileException(ExceptionMessage.RENAME_FILE_ERROR);
+            throw new OperateFileException(ErrorMessage.RENAME_FILE_ERROR);
         }
         return newFile;
     }
@@ -86,20 +86,19 @@ public class YoungGeneration extends AbstractGeneration {
     /**
      * Save log in memory.
      *
-     * @param logEntry Logs to be submitted
+     * @param logEntry Log to be submitted
      */
-    public void pendingLogEntry(LogEntry logEntry) {
+    public void pendingEntry(LogEntry logEntry) {
         pending.add(logEntry);
     }
 
     /**
-     * Save the log to a file and update the index file at the same time.
+     * Save logs in memory.
      *
-     * @param logEntry Log to be submitted
+     * @param logEntries Logs to be submitted
      */
-    public void appendLogEntry(LogEntry logEntry) {
-        long offset = fileLogEntry.append(logEntry);
-        fileLogEntryIndex.append(logEntry, offset);
+    public void pendingEntries(List<LogEntry> logEntries) {
+        pending.addAll(logEntries);
     }
 
     /**
@@ -117,9 +116,8 @@ public class YoungGeneration extends AbstractGeneration {
      * in the memory to a file, and return a list containing these logs.
      *
      * @param commitIndex commitIndex
-     * @return a list containing committed logs
      */
-    public List<LogEntry> commit(int commitIndex) {
+    public void commit(int commitIndex) {
         int maxLogIndex = fileLogEntryIndex.getMaxLogIndex();
         int size = commitIndex - maxLogIndex;
         List<LogEntry> committedEntries = new ArrayList<>(size);
@@ -128,7 +126,6 @@ public class YoungGeneration extends AbstractGeneration {
         }
         appendLogEntries(committedEntries);
         log.info("commit log that index <= {}", commitIndex);
-        return committedEntries;
     }
 
     /**

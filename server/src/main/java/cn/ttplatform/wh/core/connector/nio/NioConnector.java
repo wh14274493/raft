@@ -3,7 +3,7 @@ package cn.ttplatform.wh.core.connector.nio;
 import cn.ttplatform.wh.common.EndpointMetaData;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.Connector;
-import cn.ttplatform.wh.cmd.Message;
+import cn.ttplatform.wh.common.Message;
 import cn.ttplatform.wh.core.support.ChannelCache;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;

@@ -2,7 +2,7 @@ package cn.ttplatform.wh.core.connector.message.factory;
 
 import cn.ttplatform.wh.support.AbstractMessageFactory;
 import cn.ttplatform.wh.support.BufferPool;
-import cn.ttplatform.wh.cmd.Message;
+import cn.ttplatform.wh.common.Message;
 import cn.ttplatform.wh.core.connector.message.RequestVoteMessage;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;

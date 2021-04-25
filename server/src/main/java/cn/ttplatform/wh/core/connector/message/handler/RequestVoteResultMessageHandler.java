@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
-import cn.ttplatform.wh.cmd.Message;
+import cn.ttplatform.wh.common.Message;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.RequestVoteResultMessage;
 import cn.ttplatform.wh.core.role.Candidate;
@@ -33,7 +33,7 @@ public class RequestVoteResultMessageHandler extends AbstractMessageHandler {
         }
         if (context.isCandidate() && voted) {
             int voteCounts = ((Candidate) role).getVoteCounts() + 1;
-            int countOfActive = context.getCluster().countOfActive();
+            int countOfActive = context.getCluster().countOfCluster();
             if (voteCounts > countOfActive / 2) {
                 Leader leader = Leader.builder().term(currentTerm).scheduledFuture(context.logReplicationTask())
                     .build();

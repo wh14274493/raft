@@ -1,8 +1,6 @@
 package cn.ttplatform.wh.core.support;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -18,11 +16,6 @@ public class SingleThreadTaskExecutor implements TaskExecutor {
     public SingleThreadTaskExecutor() {
         this.executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(),
             r -> new Thread(r, "core"));
-    }
-
-    @Override
-    public <V> Future<V> submit(Callable<V> task) {
-        return executor.submit(task);
     }
 
     @Override

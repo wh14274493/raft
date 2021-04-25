@@ -1,9 +1,10 @@
 package cn.ttplatform.wh.core;
 
+import cn.ttplatform.wh.cmd.Command;
 import cn.ttplatform.wh.cmd.GetCommand;
-import cn.ttplatform.wh.cmd.GetResponseCommand;
+import cn.ttplatform.wh.cmd.GetResultCommand;
 import cn.ttplatform.wh.cmd.SetCommand;
-import cn.ttplatform.wh.cmd.SetResponseCommand;
+import cn.ttplatform.wh.cmd.SetResultCommand;
 import cn.ttplatform.wh.constant.MessageType;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.core.support.ChannelCache;
@@ -34,7 +35,7 @@ public class StateMachine {
     private final DataFactory dataFactory;
     private volatile int lastApplied;
     private final Map<Integer, List<GetCommand>> pendingGetCommandMap = new HashMap<>();
-    private final Map<Integer, SetCommand> pendingSetCommandMap = new HashMap<>();
+    private final Map<Integer, Command> pendingSetCommandMap = new HashMap<>();
 
     public StateMachine(NodeContext context) {
         this.context = context;
@@ -45,7 +46,18 @@ public class StateMachine {
         if (entry.getIndex() <= lastApplied) {
             return;
         }
-        SetCommand setCmd = pendingSetCommandMap.remove(entry.getIndex());
+        if (entry.getType() == LogEntry.OP_TYPE) {
+            replySetResult(entry);
+        } else {
+
+        }
+    }
+
+    private void replyClusterChangeResult(LogEntry entry) {
+    }
+
+    private void replySetResult(LogEntry entry) {
+        SetCommand setCmd = (SetCommand) pendingSetCommandMap.remove(entry.getIndex());
         if (setCmd == null) {
             @SuppressWarnings("unchecked")
             Factory<SetCommand> factory = context.getFactoryManager().getFactory(MessageType.SET_COMMAND);
@@ -55,16 +67,19 @@ public class StateMachine {
         lastApplied = entry.getIndex();
         Channel channel;
         if (setCmd.getId() != null && (channel = ChannelCache.getChannel(setCmd.getId())) != null) {
-            channel.writeAndFlush(SetResponseCommand.builder().id(setCmd.getId()).result(true).build())
+            channel.writeAndFlush(SetResultCommand.builder().id(setCmd.getId()).result(true).build())
                 .addListener(future -> {
                     if (future.isSuccess()) {
-                        Optional.ofNullable(pendingGetCommandMap.remove(entry.getIndex()))
-                            .orElse(Collections.emptyList())
-                            .forEach(cmd -> ChannelCache.getChannel(cmd.getId()).writeAndFlush(
-                                GetResponseCommand.builder().id(cmd.getId()).value(data.get(cmd.getKey())).build()));
+                        replyGetResult(entry.getIndex());
                     }
                 });
         }
+    }
+
+    private void replyGetResult(int index) {
+        Optional.ofNullable(pendingGetCommandMap.remove(index)).orElse(Collections.emptyList())
+            .forEach(cmd -> ChannelCache.getChannel(cmd.getId()).writeAndFlush(
+                GetResultCommand.builder().id(cmd.getId()).value(data.get(cmd.getKey())).build()));
     }
 
     public void addGetTasks(int index, GetCommand cmd) {
@@ -73,11 +88,11 @@ public class StateMachine {
             getCommands.add(cmd);
         } else {
             Channel channel = ChannelCache.getChannel(cmd.getId());
-            channel.writeAndFlush(GetResponseCommand.builder().id(cmd.getId()).value(data.get(cmd.getKey())).build());
+            channel.writeAndFlush(GetResultCommand.builder().id(cmd.getId()).value(data.get(cmd.getKey())).build());
         }
     }
 
-    public void addSetCommand(int index, SetCommand cmd) {
+    public void addPendingCommand(int index, Command cmd) {
         pendingSetCommandMap.put(index, cmd);
     }
 

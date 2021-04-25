@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.support;
 
-import cn.ttplatform.wh.constant.ExceptionMessage;
+import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.exception.OperateFileException;
 import java.io.File;
 import java.io.IOException;
@@ -18,11 +18,11 @@ public class RandomAccessFileWrapper implements ReadableAndWriteableFile {
     public RandomAccessFileWrapper(File file) {
         try {
             if (!file.exists() && !file.createNewFile()) {
-                throw new OperateFileException(ExceptionMessage.CREATE_FILE_ERROR);
+                throw new OperateFileException(ErrorMessage.CREATE_FILE_ERROR);
             }
             randomAccessFile = new RandomAccessFile(file, "rw");
         } catch (IOException e) {
-            throw new OperateFileException(ExceptionMessage.CREATE_FILE_ERROR, e.getCause());
+            throw new OperateFileException(ErrorMessage.CREATE_FILE_ERROR, e.getCause());
         }
     }
 
@@ -31,7 +31,7 @@ public class RandomAccessFileWrapper implements ReadableAndWriteableFile {
         try {
             randomAccessFile.seek(position);
         } catch (IOException e) {
-            throw new OperateFileException(ExceptionMessage.SEEK_POSITION_ERROR, e.getCause());
+            throw new OperateFileException(ErrorMessage.SEEK_POSITION_ERROR, e.getCause());
         }
     }
 
@@ -40,7 +40,7 @@ public class RandomAccessFileWrapper implements ReadableAndWriteableFile {
         try {
             randomAccessFile.writeInt(data);
         } catch (IOException e) {
-            throw new OperateFileException(ExceptionMessage.WRITE_FILE_ERROR, e.getCause());
+            throw new OperateFileException(ErrorMessage.WRITE_FILE_ERROR, e.getCause());
         }
     }
 
@@ -55,7 +55,7 @@ public class RandomAccessFileWrapper implements ReadableAndWriteableFile {
         try {
             return randomAccessFile.readInt();
         } catch (IOException e) {
-            throw new OperateFileException(ExceptionMessage.READ_FILE_ERROR, e.getCause());
+            throw new OperateFileException(ErrorMessage.READ_FILE_ERROR, e.getCause());
         }
     }
 
@@ -70,7 +70,7 @@ public class RandomAccessFileWrapper implements ReadableAndWriteableFile {
         try {
             randomAccessFile.writeLong(data);
         } catch (IOException e) {
-            throw new OperateFileException(ExceptionMessage.WRITE_FILE_ERROR, e.getCause());
+            throw new OperateFileException(ErrorMessage.WRITE_FILE_ERROR, e.getCause());
         }
     }
 
@@ -85,7 +85,7 @@ public class RandomAccessFileWrapper implements ReadableAndWriteableFile {
         try {
             return randomAccessFile.readLong();
         } catch (IOException e) {
-            throw new OperateFileException(ExceptionMessage.READ_FILE_ERROR, e.getCause());
+            throw new OperateFileException(ErrorMessage.READ_FILE_ERROR, e.getCause());
         }
     }
 
@@ -100,7 +100,7 @@ public class RandomAccessFileWrapper implements ReadableAndWriteableFile {
         try {
             randomAccessFile.write(data);
         } catch (IOException e) {
-            throw new OperateFileException(ExceptionMessage.WRITE_FILE_ERROR, e.getCause());
+            throw new OperateFileException(ErrorMessage.WRITE_FILE_ERROR, e.getCause());
         }
     }
 
@@ -122,7 +122,7 @@ public class RandomAccessFileWrapper implements ReadableAndWriteableFile {
             randomAccessFile.read(content);
             return content;
         } catch (IOException e) {
-            throw new OperateFileException(ExceptionMessage.READ_FILE_ERROR, e.getCause());
+            throw new OperateFileException(ErrorMessage.READ_FILE_ERROR, e.getCause());
         }
     }
 
@@ -137,7 +137,7 @@ public class RandomAccessFileWrapper implements ReadableAndWriteableFile {
         try {
             return randomAccessFile.length();
         } catch (IOException e) {
-            throw new OperateFileException(ExceptionMessage.READ_FILE_LENGTH_ERROR, e.getCause());
+            throw new OperateFileException(ErrorMessage.READ_FILE_LENGTH_ERROR, e.getCause());
         }
     }
 
@@ -146,7 +146,7 @@ public class RandomAccessFileWrapper implements ReadableAndWriteableFile {
         try {
             randomAccessFile.setLength(position);
         } catch (IOException e) {
-            throw new OperateFileException(ExceptionMessage.TRUNCATE_FILE_ERROR, e.getCause());
+            throw new OperateFileException(ErrorMessage.TRUNCATE_FILE_ERROR, e.getCause());
         }
     }
 
@@ -165,7 +165,7 @@ public class RandomAccessFileWrapper implements ReadableAndWriteableFile {
         try {
             randomAccessFile.close();
         } catch (IOException e) {
-            throw new OperateFileException(ExceptionMessage.CLOSE_FILE_ERROR, e.getCause());
+            throw new OperateFileException(ErrorMessage.CLOSE_FILE_ERROR, e.getCause());
         }
     }
 }

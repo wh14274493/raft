@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.cmd.factory;
 
-import cn.ttplatform.wh.cmd.Message;
+import cn.ttplatform.wh.common.Message;
 import cn.ttplatform.wh.cmd.SetCommand;
 import cn.ttplatform.wh.support.AbstractMessageFactory;
 import cn.ttplatform.wh.support.BufferPool;
@@ -13,11 +13,11 @@ import io.protostuff.runtime.RuntimeSchema;
  * @author Wang Hao
  * @date 2021/3/15 15:56
  */
-public class SetCommandMessageFactory extends AbstractMessageFactory {
+public class SetCommandFactory extends AbstractMessageFactory {
 
     private final Schema<SetCommand> schema = RuntimeSchema.getSchema(SetCommand.class);
 
-    public SetCommandMessageFactory(BufferPool<LinkedBuffer> pool) {
+    public SetCommandFactory(BufferPool<LinkedBuffer> pool) {
         super(pool);
     }
 

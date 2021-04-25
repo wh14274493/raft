@@ -19,11 +19,13 @@ public class MessageType {
     public static final int INSTALL_SNAPSHOT = 7;
     public static final int INSTALL_SNAPSHOT_RESULT = 8;
     public static final int SET_COMMAND = 9;
-    public static final int SET_COMMAND_RESPONSE = 10;
+    public static final int SET_COMMAND_RESULT = 10;
     public static final int GET_COMMAND = 11;
-    public static final int GET_COMMAND_RESPONSE = 12;
+    public static final int GET_COMMAND_RESULT = 12;
     public static final int REDIRECT_COMMAND = 13;
-    public static final int CLUSTER_NODE_CHANGE_COMMAND = 14;
+    public static final int CLUSTER_CHANGE_COMMAND = 14;
+    public static final int CLUSTER_CHANGE_RESULT_COMMAND = 15;
+    public static final int REQUEST_FAILED_COMMAND = 16;
 
 
 }

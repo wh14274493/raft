@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.core.log;
 
 
-import cn.ttplatform.wh.cmd.Message;
+import cn.ttplatform.wh.common.Message;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
 import java.util.List;
@@ -78,7 +78,7 @@ public interface Log {
      * @param entries entry list to be appended
      * @return append result
      */
-    boolean appendEntries(int index, int term, List<LogEntry> entries);
+    boolean pendingEntries(int index, int term, List<LogEntry> entries);
 
     /**
      * install snapshot file that content from leader
@@ -114,9 +114,9 @@ public interface Log {
      *
      * @param commitIndex commitIndex
      * @param term        current term
-     * @return committed entries
+     * @return committed res
      */
-    List<LogEntry> advanceCommitIndex(int commitIndex, int term);
+    boolean advanceCommitIndex(int commitIndex, int term);
 
     /**
      * Determine whether need to generate a log snapshot
@@ -140,7 +140,7 @@ public interface Log {
      *
      * @param logEntry log entry
      */
-    void appendEntry(LogEntry logEntry);
+    void pendingEntry(LogEntry logEntry);
 
     /**
      * load snapshot snapshot date into state machine
@@ -155,4 +155,6 @@ public interface Log {
      * @return lastIncludeIndex
      */
     int getLastIncludeIndex();
+
+    void close();
 }

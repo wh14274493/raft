@@ -27,15 +27,7 @@ public class ServerInboundHandler extends AbstractDuplexChannelHandler {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         if (msg instanceof Command) {
-            if (!context.isLeader()) {
-                String leaderId = null;
-                if (context.isFollower()) {
-                    Follower role = (Follower) context.getNode().getRole();
-                    leaderId = role.getLeaderId();
-                }
-                log.info("current role is not a leader, redirect request to node[id={}]", leaderId);
-                ctx.channel()
-                    .writeAndFlush(new RedirectCommand(leaderId, context.getCluster().getAllEndpointMetaData()));
+            if (!canHandler(ctx)) {
                 return;
             }
             Command cmd = (Command) msg;
@@ -46,5 +38,20 @@ public class ServerInboundHandler extends AbstractDuplexChannelHandler {
         } else {
             ctx.fireChannelRead(msg);
         }
+    }
+
+    private boolean canHandler(ChannelHandlerContext ctx) {
+        if (!context.isLeader()) {
+            String leaderId = null;
+            if (context.isFollower()) {
+                Follower role = (Follower) context.getNode().getRole();
+                leaderId = role.getLeaderId();
+            }
+            log.info("current role is not a leader, redirect request to node[id={}]", leaderId);
+            ctx.channel()
+                .writeAndFlush(new RedirectCommand(leaderId, context.getCluster().getAllEndpointMetaData()));
+            return false;
+        }
+        return true;
     }
 }

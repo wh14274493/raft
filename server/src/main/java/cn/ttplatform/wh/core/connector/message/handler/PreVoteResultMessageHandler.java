@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
-import cn.ttplatform.wh.cmd.Message;
+import cn.ttplatform.wh.common.Message;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.PreVoteResultMessage;
 import cn.ttplatform.wh.core.role.Follower;
@@ -26,9 +26,9 @@ public class PreVoteResultMessageHandler extends AbstractMessageHandler {
         }
         Role role = context.getNode().getRole();
         int preVoteCounts = ((Follower) role).getPreVoteCounts() + 1;
-        int countOfActive = context.getCluster().countOfActive();
+        int countOfCluster = context.getCluster().countOfCluster();
         int currentTerm = role.getTerm();
-        if (preVoteCounts > countOfActive / 2) {
+        if (preVoteCounts > countOfCluster / 2) {
             context.startElection(currentTerm + 1);
         } else {
             context.changeToFollower(currentTerm, null, null, preVoteCounts);

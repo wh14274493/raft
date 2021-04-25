@@ -4,8 +4,9 @@ package cn.ttplatform.wh.constant;
  * @author : wang hao
  * @date :  2020/8/15 22:02
  **/
-public class ExceptionMessage {
-    private ExceptionMessage() {
+public class ErrorMessage {
+
+    private ErrorMessage() {
     }
 
     public static final String CLUSTER_SIZE_ERROR = "cluster size can't be less than 3";
@@ -19,4 +20,6 @@ public class ExceptionMessage {
     public static final String TRUNCATE_FILE_ERROR = "truncate file error";
     public static final String LOAD_ENTRY_ERROR = "load entry error";
     public static final String READ_FAILED = "not enough content to read";
+    public static final String CLUSTER_CHANGE_IN_PROGRESS = "cluster change processing is in progress.";
+    public static final String CLUSTER_CHANGE_CANCELLED = "cluster change task had cancelled";
 }

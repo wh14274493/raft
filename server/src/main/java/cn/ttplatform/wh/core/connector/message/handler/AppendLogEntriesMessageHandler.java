@@ -1,14 +1,12 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
-import cn.ttplatform.wh.cmd.Message;
+import cn.ttplatform.wh.common.Message;
 import cn.ttplatform.wh.core.Endpoint;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesResultMessage;
-import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.core.role.Role;
 import cn.ttplatform.wh.core.support.AbstractMessageHandler;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -59,10 +57,12 @@ public class AppendLogEntriesMessageHandler extends AbstractMessageHandler {
     private boolean appendEntries(AppendLogEntriesMessage message) {
         context.changeToFollower(message.getTerm(), message.getLeaderId(), null, 0);
         if (context.getLog()
-            .appendEntries(message.getPreLogIndex(), message.getPreLogTerm(), message.getLogEntries())) {
-            List<LogEntry> entries = context.getLog()
-                .advanceCommitIndex(message.getLeaderCommitIndex(), message.getTerm());
-            context.advanceLastApplied(entries, message.getLeaderCommitIndex());
+            .pendingEntries(message.getPreLogIndex(), message.getPreLogTerm(), message.getLogEntries())) {
+
+            if (context.getLog().advanceCommitIndex(message.getLeaderCommitIndex(), message.getTerm())){
+
+                context.advanceLastApplied(message.getLeaderCommitIndex());
+            }
             return true;
         }
         return false;

@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.cmd.factory;
 
-import cn.ttplatform.wh.cmd.Message;
+import cn.ttplatform.wh.common.Message;
 import cn.ttplatform.wh.cmd.RedirectCommand;
 import cn.ttplatform.wh.support.AbstractMessageFactory;
 import cn.ttplatform.wh.support.BufferPool;
@@ -13,11 +13,11 @@ import io.protostuff.runtime.RuntimeSchema;
  * @author Wang Hao
  * @date 2021/4/23 23:18
  */
-public class RedirectCommandMessageFactory extends AbstractMessageFactory {
+public class RedirectCommandFactory extends AbstractMessageFactory {
 
     private final Schema<RedirectCommand> schema = RuntimeSchema.getSchema(RedirectCommand.class);
 
-    public RedirectCommandMessageFactory(BufferPool<LinkedBuffer> pool) {
+    public RedirectCommandFactory(BufferPool<LinkedBuffer> pool) {
         super(pool);
     }
 

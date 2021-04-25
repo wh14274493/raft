@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.core.connector;
 
 import cn.ttplatform.wh.common.EndpointMetaData;
-import cn.ttplatform.wh.cmd.Message;
+import cn.ttplatform.wh.common.Message;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 

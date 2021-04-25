@@ -11,14 +11,14 @@ import java.util.concurrent.TimeUnit;
  * @author Wang Hao
  * @date 2020/6/30 下午9:28
  */
-public class DefaultScheduler implements Scheduler {
+public class SingleThreadScheduler implements Scheduler {
 
     private final ServerProperties properties;
     private final ScheduledExecutorService executor;
 
-    public DefaultScheduler(ServerProperties properties) {
+    public SingleThreadScheduler(ServerProperties properties) {
         this.properties = properties;
-        executor = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "scheduler"));
+        this.executor = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "scheduler"));
     }
 
     @Override
@@ -34,6 +34,11 @@ public class DefaultScheduler implements Scheduler {
         long delay = properties.getLogReplicationDelay();
         long interval = properties.getLogReplicationInterval();
         return executor.scheduleWithFixedDelay(task, delay, interval, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public void close() {
+        executor.shutdownNow();
     }
 
 }

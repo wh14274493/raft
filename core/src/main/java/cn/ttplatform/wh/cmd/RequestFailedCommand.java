@@ -4,24 +4,26 @@ import cn.ttplatform.wh.constant.MessageType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 /**
  * @author Wang Hao
- * @date 2021/2/19 18:30
+ * @date 2021/4/24 20:13
  */
 @Getter
+@Setter
 @ToString
 @SuperBuilder
-@AllArgsConstructor
 @NoArgsConstructor
-public class GetResponseCommand extends AbstractCommand {
+@AllArgsConstructor
+public class RequestFailedCommand extends AbstractCommand {
 
-    private String value;
+    private String failedMessage;
 
     @Override
     public int getType() {
-        return MessageType.GET_COMMAND_RESPONSE;
+        return MessageType.REQUEST_FAILED_COMMAND;
     }
 }

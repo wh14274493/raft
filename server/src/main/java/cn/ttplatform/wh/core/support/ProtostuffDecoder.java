@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.support;
 
-import cn.ttplatform.wh.cmd.Message;
+import cn.ttplatform.wh.common.Message;
 import cn.ttplatform.wh.support.Factory;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

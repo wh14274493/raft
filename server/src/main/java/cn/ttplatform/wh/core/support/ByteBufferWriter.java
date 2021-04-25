@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.support;
 
-import cn.ttplatform.wh.constant.ExceptionMessage;
+import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.exception.OperateFileException;
 import cn.ttplatform.wh.support.BufferPool;
 import java.io.File;
@@ -52,7 +52,7 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
     public int readInt() {
         long fileSize = size();
         if (fileSize < Integer.BYTES) {
-            throw new OperateFileException(ExceptionMessage.READ_FAILED);
+            throw new OperateFileException(ErrorMessage.READ_FAILED);
         }
         return readIntAt(fileSize - Integer.BYTES);
     }
@@ -60,7 +60,7 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
     @Override
     public int readIntAt(long position) {
         if (position < 0 || size() - position < Integer.BYTES) {
-            throw new OperateFileException(ExceptionMessage.READ_FAILED);
+            throw new OperateFileException(ErrorMessage.READ_FAILED);
         }
         ByteBuffer byteBuffer = bufferPool.allocate(Integer.BYTES);
         int read = read(byteBuffer, position);
@@ -92,7 +92,7 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
     public long readLong() {
         long fileSize = size();
         if (fileSize < Long.BYTES) {
-            throw new OperateFileException(ExceptionMessage.READ_FAILED);
+            throw new OperateFileException(ErrorMessage.READ_FAILED);
         }
         return readLongAt(fileSize - Long.BYTES);
     }

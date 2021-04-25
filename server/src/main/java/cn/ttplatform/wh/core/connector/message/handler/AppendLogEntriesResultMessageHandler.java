@@ -1,12 +1,12 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
-import cn.ttplatform.wh.cmd.Message;
+import cn.ttplatform.wh.common.Message;
+import cn.ttplatform.wh.core.Cluster;
+import cn.ttplatform.wh.core.Cluster.Phase;
 import cn.ttplatform.wh.core.Endpoint;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesResultMessage;
-import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.core.support.AbstractMessageHandler;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -20,8 +20,18 @@ public class AppendLogEntriesResultMessageHandler extends AbstractMessageHandler
         super(context);
     }
 
+    public void preHandle(Message e) {
+        Cluster cluster = context.getCluster();
+        if (Phase.SYNCING == cluster.getPhase() && cluster.isSyncingNode(e.getSourceId()) && cluster.synHasComplete()) {
+            // The leader starts to use the new configuration and the old configuration at the same
+            // time, and adds a log containing the new and old configuration to the cluster
+            context.pendingOldNewConfigLog();
+        }
+    }
+
     @Override
     public void doHandle(Message e) {
+        preHandle(e);
         AppendLogEntriesResultMessage message = (AppendLogEntriesResultMessage) e;
         int term = message.getTerm();
         int currentTerm = context.getNode().getTerm();
@@ -34,8 +44,9 @@ public class AppendLogEntriesResultMessageHandler extends AbstractMessageHandler
             if (message.isSuccess()) {
                 endpoint.updateReplicationState(message.getLastLogIndex());
                 int newCommitIndex = context.getCluster().getNewCommitIndex();
-                List<LogEntry> logEntries = context.getLog().advanceCommitIndex(newCommitIndex, currentTerm);
-                context.advanceLastApplied(logEntries, newCommitIndex);
+                if (context.getLog().advanceCommitIndex(newCommitIndex, currentTerm)){
+                    context.advanceLastApplied(newCommitIndex);
+                }
             } else {
                 endpoint.backoffNextIndex();
                 endpoint.setLastHeartBeat(0L);

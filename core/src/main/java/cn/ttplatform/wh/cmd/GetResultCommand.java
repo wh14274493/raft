@@ -16,12 +16,12 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
-public class SetResponseCommand extends AbstractCommand {
+public class GetResultCommand extends AbstractCommand {
 
-    private boolean result;
+    private String value;
 
     @Override
     public int getType() {
-        return MessageType.SET_COMMAND_RESPONSE;
+        return MessageType.GET_COMMAND_RESULT;
     }
 }

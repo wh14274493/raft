@@ -2,11 +2,9 @@ package cn.ttplatform.wh.core;
 
 import cn.ttplatform.wh.constant.FileName;
 import cn.ttplatform.wh.core.role.Follower;
-import cn.ttplatform.wh.support.BufferPool;
 import cn.ttplatform.wh.core.support.ByteBufferWriter;
 import cn.ttplatform.wh.core.support.ReadableAndWriteableFile;
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 /**
@@ -17,8 +15,9 @@ public class NodeState {
 
     private final ReadableAndWriteableFile file;
 
-    public NodeState(File parent, BufferPool<ByteBuffer> pool) {
-        this.file = new ByteBufferWriter(new File(parent, FileName.NODE_STATE_FILE_NAME), pool);
+    public NodeState(NodeContext context) {
+        this.file = new ByteBufferWriter(new File(context.getBasePath(), FileName.NODE_STATE_FILE_NAME),
+            context.getByteBufferPool());
     }
 
     /**
@@ -71,6 +70,10 @@ public class NodeState {
             return "";
         }
         return new String(file.readBytesAt(offset, size), Charset.defaultCharset());
+    }
+
+    public void close() {
+        file.close();
     }
 
 }
