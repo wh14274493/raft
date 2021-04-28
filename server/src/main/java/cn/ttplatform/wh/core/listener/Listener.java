@@ -1,4 +1,4 @@
-package cn.ttplatform.wh.server;
+package cn.ttplatform.wh.core.listener;
 
 /**
  * @author Wang Hao

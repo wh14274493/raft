@@ -1,4 +1,4 @@
-package cn.ttplatform.wh.core.support;
+package cn.ttplatform.wh.core.executor;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;

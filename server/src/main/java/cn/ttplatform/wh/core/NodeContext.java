@@ -11,7 +11,6 @@ import cn.ttplatform.wh.cmd.factory.RequestFailedCommandFactory;
 import cn.ttplatform.wh.cmd.factory.SetCommandFactory;
 import cn.ttplatform.wh.cmd.factory.SetResultCommandFactory;
 import cn.ttplatform.wh.config.ServerProperties;
-import cn.ttplatform.wh.constant.MessageType;
 import cn.ttplatform.wh.constant.ReadWriteFileStrategy;
 import cn.ttplatform.wh.core.connector.Connector;
 import cn.ttplatform.wh.core.connector.message.PreVoteMessage;
@@ -35,6 +34,10 @@ import cn.ttplatform.wh.core.connector.message.handler.RequestVoteResultMessageH
 import cn.ttplatform.wh.core.connector.nio.NioConnector;
 import cn.ttplatform.wh.core.group.Cluster;
 import cn.ttplatform.wh.core.group.Endpoint;
+import cn.ttplatform.wh.core.listener.handler.ClusterChangeCommandHandler;
+import cn.ttplatform.wh.core.listener.handler.GetClusterInfoCommandHandler;
+import cn.ttplatform.wh.core.listener.handler.GetCommandHandler;
+import cn.ttplatform.wh.core.listener.handler.SetCommandHandler;
 import cn.ttplatform.wh.core.log.FileLog;
 import cn.ttplatform.wh.core.log.Log;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
@@ -45,19 +48,15 @@ import cn.ttplatform.wh.core.role.Candidate;
 import cn.ttplatform.wh.core.role.Follower;
 import cn.ttplatform.wh.core.role.Leader;
 import cn.ttplatform.wh.core.role.Role;
-import cn.ttplatform.wh.core.support.MessageDispatcher;
-import cn.ttplatform.wh.core.support.Scheduler;
-import cn.ttplatform.wh.core.support.SingleThreadScheduler;
-import cn.ttplatform.wh.core.support.SingleThreadTaskExecutor;
-import cn.ttplatform.wh.core.support.TaskExecutor;
-import cn.ttplatform.wh.server.handler.ClusterChangeCommandHandler;
-import cn.ttplatform.wh.server.handler.GetClusterInfoCommandHandler;
-import cn.ttplatform.wh.server.handler.GetCommandHandler;
-import cn.ttplatform.wh.server.handler.SetCommandHandler;
+import cn.ttplatform.wh.core.support.CommonDistributor;
+import cn.ttplatform.wh.core.executor.Scheduler;
+import cn.ttplatform.wh.core.executor.SingleThreadScheduler;
+import cn.ttplatform.wh.core.executor.SingleThreadTaskExecutor;
+import cn.ttplatform.wh.core.executor.TaskExecutor;
 import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.DistributableFactoryManager;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Message;
-import cn.ttplatform.wh.support.MessageFactoryManager;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.protostuff.LinkedBuffer;
@@ -82,8 +81,8 @@ public class NodeContext {
     private final File basePath;
     private final BufferPool<LinkedBuffer> linkedBufferPool;
     private final BufferPool<ByteBuffer> byteBufferPool;
-    private final MessageFactoryManager factoryManager;
-    private final MessageDispatcher dispatcher;
+    private final CommonDistributor distributor;
+    private final DistributableFactoryManager factoryManager;
     private final Scheduler scheduler;
     private final TaskExecutor executor;
     private final NodeState nodeState;
@@ -118,58 +117,51 @@ public class NodeContext {
         this.connector = new NioConnector(this);
         this.log = new FileLog(this);
         this.stateMachine = new StateMachine(this);
-        this.dispatcher = new MessageDispatcher();
-        this.factoryManager = new MessageFactoryManager();
+        this.distributor = new CommonDistributor();
+        this.factoryManager = new DistributableFactoryManager();
     }
 
     public void register(Node node) {
         this.node = node;
-        initMessageHandler();
-        initMessageFactory();
+        initDistributor();
+        initFactoryManager();
     }
 
-    private void initMessageHandler() {
-        dispatcher.register(MessageType.GET_CLUSTER_INFO_COMMAND, new GetClusterInfoCommandHandler(this));
-        dispatcher.register(MessageType.CLUSTER_CHANGE_COMMAND, new ClusterChangeCommandHandler(this));
-        dispatcher.register(MessageType.SET_COMMAND, new SetCommandHandler(this));
-        dispatcher.register(MessageType.GET_COMMAND, new GetCommandHandler(this));
-        dispatcher.register(MessageType.APPEND_LOG_ENTRIES, new AppendLogEntriesMessageHandler(this));
-        dispatcher
-            .register(MessageType.APPEND_LOG_ENTRIES_RESULT, new AppendLogEntriesResultMessageHandler(this));
-        dispatcher.register(MessageType.INSTALL_SNAPSHOT, new InstallSnapshotMessageHandler(this));
-        dispatcher.register(MessageType.INSTALL_SNAPSHOT_RESULT, new InstallSnapshotResultMessageHandler(this));
-        dispatcher.register(MessageType.PRE_VOTE, new PreVoteMessageHandler(this));
-        dispatcher.register(MessageType.PRE_VOTE_RESULT, new PreVoteResultMessageHandler(this));
-        dispatcher.register(MessageType.REQUEST_VOTE, new RequestVoteMessageHandler(this));
-        dispatcher.register(MessageType.REQUEST_VOTE_RESULT, new RequestVoteResultMessageHandler(this));
+    private void initDistributor() {
+        distributor.register(new GetClusterInfoCommandHandler(this));
+        distributor.register(new ClusterChangeCommandHandler(this));
+        distributor.register(new SetCommandHandler(this));
+        distributor.register(new GetCommandHandler(this));
+        distributor.register(new AppendLogEntriesMessageHandler(this));
+        distributor.register(new AppendLogEntriesResultMessageHandler(this));
+        distributor.register(new RequestVoteMessageHandler(this));
+        distributor.register(new RequestVoteResultMessageHandler(this));
+        distributor.register(new PreVoteMessageHandler(this));
+        distributor.register(new PreVoteResultMessageHandler(this));
+        distributor.register(new InstallSnapshotMessageHandler(this));
+        distributor.register(new InstallSnapshotResultMessageHandler(this));
     }
 
-    private void initMessageFactory() {
-        factoryManager
-            .register(MessageType.GET_CLUSTER_INFO_RESULT_COMMAND, new GetClusterInfoResultCommandFactory(linkedBufferPool));
-        factoryManager.register(MessageType.GET_CLUSTER_INFO_COMMAND, new GetClusterInfoCommandFactory(linkedBufferPool));
-        factoryManager.register(MessageType.CLUSTER_CHANGE_COMMAND, new ClusterChangeCommandFactory(linkedBufferPool));
-        factoryManager
-            .register(MessageType.CLUSTER_CHANGE_RESULT_COMMAND, new ClusterChangeResultCommandFactory(linkedBufferPool));
-        factoryManager
-            .register(MessageType.REQUEST_FAILED_COMMAND, new RequestFailedCommandFactory(linkedBufferPool));
-        factoryManager.register(MessageType.REDIRECT_COMMAND, new RedirectCommandFactory(linkedBufferPool));
-        factoryManager
-            .register(MessageType.SET_COMMAND_RESULT, new SetResultCommandFactory(linkedBufferPool));
-        factoryManager
-            .register(MessageType.GET_COMMAND_RESULT, new GetResultCommandFactory(linkedBufferPool));
-        factoryManager.register(MessageType.SET_COMMAND, new SetCommandFactory(linkedBufferPool));
-        factoryManager.register(MessageType.GET_COMMAND, new GetCommandFactory(linkedBufferPool));
-        factoryManager.register(MessageType.APPEND_LOG_ENTRIES, new AppendLogEntriesMessageFactory(linkedBufferPool));
-        factoryManager.register(MessageType.APPEND_LOG_ENTRIES_RESULT,
-            new AppendLogEntriesResultMessageFactory(linkedBufferPool));
-        factoryManager.register(MessageType.INSTALL_SNAPSHOT, new InstallSnapshotMessageFactory(linkedBufferPool));
-        factoryManager
-            .register(MessageType.INSTALL_SNAPSHOT_RESULT, new InstallSnapshotResultMessageFactory(linkedBufferPool));
-        factoryManager.register(MessageType.PRE_VOTE, new PreVoteMessageFactory(linkedBufferPool));
-        factoryManager.register(MessageType.PRE_VOTE_RESULT, new PreVoteResultMessageFactory(linkedBufferPool));
-        factoryManager.register(MessageType.REQUEST_VOTE, new RequestVoteMessageFactory(linkedBufferPool));
-        factoryManager.register(MessageType.REQUEST_VOTE_RESULT, new RequestVoteResultMessageFactory(linkedBufferPool));
+
+    private void initFactoryManager() {
+        factoryManager.register(new SetCommandFactory(linkedBufferPool));
+        factoryManager.register(new SetResultCommandFactory(linkedBufferPool));
+        factoryManager.register(new GetCommandFactory(linkedBufferPool));
+        factoryManager.register(new GetResultCommandFactory(linkedBufferPool));
+        factoryManager.register(new RedirectCommandFactory(linkedBufferPool));
+        factoryManager.register(new ClusterChangeCommandFactory(linkedBufferPool));
+        factoryManager.register(new ClusterChangeResultCommandFactory(linkedBufferPool));
+        factoryManager.register(new RequestFailedCommandFactory(linkedBufferPool));
+        factoryManager.register(new GetClusterInfoCommandFactory(linkedBufferPool));
+        factoryManager.register(new GetClusterInfoResultCommandFactory(linkedBufferPool));
+        factoryManager.register(new AppendLogEntriesMessageFactory(linkedBufferPool));
+        factoryManager.register(new AppendLogEntriesResultMessageFactory(linkedBufferPool));
+        factoryManager.register(new RequestVoteMessageFactory(linkedBufferPool));
+        factoryManager.register(new RequestVoteResultMessageFactory(linkedBufferPool));
+        factoryManager.register(new PreVoteMessageFactory(linkedBufferPool));
+        factoryManager.register(new PreVoteResultMessageFactory(linkedBufferPool));
+        factoryManager.register(new InstallSnapshotMessageFactory(linkedBufferPool));
+        factoryManager.register(new InstallSnapshotResultMessageFactory(linkedBufferPool));
     }
 
     public ScheduledFuture<?> electionTimeoutTask() {

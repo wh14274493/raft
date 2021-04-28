@@ -1,5 +1,6 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
+import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesResultMessage;
@@ -7,8 +8,8 @@ import cn.ttplatform.wh.core.group.Cluster;
 import cn.ttplatform.wh.core.group.Phase;
 import cn.ttplatform.wh.core.log.Log;
 import cn.ttplatform.wh.core.role.Role;
-import cn.ttplatform.wh.core.support.AbstractMessageHandler;
-import cn.ttplatform.wh.support.Message;
+import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
+import cn.ttplatform.wh.support.Distributable;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -16,15 +17,21 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2021/2/17 0:22
  */
 @Slf4j
-public class AppendLogEntriesMessageHandler extends AbstractMessageHandler {
+public class AppendLogEntriesMessageHandler extends AbstractDistributableHandler {
 
     public AppendLogEntriesMessageHandler(NodeContext context) {
         super(context);
     }
 
     @Override
-    public void doHandle(Message e) {
-        context.sendMessage(process((AppendLogEntriesMessage) e), e.getSourceId());
+    public int getHandlerType() {
+        return DistributableType.APPEND_LOG_ENTRIES;
+    }
+
+    @Override
+    public void doHandle(Distributable distributable) {
+        AppendLogEntriesMessage message = (AppendLogEntriesMessage) distributable;
+        context.sendMessage(process(message), message.getSourceId());
         Cluster cluster = context.getCluster();
         if (cluster.getPhase() == Phase.NEW) {
             cluster.enterStablePhase();

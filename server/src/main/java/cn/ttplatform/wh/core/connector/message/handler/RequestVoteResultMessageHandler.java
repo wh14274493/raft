@@ -1,15 +1,17 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
+import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.Node;
-import cn.ttplatform.wh.core.log.entry.LogEntry;
-import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.RequestVoteResultMessage;
 import cn.ttplatform.wh.core.group.Cluster;
 import cn.ttplatform.wh.core.group.Phase;
+import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.core.role.Candidate;
 import cn.ttplatform.wh.core.role.Leader;
-import cn.ttplatform.wh.core.support.AbstractMessageHandler;
+import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
+import cn.ttplatform.wh.support.Distributable;
+import cn.ttplatform.wh.support.Message;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -17,15 +19,20 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2021/2/17 1:48
  */
 @Slf4j
-public class RequestVoteResultMessageHandler extends AbstractMessageHandler {
+public class RequestVoteResultMessageHandler extends AbstractDistributableHandler {
 
     public RequestVoteResultMessageHandler(NodeContext context) {
         super(context);
     }
 
     @Override
-    public void doHandle(Message e) {
-        RequestVoteResultMessage message = (RequestVoteResultMessage) e;
+    public int getHandlerType() {
+        return DistributableType.REQUEST_VOTE_RESULT;
+    }
+
+    @Override
+    public void doHandle(Distributable distributable) {
+        RequestVoteResultMessage message = (RequestVoteResultMessage) distributable;
         int term = message.getTerm();
         Node node = context.getNode();
         int currentTerm = node.getRole().getTerm();

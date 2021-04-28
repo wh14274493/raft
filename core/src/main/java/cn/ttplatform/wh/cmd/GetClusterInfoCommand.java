@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.cmd;
 
-import cn.ttplatform.wh.constant.MessageType;
+import cn.ttplatform.wh.constant.DistributableType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -20,6 +20,6 @@ public class GetClusterInfoCommand extends AbstractCommand {
 
     @Override
     public int getType() {
-        return MessageType.GET_CLUSTER_INFO_COMMAND;
+        return DistributableType.GET_CLUSTER_INFO_COMMAND;
     }
 }

@@ -1,12 +1,14 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
-import cn.ttplatform.wh.support.Message;
+import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.PreVoteResultMessage;
 import cn.ttplatform.wh.core.group.Cluster;
 import cn.ttplatform.wh.core.group.Phase;
 import cn.ttplatform.wh.core.role.Follower;
-import cn.ttplatform.wh.core.support.AbstractMessageHandler;
+import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
+import cn.ttplatform.wh.support.Distributable;
+import cn.ttplatform.wh.support.Message;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -14,15 +16,20 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2021/2/17 1:43
  */
 @Slf4j
-public class PreVoteResultMessageHandler extends AbstractMessageHandler {
+public class PreVoteResultMessageHandler extends AbstractDistributableHandler {
 
     public PreVoteResultMessageHandler(NodeContext context) {
         super(context);
     }
 
     @Override
-    public void doHandle(Message e) {
-        PreVoteResultMessage message = (PreVoteResultMessage) e;
+    public int getHandlerType() {
+        return DistributableType.PRE_VOTE_RESULT;
+    }
+
+    @Override
+    public void doHandle(Distributable distributable) {
+        PreVoteResultMessage message = (PreVoteResultMessage) distributable;
         boolean voted = message.isVoted();
         if (!voted || !context.isFollower()) {
             return;

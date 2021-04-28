@@ -4,7 +4,7 @@ package cn.ttplatform.wh.support;
  * @author : wang hao
  * @date :  2020/8/15 23:37
  **/
-public interface Message {
+public interface Message extends Distributable {
 
     /**
      * Get message source
@@ -17,15 +17,10 @@ public interface Message {
 
     /**
      * set message source
+     *
+     * @param sourceId the source of message
      */
     default void setSourceId(String sourceId) {
     }
-
-    /**
-     * Get message type
-     *
-     * @return message type
-     */
-    int getType();
 
 }

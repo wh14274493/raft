@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.cmd;
 
-import cn.ttplatform.wh.constant.MessageType;
+import cn.ttplatform.wh.constant.DistributableType;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -25,6 +25,6 @@ public class ClusterChangeCommand extends AbstractCommand {
 
     @Override
     public int getType() {
-        return MessageType.CLUSTER_CHANGE_COMMAND;
+        return DistributableType.CLUSTER_CHANGE_COMMAND;
     }
 }

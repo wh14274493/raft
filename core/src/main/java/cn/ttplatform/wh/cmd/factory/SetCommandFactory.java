@@ -1,9 +1,10 @@
 package cn.ttplatform.wh.cmd.factory;
 
-import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.cmd.SetCommand;
-import cn.ttplatform.wh.support.AbstractMessageFactory;
+import cn.ttplatform.wh.constant.DistributableType;
+import cn.ttplatform.wh.support.AbstractDistributableFactory;
 import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Distributable;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
@@ -13,7 +14,7 @@ import io.protostuff.runtime.RuntimeSchema;
  * @author Wang Hao
  * @date 2021/3/15 15:56
  */
-public class SetCommandFactory extends AbstractMessageFactory {
+public class SetCommandFactory extends AbstractDistributableFactory {
 
     private final Schema<SetCommand> schema = RuntimeSchema.getSchema(SetCommand.class);
 
@@ -22,15 +23,20 @@ public class SetCommandFactory extends AbstractMessageFactory {
     }
 
     @Override
-    public Message create(byte[] content) {
-        SetCommand message = new SetCommand();
-        ProtostuffIOUtil.mergeFrom(content, message, schema);
-        message.setCmd(content);
-        return message;
+    public int getFactoryType() {
+        return DistributableType.SET_COMMAND;
     }
 
     @Override
-    public byte[] getBytes(Message message, LinkedBuffer buffer) {
+    public Distributable create(byte[] content) {
+        SetCommand command = new SetCommand();
+        ProtostuffIOUtil.mergeFrom(content, command, schema);
+        command.setCmd(content);
+        return command;
+    }
+
+    @Override
+    public byte[] getBytes(Distributable message, LinkedBuffer buffer) {
         return ProtostuffIOUtil.toByteArray((SetCommand) message, schema, buffer);
     }
 }

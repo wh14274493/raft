@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.connector.message;
 
-import cn.ttplatform.wh.constant.MessageType;
+import cn.ttplatform.wh.constant.DistributableType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,7 +27,7 @@ public class RequestVoteMessage extends AbstractMessage{
 
     @Override
     public int getType() {
-        return MessageType.REQUEST_VOTE;
+        return DistributableType.REQUEST_VOTE;
     }
 
 }

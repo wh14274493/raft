@@ -1,14 +1,15 @@
-package cn.ttplatform.wh.core.support;
+package cn.ttplatform.wh.core.executor;
 
 /**
  * @author Wang Hao
- * @date 2020/6/30 下午10:28
+ * @date 2020/6/30 10:28
  */
 public interface TaskExecutor {
 
     /**
      * Submit a task to the thread pool
-     * @param task
+     *
+     * @param task a special task
      */
     void execute(Runnable task);
 

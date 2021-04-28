@@ -1,16 +1,17 @@
-package cn.ttplatform.wh.server.handler;
+package cn.ttplatform.wh.core.listener.handler;
 
 import cn.ttplatform.wh.cmd.ClusterChangeCommand;
 import cn.ttplatform.wh.cmd.RequestFailedCommand;
+import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.group.EndpointMetaData;
-import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.StateMachine;
 import cn.ttplatform.wh.core.group.Cluster;
 import cn.ttplatform.wh.core.group.Phase;
-import cn.ttplatform.wh.core.support.AbstractMessageHandler;
+import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
 import cn.ttplatform.wh.core.support.ChannelPool;
+import cn.ttplatform.wh.support.Distributable;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2021/4/23 23:26
  */
 @Slf4j
-public class ClusterChangeCommandHandler extends AbstractMessageHandler {
+public class ClusterChangeCommandHandler extends AbstractDistributableHandler {
 
     private final RequestFailedCommand requestFailedCommand = new RequestFailedCommand();
 
@@ -29,8 +30,8 @@ public class ClusterChangeCommandHandler extends AbstractMessageHandler {
     }
 
     @Override
-    public void doHandle(Message e) {
-        ClusterChangeCommand cmd = (ClusterChangeCommand) e;
+    public void doHandle(Distributable distributable) {
+        ClusterChangeCommand cmd = (ClusterChangeCommand) distributable;
         Cluster cluster = context.getCluster();
         StateMachine stateMachine = context.getStateMachine();
         log.info("receive an ClusterChangeCommand");
@@ -53,5 +54,10 @@ public class ClusterChangeCommandHandler extends AbstractMessageHandler {
                 cluster.enterSyncingPhase();
             }
         }
+    }
+
+    @Override
+    public int getHandlerType() {
+        return DistributableType.CLUSTER_CHANGE_COMMAND;
     }
 }

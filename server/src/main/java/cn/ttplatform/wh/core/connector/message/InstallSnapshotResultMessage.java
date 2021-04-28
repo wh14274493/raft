@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.connector.message;
 
-import cn.ttplatform.wh.constant.MessageType;
+import cn.ttplatform.wh.constant.DistributableType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,7 +25,7 @@ public class InstallSnapshotResultMessage extends AbstractMessage{
 
     @Override
     public int getType() {
-        return MessageType.INSTALL_SNAPSHOT_RESULT;
+        return DistributableType.INSTALL_SNAPSHOT_RESULT;
     }
 
 }

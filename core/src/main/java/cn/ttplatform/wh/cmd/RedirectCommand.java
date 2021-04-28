@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.cmd;
 
-import cn.ttplatform.wh.constant.MessageType;
+import cn.ttplatform.wh.constant.DistributableType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,6 +23,6 @@ public class RedirectCommand extends AbstractCommand {
 
     @Override
     public int getType() {
-        return MessageType.REDIRECT_COMMAND;
+        return DistributableType.REDIRECT_COMMAND;
     }
 }

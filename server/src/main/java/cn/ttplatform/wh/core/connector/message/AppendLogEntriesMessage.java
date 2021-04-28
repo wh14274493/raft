@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.connector.message;
 
-import cn.ttplatform.wh.constant.MessageType;
+import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -34,7 +34,7 @@ public class AppendLogEntriesMessage extends AbstractMessage {
 
     @Override
     public int getType() {
-        return MessageType.APPEND_LOG_ENTRIES;
+        return DistributableType.APPEND_LOG_ENTRIES;
     }
 
     @Override

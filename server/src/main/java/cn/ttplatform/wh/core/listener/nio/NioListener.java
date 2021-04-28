@@ -1,6 +1,8 @@
-package cn.ttplatform.wh.server;
+package cn.ttplatform.wh.core.listener.nio;
 
 import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.support.CoreChannelInitializer;
+import cn.ttplatform.wh.core.listener.Listener;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -29,7 +31,7 @@ public class NioListener implements Listener {
     public void listen() {
         ServerBootstrap serverBootstrap = new ServerBootstrap().group(boss, worker)
             .channel(NioServerSocketChannel.class)
-            .childHandler(new ServerChannelInitializer(nodeContext));
+            .childHandler(new CoreChannelInitializer(nodeContext));
         try {
             serverBootstrap.bind(port).addListener(future -> {
                 if (future.isSuccess()) {

@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.cmd;
 
-import cn.ttplatform.wh.constant.MessageType;
+import cn.ttplatform.wh.constant.DistributableType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,6 +24,6 @@ public class RequestFailedCommand extends AbstractCommand {
 
     @Override
     public int getType() {
-        return MessageType.REQUEST_FAILED_COMMAND;
+        return DistributableType.REQUEST_FAILED_COMMAND;
     }
 }

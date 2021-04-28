@@ -1,9 +1,10 @@
 package cn.ttplatform.wh.cmd.factory;
 
-import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.cmd.RequestFailedCommand;
-import cn.ttplatform.wh.support.AbstractMessageFactory;
+import cn.ttplatform.wh.constant.DistributableType;
+import cn.ttplatform.wh.support.AbstractDistributableFactory;
 import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Distributable;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
@@ -13,7 +14,7 @@ import io.protostuff.runtime.RuntimeSchema;
  * @author Wang Hao
  * @date 2021/4/24 20:37
  */
-public class RequestFailedCommandFactory extends AbstractMessageFactory {
+public class RequestFailedCommandFactory extends AbstractDistributableFactory {
 
     private final Schema<RequestFailedCommand> schema = RuntimeSchema.getSchema(RequestFailedCommand.class);
 
@@ -22,15 +23,20 @@ public class RequestFailedCommandFactory extends AbstractMessageFactory {
     }
 
     @Override
-    public Message create(byte[] content) {
-        RequestFailedCommand message = new RequestFailedCommand();
-        ProtostuffIOUtil.mergeFrom(content, message, schema);
-        return message;
+    public int getFactoryType() {
+        return DistributableType.REQUEST_FAILED_COMMAND;
     }
 
     @Override
-    public byte[] getBytes(Message message, LinkedBuffer buffer) {
-        return ProtostuffIOUtil.toByteArray((RequestFailedCommand) message, schema, buffer);
+    public Distributable create(byte[] content) {
+        RequestFailedCommand command = new RequestFailedCommand();
+        ProtostuffIOUtil.mergeFrom(content, command, schema);
+        return command;
+    }
+
+    @Override
+    public byte[] getBytes(Distributable distributable, LinkedBuffer buffer) {
+        return ProtostuffIOUtil.toByteArray((RequestFailedCommand) distributable, schema, buffer);
     }
 
 }

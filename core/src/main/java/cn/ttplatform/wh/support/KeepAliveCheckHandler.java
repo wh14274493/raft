@@ -1,4 +1,4 @@
-package cn.ttplatform.wh.common;
+package cn.ttplatform.wh.support;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleStateEvent;

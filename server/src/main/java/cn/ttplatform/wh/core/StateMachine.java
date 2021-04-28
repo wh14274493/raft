@@ -6,10 +6,11 @@ import cn.ttplatform.wh.cmd.GetCommand;
 import cn.ttplatform.wh.cmd.GetResultCommand;
 import cn.ttplatform.wh.cmd.SetCommand;
 import cn.ttplatform.wh.cmd.SetResultCommand;
-import cn.ttplatform.wh.constant.MessageType;
+import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.core.support.ChannelPool;
 import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.DistributableFactory;
 import cn.ttplatform.wh.support.Factory;
 import io.netty.channel.ChannelFuture;
 import io.protostuff.LinkedBuffer;
@@ -70,9 +71,8 @@ public class StateMachine {
     private void replySetResult(LogEntry entry) {
         SetCommand setCmd = pendingSetCommandMap.remove(entry.getIndex());
         if (setCmd == null) {
-            @SuppressWarnings("unchecked")
-            Factory<SetCommand> factory = context.getFactoryManager().getFactory(MessageType.SET_COMMAND);
-            setCmd = factory.create(entry.getCommand());
+            DistributableFactory factory = context.getFactoryManager().getFactory(DistributableType.SET_COMMAND);
+            setCmd = (SetCommand) factory.create(entry.getCommand());
         }
         data.put(setCmd.getKey(), setCmd.getValue());
         if (setCmd.getId() != null) {

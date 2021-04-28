@@ -4,6 +4,7 @@ import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.Connector;
 import cn.ttplatform.wh.core.group.EndpointMetaData;
 import cn.ttplatform.wh.core.support.ChannelPool;
+import cn.ttplatform.wh.core.support.CoreChannelInitializer;
 import cn.ttplatform.wh.support.Message;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;

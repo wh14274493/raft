@@ -6,19 +6,19 @@ import io.protostuff.LinkedBuffer;
  * @author Wang Hao
  * @date 2021/3/15 14:25
  */
-public abstract class AbstractMessageFactory implements Factory<Message> {
+public abstract class AbstractDistributableFactory implements DistributableFactory {
 
     BufferPool<LinkedBuffer> pool;
 
-    protected AbstractMessageFactory(BufferPool<LinkedBuffer> pool) {
+    protected AbstractDistributableFactory(BufferPool<LinkedBuffer> pool) {
         this.pool = pool;
     }
 
     @Override
-    public byte[] getBytes(Message message) {
+    public byte[] getBytes(Distributable distributable) {
         LinkedBuffer buffer = pool.allocate();
         try {
-            return getBytes(message, buffer);
+            return getBytes(distributable, buffer);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         } finally {
@@ -26,5 +26,5 @@ public abstract class AbstractMessageFactory implements Factory<Message> {
         }
     }
 
-    public abstract byte[] getBytes(Message message, LinkedBuffer buffer);
+    public abstract byte[] getBytes(Distributable distributable, LinkedBuffer buffer);
 }

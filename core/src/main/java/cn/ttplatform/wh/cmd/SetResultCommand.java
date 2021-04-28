@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.cmd;
 
-import cn.ttplatform.wh.constant.MessageType;
+import cn.ttplatform.wh.constant.DistributableType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,6 +22,6 @@ public class SetResultCommand extends AbstractCommand {
 
     @Override
     public int getType() {
-        return MessageType.SET_COMMAND_RESULT;
+        return DistributableType.SET_COMMAND_RESULT;
     }
 }

@@ -9,8 +9,7 @@ public interface Manager<T> {
     /**
      * Manage different types of objects
      *
-     * @param type Type of managed object
      * @param t    Object to be managed
      */
-    void register(int type, T t);
+    void register( T t);
 }

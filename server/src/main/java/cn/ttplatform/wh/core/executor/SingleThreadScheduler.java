@@ -1,4 +1,4 @@
-package cn.ttplatform.wh.core.support;
+package cn.ttplatform.wh.core.executor;
 
 import cn.ttplatform.wh.config.ServerProperties;
 import java.util.concurrent.ScheduledExecutorService;

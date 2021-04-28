@@ -1,12 +1,13 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
+import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.RequestVoteMessage;
 import cn.ttplatform.wh.core.connector.message.RequestVoteResultMessage;
 import cn.ttplatform.wh.core.role.Follower;
 import cn.ttplatform.wh.core.role.Role;
-import cn.ttplatform.wh.core.support.AbstractMessageHandler;
-import cn.ttplatform.wh.support.Message;
+import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
+import cn.ttplatform.wh.support.Distributable;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -14,15 +15,21 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2021/2/17 1:46
  */
 @Slf4j
-public class RequestVoteMessageHandler extends AbstractMessageHandler {
+public class RequestVoteMessageHandler extends AbstractDistributableHandler {
 
     public RequestVoteMessageHandler(NodeContext context) {
         super(context);
     }
 
     @Override
-    public void doHandle(Message e) {
-        context.sendMessage(process((RequestVoteMessage) e), e.getSourceId());
+    public int getHandlerType() {
+        return DistributableType.REQUEST_VOTE;
+    }
+
+    @Override
+    public void doHandle(Distributable distributable) {
+        RequestVoteMessage message = (RequestVoteMessage) distributable;
+        context.sendMessage(process(message), message.getSourceId());
     }
 
     private RequestVoteResultMessage process(RequestVoteMessage message) {

@@ -1,11 +1,12 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
+import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotResultMessage;
 import cn.ttplatform.wh.core.role.Role;
-import cn.ttplatform.wh.core.support.AbstractMessageHandler;
-import cn.ttplatform.wh.support.Message;
+import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
+import cn.ttplatform.wh.support.Distributable;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -13,16 +14,22 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2021/2/17 1:33
  */
 @Slf4j
-public class InstallSnapshotMessageHandler extends AbstractMessageHandler {
+public class InstallSnapshotMessageHandler extends AbstractDistributableHandler {
 
     public InstallSnapshotMessageHandler(NodeContext context) {
         super(context);
     }
 
     @Override
-    public void doHandle(Message e) {
-        InstallSnapshotResultMessage resultMessage = process((InstallSnapshotMessage) e);
-        context.sendMessage(resultMessage, e.getSourceId());
+    public int getHandlerType() {
+        return DistributableType.INSTALL_SNAPSHOT;
+    }
+
+    @Override
+    public void doHandle(Distributable distributable) {
+        InstallSnapshotMessage message = (InstallSnapshotMessage) distributable;
+        InstallSnapshotResultMessage resultMessage = process(message);
+        context.sendMessage(resultMessage, message.getSourceId());
     }
 
     private InstallSnapshotResultMessage process(InstallSnapshotMessage message) {

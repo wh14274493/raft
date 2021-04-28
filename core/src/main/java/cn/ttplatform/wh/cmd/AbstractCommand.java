@@ -18,5 +18,4 @@ import lombok.experimental.SuperBuilder;
 public abstract class AbstractCommand implements Command {
 
     String id;
-    byte[] cmd;
 }
