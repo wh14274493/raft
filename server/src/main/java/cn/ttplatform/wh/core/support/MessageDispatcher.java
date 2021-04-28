@@ -1,6 +1,7 @@
 package cn.ttplatform.wh.core.support;
 
-import cn.ttplatform.wh.common.Message;
+import cn.ttplatform.wh.support.Manager;
+import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.exception.UnknownTypeException;
 import java.util.HashMap;
 import java.util.Map;

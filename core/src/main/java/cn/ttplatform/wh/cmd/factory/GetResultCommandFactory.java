@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.cmd.factory;
 
 import cn.ttplatform.wh.cmd.GetResultCommand;
-import cn.ttplatform.wh.common.Message;
+import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.support.AbstractMessageFactory;
 import cn.ttplatform.wh.support.BufferPool;
 import io.protostuff.LinkedBuffer;

@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.cmd;
 
-import cn.ttplatform.wh.common.Message;
+import cn.ttplatform.wh.support.Message;
 
 /**
  * @author Wang Hao

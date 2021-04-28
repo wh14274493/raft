@@ -1,8 +1,6 @@
 package cn.ttplatform.wh.cmd;
 
-import cn.ttplatform.wh.common.EndpointMetaData;
 import cn.ttplatform.wh.constant.MessageType;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,7 +19,7 @@ import lombok.experimental.SuperBuilder;
 public class RedirectCommand extends AbstractCommand {
 
     private String leader;
-    private List<EndpointMetaData> endpointMetaData;
+    private String endpointMetaData;
 
     @Override
     public int getType() {

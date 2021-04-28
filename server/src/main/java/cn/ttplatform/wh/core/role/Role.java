@@ -1,7 +1,5 @@
 package cn.ttplatform.wh.core.role;
 
-import cn.ttplatform.wh.constant.RoleType;
-
 /**
  * @author : wang hao
  * @date :  2020/8/15 23:20

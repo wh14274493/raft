@@ -1,16 +1,19 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
-import cn.ttplatform.wh.common.Message;
+import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.PreVoteResultMessage;
+import cn.ttplatform.wh.core.group.Cluster;
+import cn.ttplatform.wh.core.group.Phase;
 import cn.ttplatform.wh.core.role.Follower;
-import cn.ttplatform.wh.core.role.Role;
 import cn.ttplatform.wh.core.support.AbstractMessageHandler;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Wang Hao
  * @date 2021/2/17 1:43
  */
+@Slf4j
 public class PreVoteResultMessageHandler extends AbstractMessageHandler {
 
     public PreVoteResultMessageHandler(NodeContext context) {
@@ -24,14 +27,61 @@ public class PreVoteResultMessageHandler extends AbstractMessageHandler {
         if (!voted || !context.isFollower()) {
             return;
         }
-        Role role = context.getNode().getRole();
-        int preVoteCounts = ((Follower) role).getPreVoteCounts() + 1;
-        int countOfCluster = context.getCluster().countOfCluster();
+        Follower role = (Follower) context.getNode().getRole();
         int currentTerm = role.getTerm();
-        if (preVoteCounts > countOfCluster / 2) {
+        if (checkVoteCounts(message, role)) {
+            log.debug("startElection");
             context.startElection(currentTerm + 1);
         } else {
-            context.changeToFollower(currentTerm, null, null, preVoteCounts);
+            log.debug("need more votes.");
+            context.changeToFollower(currentTerm, null, null, role.getPreVoteCounts());
+        }
+    }
+
+    private boolean checkVoteCounts(Message e, Follower role) {
+        Cluster cluster = context.getCluster();
+        int countOfOldConfig = cluster.countOfOldConfig();
+        int countOfNewConfig = cluster.countOfNewConfig();
+        if (log.isDebugEnabled()) {
+            log.debug("countOfOldConfig is {}", countOfOldConfig);
+            log.debug("countOfNewConfig is {}", countOfNewConfig);
+        }
+        Phase phase = cluster.getPhase();
+        int oldCounts;
+        int newCounts;
+        switch (phase) {
+            case NEW:
+                newCounts = role.incrementNewCountsAndGet();
+                log.debug("phase is NEW, a major of newConfig is {}", newCounts);
+                return newCounts > countOfNewConfig / 2;
+            case OLD_NEW:
+                if (cluster.inNewConfig(e.getSourceId())) {
+                    newCounts = role.incrementNewCountsAndGet();
+                    oldCounts = role.getOldConfigPreVoteCounts();
+                    if (log.isDebugEnabled()) {
+                        log.debug("phase is OLD_NEW.");
+                        log.debug("receive a pre vote msg from newConfigNode[{}].", e.getSourceId());
+                    }
+                } else {
+                    newCounts = role.getNewConfigPreVoteCounts();
+                    oldCounts = role.incrementOldCountsAndGet();
+                    if (log.isDebugEnabled()) {
+                        log.debug("phase is OLD_NEW.");
+                        log.debug("receive a pre vote msg from oldConfigNode[{}].", e.getSourceId());
+                    }
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("newCounts is {}.", newCounts);
+                    log.debug("oldCounts is {}.", oldCounts);
+                }
+                return newCounts > countOfNewConfig / 2 && oldCounts > countOfOldConfig / 2;
+            default:
+                oldCounts = role.incrementOldCountsAndGet();
+                if (log.isDebugEnabled()) {
+                    log.debug("phase is {}.", phase);
+                    log.debug("oldCounts is {}.", oldCounts);
+                }
+                return oldCounts > countOfOldConfig / 2;
         }
     }
 }

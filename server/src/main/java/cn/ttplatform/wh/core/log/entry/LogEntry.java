@@ -7,7 +7,7 @@ package cn.ttplatform.wh.core.log.entry;
 public interface LogEntry {
 
     int NO_OP_TYPE = 0;
-    int OP_TYPE = 1;
+    int SET = 1;
     int OLD_NEW = 2;
     int NEW = 3;
 
@@ -31,6 +31,8 @@ public interface LogEntry {
      * @return log index
      */
     int getIndex();
+
+    void setIndex(int index);
 
     byte[] getCommand();
 

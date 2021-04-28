@@ -1,6 +1,5 @@
 package cn.ttplatform.wh.core.role;
 
-import cn.ttplatform.wh.constant.RoleType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;

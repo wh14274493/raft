@@ -1,6 +1,9 @@
 package cn.ttplatform.wh.core;
 
-import cn.ttplatform.wh.common.Message;
+import cn.ttplatform.wh.cmd.factory.ClusterChangeCommandFactory;
+import cn.ttplatform.wh.cmd.factory.ClusterChangeResultCommandFactory;
+import cn.ttplatform.wh.cmd.factory.GetClusterInfoCommandFactory;
+import cn.ttplatform.wh.cmd.factory.GetClusterInfoResultCommandFactory;
 import cn.ttplatform.wh.cmd.factory.GetCommandFactory;
 import cn.ttplatform.wh.cmd.factory.GetResultCommandFactory;
 import cn.ttplatform.wh.cmd.factory.RedirectCommandFactory;
@@ -30,27 +33,31 @@ import cn.ttplatform.wh.core.connector.message.handler.PreVoteResultMessageHandl
 import cn.ttplatform.wh.core.connector.message.handler.RequestVoteMessageHandler;
 import cn.ttplatform.wh.core.connector.message.handler.RequestVoteResultMessageHandler;
 import cn.ttplatform.wh.core.connector.nio.NioConnector;
+import cn.ttplatform.wh.core.group.Cluster;
+import cn.ttplatform.wh.core.group.Endpoint;
 import cn.ttplatform.wh.core.log.FileLog;
 import cn.ttplatform.wh.core.log.Log;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
-import cn.ttplatform.wh.core.log.entry.LogFactory;
+import cn.ttplatform.wh.core.log.entry.LogEntryFactory;
+import cn.ttplatform.wh.core.log.tool.DirectByteBufferPool;
+import cn.ttplatform.wh.core.log.tool.IndirectByteBufferPool;
 import cn.ttplatform.wh.core.role.Candidate;
 import cn.ttplatform.wh.core.role.Follower;
 import cn.ttplatform.wh.core.role.Leader;
 import cn.ttplatform.wh.core.role.Role;
-import cn.ttplatform.wh.core.support.SingleThreadScheduler;
-import cn.ttplatform.wh.core.support.DirectByteBufferPool;
-import cn.ttplatform.wh.core.support.FixedSizeLinkedBufferPool;
-import cn.ttplatform.wh.core.support.IndirectByteBufferPool;
 import cn.ttplatform.wh.core.support.MessageDispatcher;
-import cn.ttplatform.wh.core.support.MessageFactoryManager;
 import cn.ttplatform.wh.core.support.Scheduler;
+import cn.ttplatform.wh.core.support.SingleThreadScheduler;
 import cn.ttplatform.wh.core.support.SingleThreadTaskExecutor;
 import cn.ttplatform.wh.core.support.TaskExecutor;
 import cn.ttplatform.wh.server.handler.ClusterChangeCommandHandler;
+import cn.ttplatform.wh.server.handler.GetClusterInfoCommandHandler;
 import cn.ttplatform.wh.server.handler.GetCommandHandler;
 import cn.ttplatform.wh.server.handler.SetCommandHandler;
 import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
+import cn.ttplatform.wh.support.Message;
+import cn.ttplatform.wh.support.MessageFactoryManager;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.protostuff.LinkedBuffer;
@@ -87,7 +94,6 @@ public class NodeContext {
     private final EventLoopGroup boss;
     private final EventLoopGroup worker;
     private final StateMachine stateMachine;
-    private final LogFactory logFactory = LogFactory.getInstance();
 
     public NodeContext(ServerProperties properties) {
         this.properties = properties;
@@ -123,6 +129,7 @@ public class NodeContext {
     }
 
     private void initMessageHandler() {
+        dispatcher.register(MessageType.GET_CLUSTER_INFO_COMMAND, new GetClusterInfoCommandHandler(this));
         dispatcher.register(MessageType.CLUSTER_CHANGE_COMMAND, new ClusterChangeCommandHandler(this));
         dispatcher.register(MessageType.SET_COMMAND, new SetCommandHandler(this));
         dispatcher.register(MessageType.GET_COMMAND, new GetCommandHandler(this));
@@ -138,6 +145,12 @@ public class NodeContext {
     }
 
     private void initMessageFactory() {
+        factoryManager
+            .register(MessageType.GET_CLUSTER_INFO_RESULT_COMMAND, new GetClusterInfoResultCommandFactory(linkedBufferPool));
+        factoryManager.register(MessageType.GET_CLUSTER_INFO_COMMAND, new GetClusterInfoCommandFactory(linkedBufferPool));
+        factoryManager.register(MessageType.CLUSTER_CHANGE_COMMAND, new ClusterChangeCommandFactory(linkedBufferPool));
+        factoryManager
+            .register(MessageType.CLUSTER_CHANGE_RESULT_COMMAND, new ClusterChangeResultCommandFactory(linkedBufferPool));
         factoryManager
             .register(MessageType.REQUEST_FAILED_COMMAND, new RequestFailedCommandFactory(linkedBufferPool));
         factoryManager.register(MessageType.REDIRECT_COMMAND, new RedirectCommandFactory(linkedBufferPool));
@@ -163,8 +176,8 @@ public class NodeContext {
         return scheduler.scheduleElectionTimeoutTask(this::election);
     }
 
-    public ScheduledFuture<?> logReplicationTask() {
-        return scheduler.scheduleLogReplicationTask(this::doLogReplication);
+    private void election() {
+        executor.execute(this::prepareElection);
     }
 
     private void prepareElection() {
@@ -198,8 +211,15 @@ public class NodeContext {
         sendMessageToOthers(requestVoteMessage);
     }
 
+    public ScheduledFuture<?> logReplicationTask() {
+        return scheduler.scheduleLogReplicationTask(this::logReplication);
+    }
+
+    public void logReplication() {
+        executor.execute(this::doLogReplication);
+    }
+
     public void doLogReplication() {
-        logger.debug("log replication task scheduled.");
         int currentTerm = node.getTerm();
         cluster.getAllEndpointExceptSelf().forEach(endpoint -> {
             long now = System.currentTimeMillis();
@@ -208,7 +228,7 @@ public class NodeContext {
             // Doing so will cause a problem that the results of the slave processing log snapshot messages may not be
             // returned in time, causing the master to resend the last message because it does not receive a reply. If
             // the slave does not handle it, an unknown error will occur.
-            if (!endpoint.isReplicating() || now - endpoint.getLastHeartBeat() >= properties
+            if (!endpoint.isSnapshotReplicating() && now - endpoint.getLastHeartBeat() >= properties
                 .getReplicationHeartBeat()) {
                 Message message = log
                     .createAppendLogEntriesMessage(node.getSelfId(), currentTerm, endpoint.getNextIndex(),
@@ -217,15 +237,12 @@ public class NodeContext {
                     message = log.createInstallSnapshotMessage(currentTerm, endpoint.getSnapshotOffset(),
                         properties.getMaxTransferSize());
                     // start snapshot replication
-                    endpoint.setReplicating(true);
+                    endpoint.setSnapshotReplicating(true);
                 }
+                endpoint.setLastHeartBeat(System.currentTimeMillis());
                 sendMessage(message, endpoint);
             }
         });
-    }
-
-    private void election() {
-        executor.execute(this::prepareElection);
     }
 
     public void sendMessageToOthers(Message message) {
@@ -233,46 +250,48 @@ public class NodeContext {
     }
 
     public void sendMessage(Message message, Endpoint endpoint) {
-        logger.debug("send message to {}", endpoint);
         message.setSourceId(properties.getNodeId());
-        connector.send(message, endpoint.getMetaData()).addListener(future -> {
-            if (future.isSuccess()) {
-                endpoint.setLastHeartBeat(System.currentTimeMillis());
-                logger.debug("send message {} success", message);
-            } else {
-                logger.debug("send message {} failed", message);
-            }
-        });
+        connector.send(message, endpoint.getMetaData());
+    }
+
+    public void sendMessage(Message message, String nodeId) {
+        if (message == null) {
+            return;
+        }
+        message.setSourceId(properties.getNodeId());
+        connector.send(message, nodeId);
     }
 
     public void advanceLastApplied(int newCommitIndex) {
         int lastApplied = stateMachine.getLastApplied();
         int lastIncludeIndex = log.getLastIncludeIndex();
         if (lastApplied == 0 && lastIncludeIndex > 0) {
+            logger.debug("lastApplied is 0, and there is a none empty snapshot, then apply snapshot.");
             stateMachine.applySnapshotData(log.getSnapshotData(), lastIncludeIndex);
             lastApplied = lastIncludeIndex;
         }
         Optional.ofNullable(log.subList(lastApplied + 1, newCommitIndex + 1))
             .orElse(Collections.emptyList()).forEach(logEntry -> {
-            if (isLeader() && logEntry.getType() == LogEntry.OLD_NEW) {
-                // At this point, the leader has persisted the Coldnew log to the disk
-                // file, and then needs to send a Cnew log and then enter the NEW phase
-                pendingNewConfigLog();
-            } else if (logEntry.getType() == LogEntry.NEW) {
-                // At this point, Cnew Log had been committed, then enter STABLE phase, if the node
-                // is not exist in new config, the then node will go offline.
-                cluster.enterStablePhase();
-                if (!cluster.inNewConfig(node.getSelfId())) {
-                    node.stop();
+            if (isLeader()) {
+                if (logEntry.getType() == LogEntry.OLD_NEW) {
+                    // At this point, the leader has persisted the Coldnew log to the disk
+                    // file, and then needs to send a Cnew log and then enter the NEW phase
+                    logger.info("OLD_NEW log had been committed");
+                    cluster.enterNewPhase();
+                } else if (logEntry.getType() == LogEntry.NEW) {
+                    // At this point, Cnew Log had been committed, then enter STABLE phase, if the node
+                    // is not exist in new config, the then node will go offline.
+                    logger.info("NEW log had been committed");
+                    cluster.enterStablePhase();
                 }
             }
             stateMachine.apply(logEntry);
         });
         if (log.shouldGenerateSnapshot(properties.getSnapshotGenerateThreshold())) {
-            // if entry file size more than SnapshotGenerateThreshold then generate snapshot
+            logger.debug("entry file size more than SnapshotGenerateThreshold then generate snapshot");
             byte[] snapshotData = stateMachine.generateSnapshotData();
-            LogEntry entry = log.getEntry(lastApplied);
-            log.generateSnapshot(lastApplied, entry.getTerm(), snapshotData);
+            logger.debug("had generated snapshot data");
+            log.generateSnapshot(lastApplied, snapshotData);
         }
     }
 
@@ -281,16 +300,8 @@ public class NodeContext {
         stateMachine.applySnapshotData(snapshotData, lastIncludeIndex);
     }
 
-    public void pendingNewConfigLog() {
-        log.pendingEntry(logFactory.createEntry(LogEntry.NEW, node.getTerm(), log.getNextIndex(),
-            cluster.getNewConfig()));
-        cluster.enterNewPhase();
-    }
-
-    public void pendingOldNewConfigLog() {
-        log.pendingEntry(logFactory.createEntry(LogEntry.OLD_NEW, node.getTerm(), log.getNextIndex(),
-            cluster.getOldNewConfig()));
-        cluster.enterOldNewPhase();
+    public void pendingLog(int type, byte[] config) {
+        log.pendingEntry(LogEntryFactory.createEntry(type, node.getTerm(), 0, config));
     }
 
     public boolean isLeader() {
@@ -343,4 +354,5 @@ public class NodeContext {
         executor.close();
         scheduler.close();
     }
+
 }

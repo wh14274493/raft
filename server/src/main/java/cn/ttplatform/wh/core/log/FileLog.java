@@ -1,11 +1,14 @@
 package cn.ttplatform.wh.core.log;
 
-import cn.ttplatform.wh.common.Message;
-import cn.ttplatform.wh.constant.FileName;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
+import cn.ttplatform.wh.core.group.Cluster;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
+import cn.ttplatform.wh.core.log.generation.FileName;
+import cn.ttplatform.wh.core.log.generation.OldGeneration;
+import cn.ttplatform.wh.core.log.generation.YoungGeneration;
+import cn.ttplatform.wh.support.Message;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
@@ -66,12 +69,6 @@ public class FileLog implements Log {
     }
 
     @Override
-    public void close() {
-        youngGeneration.close();
-        oldGeneration.close();
-    }
-
-    @Override
     public int getLastLogIndex() {
         if (youngGeneration.isEmpty()) {
             return oldGeneration.getLastIncludeIndex();
@@ -108,34 +105,29 @@ public class FileLog implements Log {
     }
 
     @Override
-    public List<LogEntry> subListWithMaxLength(int from, int maxLength) {
-        return subList(from, from + maxLength);
+    public void pendingEntries(int index, List<LogEntry> entries) {
+        youngGeneration.removeAfter(index);
+        Cluster cluster = context.getCluster();
+        if (entries != null && !entries.isEmpty()) {
+            entries.forEach(logEntry -> {
+                if (logEntry.getType() == LogEntry.OLD_NEW) {
+                    log.info("receive a OLD_NEW log[{}] from leader", logEntry);
+                    cluster.applyOldNewConfig(logEntry.getCommand());
+                    cluster.enterOldNewPhase();
+                } else if (logEntry.getType() == LogEntry.NEW) {
+                    log.info("receive a NEW log[{}] from leader", logEntry);
+                    cluster.applyNewConfig(logEntry.getCommand());
+                    cluster.enterNewPhase();
+                }
+                youngGeneration.pendingEntry(logEntry);
+            });
+            nextIndex = entries.get(entries.size() - 1).getIndex() + 1;
+            log.debug("update nextIndex[{}]", nextIndex);
+        }
     }
 
     @Override
-    public boolean pendingEntries(int index, int term, List<LogEntry> entries) {
-        if (checkIndexAndTermIfMatched(index, term)) {
-            youngGeneration.removeAfter(index);
-            if (entries != null && !entries.isEmpty()) {
-                entries.forEach(logEntry -> {
-                    if (logEntry.getType() == LogEntry.OLD_NEW) {
-                        context.getCluster().enterOldNewPhase();
-                        context.getCluster().applyOldNewConfig(logEntry.getCommand());
-                    } else if (logEntry.getType() == LogEntry.NEW) {
-                        context.getCluster().enterNewPhase();
-                        context.getCluster().applyNewConfig(logEntry.getCommand());
-                    }
-                    youngGeneration.pendingEntry(logEntry);
-                });
-                nextIndex = entries.get(entries.size() - 1).getIndex() + 1;
-                log.debug("update nextIndex[{}]", nextIndex);
-            }
-            return true;
-        }
-        return false;
-    }
-
-    private boolean checkIndexAndTermIfMatched(int index, int term) {
+    public boolean checkIndexAndTermIfMatched(int index, int term) {
         int lastIncludeIndex = oldGeneration.getLastIncludeIndex();
         int lastIncludeTerm = oldGeneration.getLastIncludeTerm();
         if (index < lastIncludeIndex) {
@@ -153,13 +145,14 @@ public class FileLog implements Log {
 
     @Override
     public void pendingEntry(LogEntry entry) {
+        entry.setIndex(nextIndex++);
         youngGeneration.pendingEntry(entry);
-        nextIndex = entry.getIndex() + 1;
         log.debug("update nextIndex[{}]", nextIndex);
     }
 
     @Override
     public Message createAppendLogEntriesMessage(String leaderId, int term, int nextIndex, int size) {
+        log.debug("create AppendLogEntriesMessage.");
         int lastIncludeIndex = oldGeneration.getLastIncludeIndex();
         int lastIncludeTerm = oldGeneration.getLastIncludeTerm();
         if (nextIndex <= lastIncludeIndex) {
@@ -169,7 +162,7 @@ public class FileLog implements Log {
             .leaderCommitIndex(commitIndex)
             .term(term)
             .leaderId(leaderId)
-            .logEntries(subListWithMaxLength(nextIndex, size))
+            .logEntries(subList(nextIndex, nextIndex + size))
             .build();
         int preIndex = lastIncludeIndex;
         int preTerm = lastIncludeTerm;
@@ -184,7 +177,7 @@ public class FileLog implements Log {
     }
 
     @Override
-    public Message createInstallSnapshotMessage(int term, long offset, int size) {
+    public InstallSnapshotMessage createInstallSnapshotMessage(int term, long offset, int size) {
         return InstallSnapshotMessage.builder().term(term)
             .lastIncludeIndex(oldGeneration.getLastIncludeIndex())
             .lastIncludeTerm(oldGeneration.getLastIncludeTerm())
@@ -196,14 +189,18 @@ public class FileLog implements Log {
     @Override
     public boolean advanceCommitIndex(int newCommitIndex, int term) {
         if (newCommitIndex <= commitIndex) {
+            log.debug("newCommitIndex[{}]<=commitIndex[{}], can not advance commitIndex", newCommitIndex, commitIndex);
             return false;
         }
         LogEntry entry = getEntry(newCommitIndex);
         if (entry == null || entry.getTerm() < term) {
+            log.debug("find entry by newCommitIndex[{}] is {}, unmatched.", newCommitIndex, entry);
             return false;
         }
         commitIndex = newCommitIndex;
+        log.debug("update commitIndex to {}", commitIndex);
         youngGeneration.commit(commitIndex);
+        log.debug("commit {} success.", commitIndex);
         return true;
     }
 
@@ -218,6 +215,7 @@ public class FileLog implements Log {
         // if the lastIncludeIndex < oldGeneration.getLastIncludeIndex() means this message is an expired messages.
         // need to prevent repeated consumption of expired messages
         if (lastIncludeIndex <= oldGeneration.getLastIncludeIndex()) {
+            log.warn("install snapshot message is expired");
             throw new UnsupportedOperationException("the message is expired");
         }
         int lastIncludeTerm = message.getLastIncludeTerm();
@@ -226,17 +224,21 @@ public class FileLog implements Log {
         long offset = message.getOffset();
         if (lastIncludeIndex != youngGeneration.getLastIncludeIndex()
             || lastIncludeTerm != youngGeneration.getLastIncludeTerm()) {
+            log.warn("lastIncludeIndex[{}] and lastIncludeTerm[{}] is unexpect.", lastIncludeIndex, lastIncludeTerm);
             return false;
         }
         if (!messageSourceId.equals(snapshotSource) && offset != 0L) {
             // The leader has changed and needs to start transmission from offset==0 again
+            log.warn("The snapshotSource has changed and needs to start transmission from offset==0 again");
             return false;
         }
         long expectedOffset = youngGeneration.getSnapshotSize();
         if (messageSourceId.equals(snapshotSource) && offset != expectedOffset) {
+            log.warn("the offset[{}] of message is unmatched, expect {}.", offset, expectedOffset);
             throw new UnsupportedOperationException("the offset is unmatched");
         }
         if (!messageSourceId.equals(snapshotSource)) {
+            log.info("the snapshotSource has changed, reset install snapshot task state");
             // The leader has changed, and the file needs to be cleared before restarting the transfer of the log snapshot
             youngGeneration.clearSnapshot();
             // Update log snapshot source
@@ -250,10 +252,10 @@ public class FileLog implements Log {
     }
 
     @Override
-    public void generateSnapshot(int lastIncludeIndex, int lastIncludeTerm, byte[] content) {
+    public void generateSnapshot(int lastIncludeIndex, byte[] content) {
+        int lastIncludeTerm = youngGeneration.getEntryMetaData(lastIncludeIndex).getTerm();
         youngGeneration.generateSnapshot(lastIncludeIndex, lastIncludeTerm, content);
-        log.info("generate snapshot that lastIncludeIndex is {} and lastIncludeTerm is {}", lastIncludeIndex,
-            lastIncludeTerm);
+        log.info("generate snapshot that lastIncludeIndex is {} and lastIncludeTerm is {}", lastIncludeIndex, lastIncludeTerm);
         replace(lastIncludeIndex, lastIncludeTerm);
     }
 
@@ -273,4 +275,11 @@ public class FileLog implements Log {
     public byte[] getSnapshotData() {
         return oldGeneration.readSnapshot();
     }
+
+    @Override
+    public void close() {
+        youngGeneration.close();
+        oldGeneration.close();
+    }
+
 }

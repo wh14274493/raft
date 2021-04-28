@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.cmd.factory;
 
 import cn.ttplatform.wh.cmd.ClusterChangeResultCommand;
-import cn.ttplatform.wh.common.Message;
+import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.support.AbstractMessageFactory;
 import cn.ttplatform.wh.support.BufferPool;
 import io.protostuff.LinkedBuffer;
@@ -17,7 +17,7 @@ public class ClusterChangeResultCommandFactory extends AbstractMessageFactory {
 
     private final Schema<ClusterChangeResultCommand> schema = RuntimeSchema.getSchema(ClusterChangeResultCommand.class);
 
-    protected ClusterChangeResultCommandFactory(BufferPool<LinkedBuffer> pool) {
+    public ClusterChangeResultCommandFactory(BufferPool<LinkedBuffer> pool) {
         super(pool);
     }
 

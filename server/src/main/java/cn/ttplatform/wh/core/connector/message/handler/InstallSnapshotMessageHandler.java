@@ -1,12 +1,11 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
-import cn.ttplatform.wh.common.Message;
-import cn.ttplatform.wh.core.Endpoint;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotResultMessage;
 import cn.ttplatform.wh.core.role.Role;
 import cn.ttplatform.wh.core.support.AbstractMessageHandler;
+import cn.ttplatform.wh.support.Message;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -22,13 +21,8 @@ public class InstallSnapshotMessageHandler extends AbstractMessageHandler {
 
     @Override
     public void doHandle(Message e) {
-        InstallSnapshotMessage message = (InstallSnapshotMessage) e;
-        String sourceId = message.getSourceId();
-        Endpoint endpoint = context.getCluster().find(sourceId);
-        InstallSnapshotResultMessage resultMessage = process(message);
-        if (resultMessage != null) {
-            context.sendMessage(resultMessage, endpoint);
-        }
+        InstallSnapshotResultMessage resultMessage = process((InstallSnapshotMessage) e);
+        context.sendMessage(resultMessage, e.getSourceId());
     }
 
     private InstallSnapshotResultMessage process(InstallSnapshotMessage message) {
@@ -68,6 +62,7 @@ public class InstallSnapshotMessageHandler extends AbstractMessageHandler {
                 .build();
         }
         if (message.isDone()) {
+            log.info("install snapshot task is completed, then apply snapshot");
             context.applySnapshot(message.getLastIncludeIndex());
         }
         return InstallSnapshotResultMessage.builder()

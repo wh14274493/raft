@@ -1,11 +1,11 @@
 package cn.ttplatform.wh.core.log.entry;
 
-import static cn.ttplatform.wh.core.support.ByteConvertor.fillIntBytes;
-import static cn.ttplatform.wh.core.support.ByteConvertor.fillLongBytes;
+import static cn.ttplatform.wh.core.log.tool.ByteConvertor.fillIntBytes;
+import static cn.ttplatform.wh.core.log.tool.ByteConvertor.fillLongBytes;
 
-import cn.ttplatform.wh.constant.FileName;
-import cn.ttplatform.wh.core.support.ByteBufferWriter;
-import cn.ttplatform.wh.core.support.ReadableAndWriteableFile;
+import cn.ttplatform.wh.core.log.generation.FileName;
+import cn.ttplatform.wh.core.log.tool.ByteBufferWriter;
+import cn.ttplatform.wh.core.log.tool.ReadableAndWriteableFile;
 import cn.ttplatform.wh.support.BufferPool;
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -29,7 +29,7 @@ public class FileLogEntryIndex {
     private int maxLogIndex;
     private final List<LogEntryIndex> logEntryIndices = new ArrayList<>();
 
-    private final LogFactory logFactory = LogFactory.getInstance();
+    private final LogEntryFactory logEntryFactory = LogEntryFactory.getInstance();
 
     public FileLogEntryIndex(File parent, BufferPool<ByteBuffer> pool, int lastIncludeIndex) {
         file = new ByteBufferWriter(new File(parent, FileName.INDEX_FILE_NAME), pool);
@@ -43,7 +43,7 @@ public class FileLogEntryIndex {
             byte[] content = file.readBytesAt(0L, (int) file.size());
             LogEntryIndex logEntryIndex = null;
             for (int index = 0; index < content.length; index += ITEM_LENGTH) {
-                logEntryIndex = logFactory.transferBytesToLogEntryIndex(content, index);
+                logEntryIndex = logEntryFactory.transferBytesToLogEntryIndex(content, index);
                 logEntryIndices.add(logEntryIndex);
                 if (index == 0) {
                     minLogIndex = logEntryIndex.getIndex();
@@ -84,7 +84,7 @@ public class FileLogEntryIndex {
         maxLogIndex = index;
         LogEntryIndex logEntryIndex = LogEntryIndex.builder().index(index).term(logEntry.getTerm()).offset(offset)
             .type(logEntry.getType()).build();
-        file.writeBytes(logFactory.transferLogEntryIndexToBytes(logEntryIndex));
+        file.writeBytes(logEntryFactory.transferLogEntryIndexToBytes(logEntryIndex));
         logEntryIndices.add(logEntryIndex);
     }
 

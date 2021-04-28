@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.core.connector.message;
 
 
-import cn.ttplatform.wh.common.Message;
+import cn.ttplatform.wh.support.Message;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;

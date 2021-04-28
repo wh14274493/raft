@@ -1,12 +1,14 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
-import cn.ttplatform.wh.common.Message;
-import cn.ttplatform.wh.core.Endpoint;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesResultMessage;
+import cn.ttplatform.wh.core.group.Cluster;
+import cn.ttplatform.wh.core.group.Phase;
+import cn.ttplatform.wh.core.log.Log;
 import cn.ttplatform.wh.core.role.Role;
 import cn.ttplatform.wh.core.support.AbstractMessageHandler;
+import cn.ttplatform.wh.support.Message;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -22,9 +24,11 @@ public class AppendLogEntriesMessageHandler extends AbstractMessageHandler {
 
     @Override
     public void doHandle(Message e) {
-        AppendLogEntriesMessage message = (AppendLogEntriesMessage) e;
-        Endpoint endpoint = context.getCluster().find(message.getLeaderId());
-        context.sendMessage(process(message), endpoint);
+        context.sendMessage(process((AppendLogEntriesMessage) e), e.getSourceId());
+        Cluster cluster = context.getCluster();
+        if (cluster.getPhase() == Phase.NEW) {
+            cluster.enterStablePhase();
+        }
     }
 
     private AppendLogEntriesResultMessage process(AppendLogEntriesMessage message) {
@@ -56,11 +60,11 @@ public class AppendLogEntriesMessageHandler extends AbstractMessageHandler {
 
     private boolean appendEntries(AppendLogEntriesMessage message) {
         context.changeToFollower(message.getTerm(), message.getLeaderId(), null, 0);
-        if (context.getLog()
-            .pendingEntries(message.getPreLogIndex(), message.getPreLogTerm(), message.getLogEntries())) {
-
-            if (context.getLog().advanceCommitIndex(message.getLeaderCommitIndex(), message.getTerm())){
-
+        Log log = context.getLog();
+        int preLogIndex = message.getPreLogIndex();
+        if (log.checkIndexAndTermIfMatched(preLogIndex, message.getPreLogTerm())) {
+            log.pendingEntries(preLogIndex, message.getLogEntries());
+            if (log.advanceCommitIndex(message.getLeaderCommitIndex(), message.getTerm())) {
                 context.advanceLastApplied(message.getLeaderCommitIndex());
             }
             return true;

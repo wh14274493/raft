@@ -1,11 +1,11 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
-import cn.ttplatform.wh.common.Message;
-import cn.ttplatform.wh.core.Cluster;
-import cn.ttplatform.wh.core.Cluster.Phase;
-import cn.ttplatform.wh.core.Endpoint;
+import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesResultMessage;
+import cn.ttplatform.wh.core.group.Cluster;
+import cn.ttplatform.wh.core.group.Endpoint;
+import cn.ttplatform.wh.core.group.Phase;
 import cn.ttplatform.wh.core.support.AbstractMessageHandler;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,9 +23,12 @@ public class AppendLogEntriesResultMessageHandler extends AbstractMessageHandler
     public void preHandle(Message e) {
         Cluster cluster = context.getCluster();
         if (Phase.SYNCING == cluster.getPhase() && cluster.isSyncingNode(e.getSourceId()) && cluster.synHasComplete()) {
-            // The leader starts to use the new configuration and the old configuration at the same
-            // time, and adds a log containing the new and old configuration to the cluster
-            context.pendingOldNewConfigLog();
+            /*
+             The leader starts to use the new configuration and the old configuration at the same
+             time, and adds a log containing the new and old configuration to the cluster
+             */
+            log.info("all syncing Endpoint had catchup, enter OLD_NEW phase");
+            cluster.enterOldNewPhase();
         }
     }
 
@@ -41,10 +44,14 @@ public class AppendLogEntriesResultMessageHandler extends AbstractMessageHandler
         }
         if (context.isLeader()) {
             Endpoint endpoint = context.getCluster().find(message.getSourceId());
+            if (endpoint == null) {
+                log.warn("endpoint[{}] is not in cluster.", message.getSourceId());
+                return;
+            }
             if (message.isSuccess()) {
                 endpoint.updateReplicationState(message.getLastLogIndex());
                 int newCommitIndex = context.getCluster().getNewCommitIndex();
-                if (context.getLog().advanceCommitIndex(newCommitIndex, currentTerm)){
+                if (context.getLog().advanceCommitIndex(newCommitIndex, currentTerm)) {
                     context.advanceLastApplied(newCommitIndex);
                 }
             } else {

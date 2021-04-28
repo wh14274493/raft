@@ -35,6 +35,11 @@ public abstract class AbstractLogEntry implements LogEntry {
     }
 
     @Override
+    public void setIndex(int index) {
+        metadata.setIndex(index);
+    }
+
+    @Override
     public LogEntryIndex getMetadata() {
         return metadata;
     }

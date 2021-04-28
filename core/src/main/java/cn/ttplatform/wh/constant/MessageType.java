@@ -26,6 +26,7 @@ public class MessageType {
     public static final int CLUSTER_CHANGE_COMMAND = 14;
     public static final int CLUSTER_CHANGE_RESULT_COMMAND = 15;
     public static final int REQUEST_FAILED_COMMAND = 16;
-
+    public static final int GET_CLUSTER_INFO_COMMAND = 17;
+    public static final int GET_CLUSTER_INFO_RESULT_COMMAND = 18;
 
 }

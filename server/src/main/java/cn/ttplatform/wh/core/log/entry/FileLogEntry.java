@@ -1,12 +1,11 @@
 package cn.ttplatform.wh.core.log.entry;
 
-import static cn.ttplatform.wh.core.support.ByteConvertor.fillIntBytes;
-import static cn.ttplatform.wh.core.support.ByteConvertor.fillLongBytes;
+import static cn.ttplatform.wh.core.log.tool.ByteConvertor.fillIntBytes;
 
-import cn.ttplatform.wh.constant.FileName;
+import cn.ttplatform.wh.core.log.generation.FileName;
 import cn.ttplatform.wh.support.BufferPool;
-import cn.ttplatform.wh.core.support.ByteBufferWriter;
-import cn.ttplatform.wh.core.support.ReadableAndWriteableFile;
+import cn.ttplatform.wh.core.log.tool.ByteBufferWriter;
+import cn.ttplatform.wh.core.log.tool.ReadableAndWriteableFile;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -20,8 +19,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FileLogEntry {
 
-    public static final int LOG_ENTRY_HEADER_SIZE = 16;
-    private final LogFactory logFactory = LogFactory.getInstance();
+    /**
+     * index(4 bytes) + term(4 bytes) + type(4 bytes) + commandLength(4 bytes) = 16
+     */
+    public static final int LOG_ENTRY_HEADER_SIZE = 4 + 4 + 4 + 4;
+    private final LogEntryFactory logEntryFactory = LogEntryFactory.getInstance();
     private final ReadableAndWriteableFile file;
 
     public FileLogEntry(File parent, BufferPool<ByteBuffer> pool) {
@@ -30,7 +32,7 @@ public class FileLogEntry {
 
     public long append(LogEntry logEntry) {
         long offset = file.size();
-        file.writeBytes(logFactory.transferLogEntryToBytes(logEntry));
+        file.writeBytes(logEntryFactory.transferLogEntryToBytes(logEntry));
         return offset;
     }
 
@@ -59,7 +61,7 @@ public class FileLogEntry {
             fillIntBytes(logEntry.getType(), content, index);
             index += 4;
             byte[] command = logEntry.getCommand();
-            fillLongBytes(command.length, content, index);
+            fillIntBytes(command.length, content, index);
             index++;
             for (byte b : command) {
                 content[index++] = b;
@@ -67,6 +69,13 @@ public class FileLogEntry {
         }
     }
 
+    /**
+     * read a byte array from file start to end, then transfer to LogEntry
+     *
+     * @param start start offset
+     * @param end   end offset
+     * @return an log entry
+     */
     public LogEntry getEntry(long start, long end) {
         long fileSize = file.size();
         if (start < 0 || start > fileSize) {
@@ -79,7 +88,7 @@ public class FileLogEntry {
             readLength = (int) (end - start);
         }
         byte[] content = file.readBytesAt(start, readLength);
-        return logFactory.transferBytesToLogEntry(content, 0);
+        return logEntryFactory.transferBytesToLogEntry(content);
     }
 
     public byte[] loadEntriesFromFile(long start, long end) {

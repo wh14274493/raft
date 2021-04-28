@@ -1,7 +1,8 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
-import cn.ttplatform.wh.common.Message;
-import cn.ttplatform.wh.core.Endpoint;
+import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
+import cn.ttplatform.wh.support.Message;
+import cn.ttplatform.wh.core.group.Endpoint;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotResultMessage;
 import cn.ttplatform.wh.core.support.AbstractMessageHandler;
@@ -20,39 +21,39 @@ public class InstallSnapshotResultMessageHandler extends AbstractMessageHandler 
 
     @Override
     public void doHandle(Message e) {
-        InstallSnapshotResultMessage message = (InstallSnapshotResultMessage) e;
+        InstallSnapshotMessage message = process((InstallSnapshotResultMessage) e);
+        context.sendMessage(message,e.getSourceId());
+    }
+
+    private InstallSnapshotMessage process(InstallSnapshotResultMessage message) {
         int term = message.getTerm();
         int currentTerm = context.getNode().getTerm();
         Endpoint endpoint = context.getCluster().find(message.getSourceId());
         if (term > currentTerm) {
             context.changeToFollower(term, null, null, 0);
-            return;
+            return null;
         }
         if (!context.isLeader()) {
             log.warn("role is not a leader, ignore this message.");
-            return;
+            return null;
         }
         if (term < currentTerm) {
-            return;
+            return null;
         }
         if (message.isSuccess()) {
             if (message.isDone()) {
-                endpoint.setReplicating(false);
+                endpoint.setSnapshotReplicating(false);
                 endpoint.updateReplicationState(context.getLog().getLastIncludeIndex());
-                context.doLogReplication();
+                return null;
             } else {
                 long snapshotOffset = message.getOffset();
                 endpoint.setSnapshotOffset(snapshotOffset);
-                Message installSnapshotMessage = context.getLog()
-                    .createInstallSnapshotMessage(currentTerm, snapshotOffset,
-                        context.getProperties().getMaxTransferSize());
-                context.sendMessage(installSnapshotMessage, endpoint);
+                return context.getLog().createInstallSnapshotMessage(currentTerm, snapshotOffset,
+                    context.getProperties().getMaxTransferSize());
             }
         } else {
             endpoint.setSnapshotOffset(0L);
-            Message installSnapshotMessage = context.getLog()
-                .createInstallSnapshotMessage(currentTerm, 0L, context.getProperties().getMaxTransferSize());
-            context.sendMessage(installSnapshotMessage, endpoint);
+            return context.getLog().createInstallSnapshotMessage(currentTerm, 0L, context.getProperties().getMaxTransferSize());
         }
     }
 }

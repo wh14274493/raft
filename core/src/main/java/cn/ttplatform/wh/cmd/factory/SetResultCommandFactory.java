@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.cmd.factory;
 
-import cn.ttplatform.wh.common.Message;
+import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.cmd.SetResultCommand;
 import cn.ttplatform.wh.support.AbstractMessageFactory;
 import cn.ttplatform.wh.support.BufferPool;

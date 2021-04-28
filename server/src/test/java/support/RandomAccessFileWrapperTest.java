@@ -1,6 +1,6 @@
 package support;
 
-import cn.ttplatform.wh.core.support.RandomAccessFileWrapper;
+import cn.ttplatform.wh.core.log.tool.RandomAccessFileWrapper;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;

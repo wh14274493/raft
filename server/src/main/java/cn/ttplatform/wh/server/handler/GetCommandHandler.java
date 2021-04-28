@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.server.handler;
 
 import cn.ttplatform.wh.cmd.GetCommand;
-import cn.ttplatform.wh.common.Message;
+import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.support.AbstractMessageHandler;
 

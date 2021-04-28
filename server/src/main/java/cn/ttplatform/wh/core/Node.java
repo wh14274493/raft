@@ -2,7 +2,7 @@ package cn.ttplatform.wh.core;
 
 import cn.ttplatform.wh.core.role.Follower;
 import cn.ttplatform.wh.core.role.Role;
-import cn.ttplatform.wh.core.support.Listener;
+import cn.ttplatform.wh.server.Listener;
 import cn.ttplatform.wh.server.NioListener;
 import lombok.Getter;
 import lombok.Setter;

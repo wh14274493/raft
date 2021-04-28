@@ -1,8 +1,7 @@
 package cn.ttplatform.wh.cmd;
 
-import cn.ttplatform.wh.common.EndpointMetaData;
 import cn.ttplatform.wh.constant.MessageType;
-import java.util.List;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,7 +21,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class ClusterChangeCommand extends AbstractCommand {
 
-    private List<EndpointMetaData> newConfig;
+    private Set<String> newConfig;
 
     @Override
     public int getType() {

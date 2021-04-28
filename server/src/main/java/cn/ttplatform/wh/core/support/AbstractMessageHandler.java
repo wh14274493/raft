@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.core.support;
 
-import cn.ttplatform.wh.common.Message;
 import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.support.Message;
 
 /**
  * @author Wang Hao

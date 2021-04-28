@@ -22,4 +22,9 @@ public class ErrorMessage {
     public static final String READ_FAILED = "not enough content to read";
     public static final String CLUSTER_CHANGE_IN_PROGRESS = "cluster change processing is in progress.";
     public static final String CLUSTER_CHANGE_CANCELLED = "cluster change task had cancelled";
+    public static final String NOT_SYNCING_PHASE = "current phase[%s] is not SYNCING.";
+    public static final String NOT_STABLE_PHASE = "current phase[%s] is not STABLE.";
+    public static final String NOT_NEW_OR_OLD_NEW_PHASE = "current phase[%s] is not NEW or OLD_NEW.";
+    public static final String NOT_STABLE_OR_SYNCING_PHASE = "current phase[%S] is not STABLE or SYNCING.";
+    public static final String NOT_OLD_NEW_PHASE = "current phase[%S] is not OLD_NEW.";
 }

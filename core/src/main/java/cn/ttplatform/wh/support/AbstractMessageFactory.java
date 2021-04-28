@@ -1,6 +1,5 @@
 package cn.ttplatform.wh.support;
 
-import cn.ttplatform.wh.common.Message;
 import io.protostuff.LinkedBuffer;
 
 /**

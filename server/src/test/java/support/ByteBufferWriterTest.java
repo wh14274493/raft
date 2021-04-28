@@ -1,7 +1,7 @@
 package support;
 
-import cn.ttplatform.wh.core.support.ByteBufferWriter;
-import cn.ttplatform.wh.core.support.DirectByteBufferPool;
+import cn.ttplatform.wh.core.log.tool.ByteBufferWriter;
+import cn.ttplatform.wh.core.log.tool.DirectByteBufferPool;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.IntStream;

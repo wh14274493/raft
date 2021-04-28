@@ -1,10 +1,10 @@
 package cn.ttplatform.wh.core.connector.nio;
 
-import cn.ttplatform.wh.common.EndpointMetaData;
 import cn.ttplatform.wh.core.NodeContext;
 import cn.ttplatform.wh.core.connector.Connector;
-import cn.ttplatform.wh.common.Message;
-import cn.ttplatform.wh.core.support.ChannelCache;
+import cn.ttplatform.wh.core.group.EndpointMetaData;
+import cn.ttplatform.wh.core.support.ChannelPool;
+import cn.ttplatform.wh.support.Message;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -41,33 +41,54 @@ public class NioConnector implements Connector {
     }
 
     @Override
-    public Channel connect(EndpointMetaData endpointMetaData) {
-        InetSocketAddress socketAddress = endpointMetaData.getAddress();
-        String remoteId = endpointMetaData.getNodeId();
-        Channel channel = ChannelCache.getChannel(remoteId);
+    public Channel connect(EndpointMetaData metaData) {
+        InetSocketAddress socketAddress = metaData.getAddress();
+        String remoteId = metaData.getNodeId();
+        Channel channel = ChannelPool.getChannel(remoteId);
         if (channel != null && channel.isOpen()) {
             return channel;
         }
         try {
             channel = bootstrap.connect(socketAddress).sync().channel();
-            ChannelCache.cacheChannel(remoteId, channel);
+            ChannelPool.cacheChannel(remoteId, channel);
             channel.closeFuture().addListener(future -> {
                 if (future.isSuccess()) {
-                    Channel remove = ChannelCache.removeChannel(remoteId);
-                    log.debug("out channel[{}] close success", remove);
+                    log.debug("out channel[{}] close success", ChannelPool.removeChannel(remoteId));
                 }
             });
             return channel;
         } catch (Exception e) {
             log.error("connect to {} failed", remoteId);
-            throw new IllegalStateException("connect to [" + remoteId + "," + socketAddress + "] failed");
+            return null;
         }
     }
 
     @Override
-    public ChannelFuture send(Message message, EndpointMetaData endpointMetaData) {
-        Channel channel = connect(endpointMetaData);
-        return channel.writeAndFlush(message);
+    public ChannelFuture send(Message message, EndpointMetaData metaData) {
+        Channel channel = connect(metaData);
+        if (channel == null) {
+            return null;
+        }
+        return write(channel, message, metaData.getNodeId());
+    }
+
+    @Override
+    public ChannelFuture send(Message message, String nodeId) {
+        Channel channel = ChannelPool.getChannel(nodeId);
+        if (channel == null) {
+            return null;
+        }
+        return write(channel, message, nodeId);
+    }
+
+    private ChannelFuture write(Channel channel, Message message, String dest) {
+        return channel.writeAndFlush(message).addListener(future -> {
+            if (future.isSuccess()) {
+                log.debug("send message {} to {} success.", message, dest);
+            } else {
+                log.debug("send message {} to {} failed.", message, dest);
+            }
+        });
     }
 
 }

@@ -1,9 +1,8 @@
 package cn.ttplatform.wh.core;
 
-import cn.ttplatform.wh.constant.FileName;
 import cn.ttplatform.wh.core.role.Follower;
-import cn.ttplatform.wh.core.support.ByteBufferWriter;
-import cn.ttplatform.wh.core.support.ReadableAndWriteableFile;
+import cn.ttplatform.wh.core.log.tool.ByteBufferWriter;
+import cn.ttplatform.wh.core.log.tool.ReadableAndWriteableFile;
 import java.io.File;
 import java.nio.charset.Charset;
 
@@ -13,10 +12,15 @@ import java.nio.charset.Charset;
  */
 public class NodeState {
 
+    /**
+     * Node state will be stored in {@code nodeStoreFile}
+     */
+    public static final String NODE_STATE_FILE_NAME = "node.state";
+
     private final ReadableAndWriteableFile file;
 
     public NodeState(NodeContext context) {
-        this.file = new ByteBufferWriter(new File(context.getBasePath(), FileName.NODE_STATE_FILE_NAME),
+        this.file = new ByteBufferWriter(new File(context.getBasePath(), NODE_STATE_FILE_NAME),
             context.getByteBufferPool());
     }
 
@@ -42,8 +46,8 @@ public class NodeState {
     }
 
     /**
-     * if node's role is {@link Follower} then it's {@code voteTo} should be recorded， otherwise there may be a problem
-     * of repeating voting.
+     * if node's role is {@link Follower} then it's {@code voteTo} should be recorded， otherwise there may be a problem of
+     * repeating voting.
      *
      * @param voteTo the node id that vote for
      */

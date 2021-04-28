@@ -1,9 +1,9 @@
 package cn.ttplatform.wh.core.log;
 
 
-import cn.ttplatform.wh.common.Message;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
+import cn.ttplatform.wh.support.Message;
 import java.util.List;
 
 /**
@@ -61,24 +61,14 @@ public interface Log {
     List<LogEntry> subList(int from, int to);
 
     /**
-     * search entry list from {@code from} to nextIndex if to-from > maxLength, then return the entry list that index in
-     * [from, from + maxLength) else return the entry list that index in [from, nextIndex)
-     *
-     * @param from      include from index
-     * @param maxLength max size of the result list
-     * @return search result
-     */
-    List<LogEntry> subListWithMaxLength(int from, int maxLength);
-
-    /**
      * if {@code index} and {@code term} is matched, then append the {@code entries}, else return false
      *
      * @param index   log index
-     * @param term    log term
      * @param entries entry list to be appended
-     * @return append result
      */
-    boolean pendingEntries(int index, int term, List<LogEntry> entries);
+    void pendingEntries(int index, List<LogEntry> entries);
+
+    boolean checkIndexAndTermIfMatched(int index, int term);
 
     /**
      * install snapshot file that content from leader
@@ -107,7 +97,7 @@ public interface Log {
      * @param size   The size of the transfer log
      * @return an InstallSnapshotMessage
      */
-    Message createInstallSnapshotMessage(int term, long offset, int size);
+    InstallSnapshotMessage createInstallSnapshotMessage(int term, long offset, int size);
 
     /**
      * All logs with index less than commitIndex need to be committed.
@@ -130,10 +120,9 @@ public interface Log {
      * Generate log snapshots based on state machine data
      *
      * @param lastIncludeIndex the last log index be included in snapshot
-     * @param lastIncludeTerm  the last log term be included in snapshot
      * @param content          state machine data
      */
-    void generateSnapshot(int lastIncludeIndex, int lastIncludeTerm, byte[] content);
+    void generateSnapshot(int lastIncludeIndex, byte[] content);
 
     /**
      * pending an log entry
