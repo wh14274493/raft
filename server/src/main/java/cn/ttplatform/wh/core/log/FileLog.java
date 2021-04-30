@@ -203,7 +203,7 @@ public class FileLog implements Log {
         commitIndex = newCommitIndex;
         log.debug("update commitIndex to {}", commitIndex);
         youngGeneration.commit(commitIndex);
-        log.debug("commit {} success.", commitIndex);
+        log.info("commit {} success.", commitIndex);
         return true;
     }
 

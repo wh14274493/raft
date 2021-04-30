@@ -105,6 +105,7 @@ public class YoungGeneration extends AbstractGeneration {
             throw new IllegalStateException("The index number of the log is incorrect ");
         }
         pending.addAll(logEntries);
+        log.info("write {} logs into memory.", logEntries.size());
     }
 
     /**
@@ -123,6 +124,11 @@ public class YoungGeneration extends AbstractGeneration {
      * @param logEntries Logs to be submitted
      */
     public void appendLogEntries(List<LogEntry> logEntries) {
+        if (logEntries == null || logEntries.isEmpty()) {
+            log.info("logEntries size is 0, skip to write operation.");
+            return;
+        }
+        log.info("prepare to write {} logs into file.", logEntries.size());
         if (logEntries.size() == 1) {
             appendLogEntry(logEntries.get(0));
         } else {

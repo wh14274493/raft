@@ -18,4 +18,11 @@ import lombok.experimental.SuperBuilder;
 public abstract class AbstractCommand implements Command {
 
     String id;
+
+    @Override
+    public String toString() {
+        return "AbstractCommand{" +
+            "id='" + id + '\'' +
+            '}';
+    }
 }

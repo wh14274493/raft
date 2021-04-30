@@ -14,7 +14,6 @@ import lombok.experimental.SuperBuilder;
  */
 @Getter
 @Setter
-@ToString
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,5 +24,13 @@ public class GetCommand extends AbstractCommand{
     @Override
     public int getType() {
         return DistributableType.GET_COMMAND;
+    }
+
+    @Override
+    public String toString() {
+        return "GetCommand{" +
+            "id='" + id + '\'' +
+            ", key='" + key + '\'' +
+            '}';
     }
 }

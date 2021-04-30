@@ -14,7 +14,6 @@ import lombok.experimental.SuperBuilder;
  */
 @Setter
 @Getter
-@ToString
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -31,5 +30,14 @@ public class SetCommand extends AbstractCommand {
 
     public byte[] getCmd() {
         return cmd;
+    }
+
+    @Override
+    public String toString() {
+        return "SetCommand{" +
+            "id='" + id + '\'' +
+            ", key='" + key + '\'' +
+            ", value='" + value + '\'' +
+            '}';
     }
 }

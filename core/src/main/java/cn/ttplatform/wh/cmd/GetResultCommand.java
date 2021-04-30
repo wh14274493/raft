@@ -12,7 +12,6 @@ import lombok.experimental.SuperBuilder;
  * @date 2021/2/19 18:30
  */
 @Getter
-@ToString
 @SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -23,5 +22,13 @@ public class GetResultCommand extends AbstractCommand {
     @Override
     public int getType() {
         return DistributableType.GET_COMMAND_RESULT;
+    }
+
+    @Override
+    public String toString() {
+        return "GetResultCommand{" +
+            "id='" + id + '\'' +
+            ", value='" + value + '\'' +
+            '}';
     }
 }

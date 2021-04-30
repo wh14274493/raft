@@ -12,7 +12,6 @@ import lombok.experimental.SuperBuilder;
  * @date 2021/4/23 22:35
  */
 @Getter
-@ToString
 @SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -24,5 +23,14 @@ public class RedirectCommand extends AbstractCommand {
     @Override
     public int getType() {
         return DistributableType.REDIRECT_COMMAND;
+    }
+
+    @Override
+    public String toString() {
+        return "RedirectCommand{" +
+            "id='" + id + '\'' +
+            ", leader='" + leader + '\'' +
+            ", endpointMetaData='" + endpointMetaData + '\'' +
+            '}';
     }
 }

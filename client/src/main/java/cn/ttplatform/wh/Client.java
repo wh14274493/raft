@@ -65,18 +65,24 @@ public class Client {
                 protected void initChannel(SocketChannel ch) throws Exception {
                     ChannelPipeline pipeline = ch.pipeline();
                     pipeline.addLast(new DistributableCodec(factoryManager));
-                    pipeline.addLast(new ChannelDuplexHandler(){
+                    pipeline.addLast(new ChannelDuplexHandler() {
+                        int index = 1;
+
                         @Override
                         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                            log.info(msg.toString());
+                            if (index == 1) {
+                                log.debug(System.nanoTime() + "");
+                                log.info(msg.toString());
+                            }
+                            if (index == 10000) {
+                                log.debug(System.nanoTime() + "");
+                                log.info(msg.toString());
+                            }
+                            index++;
                         }
                     });
                 }
             });
-    }
-
-    public Channel connect() throws InterruptedException {
-        return bootstrap.connect("127.0.0.1", 8888).sync().channel();
     }
 
     public void send(Command command) throws InterruptedException {
@@ -84,18 +90,36 @@ public class Client {
         channel.writeAndFlush(command);
     }
 
+    public Channel connect() throws InterruptedException {
+        return bootstrap.connect("127.0.0.1", 7777).sync().channel();
+    }
+
     public static void main(String[] args) throws InterruptedException {
         Client client = new Client();
         client.send(clusterChangeCommand());
+        Channel channel = client.connect();
+        StringBuilder value = new StringBuilder();
+        while (value.length() < 256) {
+            value.append(UUID.randomUUID().toString());
+        }
+        String s = value.substring(0, 256);
+        IntStream.range(0, 10000).forEach(index -> {
+            String id = UUID.randomUUID().toString();
+            SetCommand setCommand = SetCommand.builder().id(id).key(id + index).value(s + index).build();
+            channel.writeAndFlush(setCommand);
+            if (index == 0) {
+                log.info("begin:" + System.nanoTime());
+            }
+        });
     }
 
     private static ClusterChangeCommand clusterChangeCommand() {
         Set<String> newConfig = new HashSet<>();
         newConfig.add("A,127.0.0.1,6666");
         newConfig.add("B,127.0.0.1,7777");
-//        newConfig.add("C,127.0.0.1,8888");
-//        newConfig.add("D,127.0.0.1,9999");
-        newConfig.add("E,127.0.0.1,5555");
+        newConfig.add("C,127.0.0.1,8888");
+        newConfig.add("D,127.0.0.1,9999");
+//        newConfig.add("E,127.0.0.1,5555");
         return ClusterChangeCommand.builder().newConfig(newConfig)
             .id(UUID.randomUUID().toString())
             .build();

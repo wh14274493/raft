@@ -75,9 +75,10 @@ public class StateMachine {
             setCmd = (SetCommand) factory.create(entry.getCommand());
         }
         data.put(setCmd.getKey(), setCmd.getValue());
-        if (setCmd.getId() != null) {
+        String requestId = setCmd.getId();
+        if (requestId != null) {
             ChannelFuture channelFuture = ChannelPool
-                .reply(setCmd.getId(), SetResultCommand.builder().id(setCmd.getId()).result(true).build());
+                .reply(requestId, SetResultCommand.builder().id(requestId).result(true).build());
             if (channelFuture != null) {
                 channelFuture.addListener(future -> {
                     if (future.isSuccess()) {

@@ -14,7 +14,6 @@ import lombok.experimental.SuperBuilder;
  */
 @Getter
 @Setter
-@ToString
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,5 +24,13 @@ public class RequestFailedCommand extends AbstractCommand {
     @Override
     public int getType() {
         return DistributableType.REQUEST_FAILED_COMMAND;
+    }
+
+    @Override
+    public String toString() {
+        return "RequestFailedCommand{" +
+            "id='" + id + '\'' +
+            ", failedMessage='" + failedMessage + '\'' +
+            '}';
     }
 }

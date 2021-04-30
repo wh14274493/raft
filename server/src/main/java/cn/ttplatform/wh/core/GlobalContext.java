@@ -402,9 +402,9 @@ public class GlobalContext {
         int index = pendingLog(LogEntry.NO_OP_TYPE, new byte[0]);
         cluster.resetReplicationStates(index);
         if (logger.isDebugEnabled()) {
-            logger.debug("become leader.");
-            logger.debug("reset all node replication state with nextIndex[{}]", index);
-            logger.debug("pending first no op log in this term, then start log replicating");
+            logger.info("become leader.");
+            logger.info("reset all node replication state with nextIndex[{}]", index);
+            logger.info("pending first no op log in this term, then start log replicating");
         }
     }
 

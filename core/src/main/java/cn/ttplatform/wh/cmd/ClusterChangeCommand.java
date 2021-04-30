@@ -15,7 +15,6 @@ import lombok.experimental.SuperBuilder;
  */
 @Getter
 @Setter
-@ToString
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -26,5 +25,13 @@ public class ClusterChangeCommand extends AbstractCommand {
     @Override
     public int getType() {
         return DistributableType.CLUSTER_CHANGE_COMMAND;
+    }
+
+    @Override
+    public String toString() {
+        return "ClusterChangeCommand{" +
+            "id='" + id + '\'' +
+            ", newConfig=" + newConfig +
+            '}';
     }
 }
