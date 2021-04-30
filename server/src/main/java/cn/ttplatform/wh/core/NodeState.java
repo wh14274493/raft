@@ -19,7 +19,7 @@ public class NodeState {
 
     private final ReadableAndWriteableFile file;
 
-    public NodeState(NodeContext context) {
+    public NodeState(GlobalContext context) {
         this.file = new ByteBufferWriter(new File(context.getBasePath(), NODE_STATE_FILE_NAME),
             context.getByteBufferPool());
     }
@@ -40,7 +40,7 @@ public class NodeState {
      */
     public int getCurrentTerm() {
         if (file.isEmpty()) {
-            return 0;
+            return 1;
         }
         return file.readIntAt(0L);
     }
@@ -53,10 +53,10 @@ public class NodeState {
      */
     public void setVoteTo(String voteTo) {
         if (voteTo == null || "".equals(voteTo)) {
+            file.truncate(Integer.BYTES);
             return;
         }
-        byte[] content = voteTo.getBytes(Charset.defaultCharset());
-        file.writeBytesAt(Integer.BYTES, content);
+        file.writeBytesAt(Integer.BYTES, voteTo.getBytes(Charset.defaultCharset()));
     }
 
     /**
@@ -65,15 +65,11 @@ public class NodeState {
      * @return the node id that vote for
      */
     public String getVoteTo() {
-        if (file.isEmpty()) {
+        long fileSize = file.size();
+        if (fileSize <= Integer.BYTES) {
             return null;
         }
-        long offset = Integer.BYTES;
-        int size = (int) (file.size() - offset);
-        if (size == 0) {
-            return "";
-        }
-        return new String(file.readBytesAt(offset, size), Charset.defaultCharset());
+        return new String(file.readBytesAt(Integer.BYTES, (int) (fileSize - Integer.BYTES)), Charset.defaultCharset());
     }
 
     public void close() {

@@ -1,7 +1,8 @@
 package cn.ttplatform.wh.core.support;
 
+import cn.ttplatform.wh.support.DistributableCodec;
 import cn.ttplatform.wh.support.KeepAliveCheckHandler;
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -12,9 +13,9 @@ import io.netty.channel.socket.SocketChannel;
  **/
 public class CoreChannelInitializer extends ChannelInitializer<SocketChannel> {
 
-    private final NodeContext context;
+    private final GlobalContext context;
 
-    public CoreChannelInitializer(NodeContext context) {
+    public CoreChannelInitializer(GlobalContext context) {
         this.context = context;
     }
 

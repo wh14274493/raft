@@ -3,12 +3,11 @@ package cn.ttplatform.wh.core.log.entry;
 import static cn.ttplatform.wh.core.log.tool.ByteConvertor.fillIntBytes;
 
 import cn.ttplatform.wh.core.log.generation.FileName;
-import cn.ttplatform.wh.support.BufferPool;
 import cn.ttplatform.wh.core.log.tool.ByteBufferWriter;
 import cn.ttplatform.wh.core.log.tool.ReadableAndWriteableFile;
+import cn.ttplatform.wh.support.BufferPool;
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,22 +31,22 @@ public class FileLogEntry {
 
     public long append(LogEntry logEntry) {
         long offset = file.size();
-        file.writeBytes(logEntryFactory.transferLogEntryToBytes(logEntry));
+        file.append(logEntryFactory.transferLogEntryToBytes(logEntry));
         return offset;
     }
 
-    public List<Long> append(List<LogEntry> logEntries) {
-        List<Long> offsetList = new ArrayList<>(logEntries.size());
+    public long[] append(List<LogEntry> logEntries) {
+        long[] offsets = new long[logEntries.size()];
         long base = file.size();
         long offset = base;
-        for (LogEntry logEntry : logEntries) {
-            offsetList.add(offset);
-            offset += (LOG_ENTRY_HEADER_SIZE + logEntry.getCommand().length);
+        for (int i = 0; i < logEntries.size(); i++) {
+            offsets[i] = offset;
+            offset += (LOG_ENTRY_HEADER_SIZE + logEntries.get(i).getCommand().length);
         }
         byte[] content = new byte[(int) (offset - base)];
         fillContentWithLogEntries(content, logEntries);
         file.append(content);
-        return offsetList;
+        return offsets;
     }
 
     public void fillContentWithLogEntries(byte[] content, List<LogEntry> logEntries) {
@@ -77,13 +76,13 @@ public class FileLogEntry {
      * @return an log entry
      */
     public LogEntry getEntry(long start, long end) {
-        long fileSize = file.size();
-        if (start < 0 || start > fileSize) {
+        long size = file.size();
+        if (start < 0 || start > size) {
             return null;
         }
         int readLength;
         if (end < start) {
-            readLength = (int) (fileSize - start);
+            readLength = (int) (size - start);
         } else {
             readLength = (int) (end - start);
         }

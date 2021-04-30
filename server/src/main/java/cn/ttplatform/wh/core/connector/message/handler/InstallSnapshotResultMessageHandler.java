@@ -1,12 +1,12 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
+import cn.ttplatform.wh.core.connector.message.InstallSnapshotResultMessage;
+import cn.ttplatform.wh.core.group.Endpoint;
 import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
 import cn.ttplatform.wh.support.Distributable;
-import cn.ttplatform.wh.core.group.Endpoint;
-import cn.ttplatform.wh.core.NodeContext;
-import cn.ttplatform.wh.core.connector.message.InstallSnapshotResultMessage;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class InstallSnapshotResultMessageHandler extends AbstractDistributableHandler {
 
-    public InstallSnapshotResultMessageHandler(NodeContext context) {
+    public InstallSnapshotResultMessageHandler(GlobalContext context) {
         super(context);
     }
 
@@ -28,38 +28,46 @@ public class InstallSnapshotResultMessageHandler extends AbstractDistributableHa
     @Override
     public void doHandle(Distributable distributable) {
         InstallSnapshotResultMessage message = (InstallSnapshotResultMessage) distributable;
-        context.sendMessage(process(message), message.getSourceId());
-    }
 
-    private InstallSnapshotMessage process(InstallSnapshotResultMessage message) {
         int term = message.getTerm();
         int currentTerm = context.getNode().getTerm();
-        Endpoint endpoint = context.getCluster().find(message.getSourceId());
         if (term > currentTerm) {
-            context.changeToFollower(term, null, null, 0);
-            return null;
+            context.changeToFollower(term, null, null, 0, 0, 0L);
+            return;
         }
         if (!context.isLeader()) {
             log.warn("role is not a leader, ignore this message.");
-            return null;
+            return;
         }
         if (term < currentTerm) {
-            return null;
+            return;
         }
+        Endpoint endpoint = context.getCluster().find(message.getSourceId());
+        if (endpoint == null) {
+            log.warn("endpoint[{}] is not in cluster.", message.getSourceId());
+            return;
+        }
+        InstallSnapshotMessage installSnapshotMessage;
         if (message.isSuccess()) {
             if (message.isDone()) {
-                endpoint.setSnapshotReplicating(false);
                 endpoint.updateReplicationState(context.getLog().getLastIncludeIndex());
-                return null;
+                context.doLogReplication(endpoint, currentTerm);
+                return;
             } else {
                 long snapshotOffset = message.getOffset();
                 endpoint.setSnapshotOffset(snapshotOffset);
-                return context.getLog().createInstallSnapshotMessage(currentTerm, snapshotOffset,
+                installSnapshotMessage = context.getLog().createInstallSnapshotMessage(currentTerm, snapshotOffset,
                     context.getProperties().getMaxTransferSize());
             }
         } else {
             endpoint.setSnapshotOffset(0L);
-            return context.getLog().createInstallSnapshotMessage(currentTerm, 0L, context.getProperties().getMaxTransferSize());
+            installSnapshotMessage = context.getLog()
+                .createInstallSnapshotMessage(currentTerm, 0L, context.getProperties().getMaxTransferSize());
         }
+
+        context.sendMessage(installSnapshotMessage, endpoint);
+        endpoint.setReplicating(true);
+        endpoint.setLastHeartBeat(System.currentTimeMillis());
     }
+
 }

@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.log;
 
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.core.group.Cluster;
@@ -24,13 +24,13 @@ import lombok.extern.slf4j.Slf4j;
 public class FileLog implements Log {
 
     private static final Pattern DIR_NAME_PATTERN = Pattern.compile("log-(\\d+)");
-    private final NodeContext context;
+    private final GlobalContext context;
     private YoungGeneration youngGeneration;
     private OldGeneration oldGeneration;
     private int commitIndex;
     private int nextIndex;
 
-    public FileLog(NodeContext context) {
+    public FileLog(GlobalContext context) {
         this.context = context;
         oldGeneration = new OldGeneration(getLatestGeneration(context.getBasePath()), context.getByteBufferPool());
         youngGeneration = new YoungGeneration(context.getBasePath(), context.getByteBufferPool(),
@@ -128,9 +128,11 @@ public class FileLog implements Log {
 
     @Override
     public boolean checkIndexAndTermIfMatched(int index, int term) {
+        log.debug("checkIndexAndTermIfMatched");
         int lastIncludeIndex = oldGeneration.getLastIncludeIndex();
         int lastIncludeTerm = oldGeneration.getLastIncludeTerm();
         if (index < lastIncludeIndex) {
+            log.debug("index[{}] < lastIncludeIndex[{}], unmatched", index, lastIncludeIndex);
             return false;
         }
         if (index == lastIncludeIndex) {
@@ -144,10 +146,11 @@ public class FileLog implements Log {
     }
 
     @Override
-    public void pendingEntry(LogEntry entry) {
+    public int pendingEntry(LogEntry entry) {
         entry.setIndex(nextIndex++);
         youngGeneration.pendingEntry(entry);
         log.debug("update nextIndex[{}]", nextIndex);
+        return entry.getIndex();
     }
 
     @Override

@@ -19,8 +19,8 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public abstract class AbstractRole implements Role {
 
-    private int term;
-    private ScheduledFuture<?> scheduledFuture;
+    protected int term;
+    protected ScheduledFuture<?> scheduledFuture;
 
     @Override
     public void cancelTask() {

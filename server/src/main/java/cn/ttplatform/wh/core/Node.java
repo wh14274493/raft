@@ -17,12 +17,12 @@ public class Node {
 
     private String selfId;
     private Role role;
-    private final NodeContext context;
+    private final GlobalContext context;
     private boolean start;
     private boolean stop;
     private final Listener listener;
 
-    public Node(NodeContext context) {
+    public Node(GlobalContext context) {
         this.context = context;
         this.selfId = context.getProperties().getNodeId();
         this.listener = new NioListener(context);
@@ -42,15 +42,16 @@ public class Node {
         start = true;
     }
 
-    public synchronized void stop(){
-        if (!stop){
+    public synchronized void stop() {
+        if (!stop) {
             listener.stop();
             context.close();
         }
     }
 
-    public int getTerm(){
+    public int getTerm() {
         return role.getTerm();
     }
+
 
 }

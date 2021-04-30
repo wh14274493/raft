@@ -2,7 +2,7 @@ package cn.ttplatform.wh;
 
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.core.Node;
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -25,7 +25,7 @@ public class Application {
             return;
         }
         ServerProperties properties = initConfig(commandLine);
-        NodeContext context = new NodeContext(properties);
+        GlobalContext context = new GlobalContext(properties);
         Node node = new Node(context);
         context.register(node);
         node.start();

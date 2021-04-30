@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.message.RequestVoteMessage;
 import cn.ttplatform.wh.core.connector.message.RequestVoteResultMessage;
 import cn.ttplatform.wh.core.role.Follower;
@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RequestVoteMessageHandler extends AbstractDistributableHandler {
 
-    public RequestVoteMessageHandler(NodeContext context) {
+    public RequestVoteMessageHandler(GlobalContext context) {
         super(context);
     }
 
@@ -58,18 +58,18 @@ public class RequestVoteMessageHandler extends AbstractDistributableHandler {
             log.debug("the term[{}] > currentTerm[{}], and the vote result is {}.", term, currentTerm, voted);
             if (voted) {
                 log.debug("become follower and vote to {}", candidateId);
-                context.changeToFollower(term, null, candidateId, 0);
+                context.changeToFollower(term, null, candidateId, 0, 0, 0L);
             }
             return requestVoteResultMessage;
         }
         if (context.isFollower()) {
             boolean voted = !context.getLog().isNewerThan(lastLogIndex, lastLogTerm);
             log.debug("the term[{}] == currentTerm[{}], and the vote result is {}.", term, currentTerm, voted);
-            requestVoteResultMessage.setVoted(voted);
             String voteTo = ((Follower) role).getVoteTo();
             if (voted && (voteTo == null || "".equals(voteTo))) {
+                requestVoteResultMessage.setVoted(voted);
                 log.debug("at this point, having not voted for any other node, so become follower and vote to {}", candidateId);
-                context.changeToFollower(term, null, candidateId, 0);
+                context.changeToFollower(term, null, candidateId, 0, 0, 0L);
             }
         }
         return requestVoteResultMessage;

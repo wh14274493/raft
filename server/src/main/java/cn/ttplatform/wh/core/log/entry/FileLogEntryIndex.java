@@ -82,13 +82,14 @@ public class FileLogEntryIndex {
             }
         }
         maxLogIndex = index;
+        log.debug("update maxLogIndex = {}.", maxLogIndex);
         LogEntryIndex logEntryIndex = LogEntryIndex.builder().index(index).term(logEntry.getTerm()).offset(offset)
             .type(logEntry.getType()).build();
-        file.writeBytes(logEntryFactory.transferLogEntryIndexToBytes(logEntryIndex));
+        file.append(logEntryFactory.transferLogEntryIndexToBytes(logEntryIndex));
         logEntryIndices.add(logEntryIndex);
     }
 
-    public void append(List<LogEntry> logEntries, List<Long> offsetList) {
+    public void append(List<LogEntry> logEntries, long[] offsets) {
         if (isEmpty()) {
             minLogIndex = logEntries.get(0).getIndex();
         } else {
@@ -98,12 +99,13 @@ public class FileLogEntryIndex {
             }
         }
         maxLogIndex = logEntries.get(logEntries.size() - 1).getIndex();
+        log.debug("update maxLogIndex = {}.", maxLogIndex);
         byte[] content = new byte[logEntries.size() * ITEM_LENGTH];
-        fillContentWithLogEntryIndex(content, logEntries, offsetList);
+        fillContentWithLogEntryIndex(content, logEntries, offsets);
         file.append(content);
     }
 
-    public void fillContentWithLogEntryIndex(byte[] content, List<LogEntry> logEntries, List<Long> offsetList) {
+    private void fillContentWithLogEntryIndex(byte[] content, List<LogEntry> logEntries, long[] offsets) {
         int index = 0;
         LogEntry logEntry;
         for (int i = 0; i < logEntries.size(); i++) {
@@ -115,12 +117,12 @@ public class FileLogEntryIndex {
             index += 4;
             fillIntBytes(logEntry.getType(), content, index);
             index += 8;
-            fillLongBytes(offsetList.get(i), content, index);
+            fillLongBytes(offsets[i], content, index);
             index++;
             logEntryIndices.add(LogEntryIndex.builder()
                 .index(logEntry.getIndex())
                 .term(logEntry.getTerm())
-                .offset(offsetList.get(i))
+                .offset(offsets[i])
                 .type(logEntry.getType())
                 .build());
         }

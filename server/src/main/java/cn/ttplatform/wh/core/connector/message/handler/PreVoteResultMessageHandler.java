@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.message.PreVoteResultMessage;
 import cn.ttplatform.wh.core.group.Cluster;
 import cn.ttplatform.wh.core.group.Phase;
@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PreVoteResultMessageHandler extends AbstractDistributableHandler {
 
-    public PreVoteResultMessageHandler(NodeContext context) {
+    public PreVoteResultMessageHandler(GlobalContext context) {
         super(context);
     }
 
@@ -37,11 +37,14 @@ public class PreVoteResultMessageHandler extends AbstractDistributableHandler {
         Follower role = (Follower) context.getNode().getRole();
         int currentTerm = role.getTerm();
         if (checkVoteCounts(message, role)) {
-            log.debug("startElection");
             context.startElection(currentTerm + 1);
         } else {
             log.debug("need more votes.");
-            context.changeToFollower(currentTerm, null, null, role.getPreVoteCounts());
+            context.changeToFollower(currentTerm,
+                null, role.getVoteTo(),
+                role.getOldConfigPreVoteCounts(),
+                role.getNewConfigPreVoteCounts(),
+                0L);
         }
     }
 
@@ -54,8 +57,8 @@ public class PreVoteResultMessageHandler extends AbstractDistributableHandler {
             log.debug("countOfNewConfig is {}", countOfNewConfig);
         }
         Phase phase = cluster.getPhase();
-        int oldCounts;
-        int newCounts;
+        int oldCounts = role.getOldConfigPreVoteCounts();
+        int newCounts = role.getNewConfigPreVoteCounts();
         switch (phase) {
             case NEW:
                 newCounts = role.incrementNewCountsAndGet();
@@ -64,13 +67,12 @@ public class PreVoteResultMessageHandler extends AbstractDistributableHandler {
             case OLD_NEW:
                 if (cluster.inNewConfig(e.getSourceId())) {
                     newCounts = role.incrementNewCountsAndGet();
-                    oldCounts = role.getOldConfigPreVoteCounts();
                     if (log.isDebugEnabled()) {
                         log.debug("phase is OLD_NEW.");
                         log.debug("receive a pre vote msg from newConfigNode[{}].", e.getSourceId());
                     }
-                } else {
-                    newCounts = role.getNewConfigPreVoteCounts();
+                }
+                if (cluster.inOldConfig(e.getSourceId())) {
                     oldCounts = role.incrementOldCountsAndGet();
                     if (log.isDebugEnabled()) {
                         log.debug("phase is OLD_NEW.");

@@ -6,8 +6,8 @@ import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.log.entry.FileLogEntry;
 import cn.ttplatform.wh.core.log.entry.FileLogEntryIndex;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
-import cn.ttplatform.wh.core.log.entry.LogEntryIndex;
 import cn.ttplatform.wh.core.log.entry.LogEntryFactory;
+import cn.ttplatform.wh.core.log.entry.LogEntryIndex;
 import cn.ttplatform.wh.exception.OperateFileException;
 import cn.ttplatform.wh.support.BufferPool;
 import java.io.File;
@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.IntStream;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -88,6 +89,9 @@ public class YoungGeneration extends AbstractGeneration {
      * @param logEntry Log to be submitted
      */
     public void pendingEntry(LogEntry logEntry) {
+        if (!pending.isEmpty() && logEntry.getIndex() != pending.peekLast().getIndex() + 1) {
+            throw new IllegalStateException("The index number of the log is incorrect ");
+        }
         pending.add(logEntry);
     }
 
@@ -97,7 +101,20 @@ public class YoungGeneration extends AbstractGeneration {
      * @param logEntries Logs to be submitted
      */
     public void pendingEntries(List<LogEntry> logEntries) {
+        if (!pending.isEmpty() && logEntries.get(0).getIndex() != pending.peekLast().getIndex() + 1) {
+            throw new IllegalStateException("The index number of the log is incorrect ");
+        }
         pending.addAll(logEntries);
+    }
+
+    /**
+     * Save the log to a file and update the index file at the same time.
+     *
+     * @param logEntry Log to be submitted
+     */
+    public void appendLogEntry(LogEntry logEntry) {
+        long offsets = fileLogEntry.append(logEntry);
+        fileLogEntryIndex.append(logEntry, offsets);
     }
 
     /**
@@ -106,8 +123,12 @@ public class YoungGeneration extends AbstractGeneration {
      * @param logEntries Logs to be submitted
      */
     public void appendLogEntries(List<LogEntry> logEntries) {
-        List<Long> offsetList = fileLogEntry.append(logEntries);
-        fileLogEntryIndex.append(logEntries, offsetList);
+        if (logEntries.size() == 1) {
+            appendLogEntry(logEntries.get(0));
+        } else {
+            long[] offsets = fileLogEntry.append(logEntries);
+            fileLogEntryIndex.append(logEntries, offsets);
+        }
     }
 
     /**
@@ -142,12 +163,13 @@ public class YoungGeneration extends AbstractGeneration {
             log.debug("index[{}] < minEntryIndex[{}]", index, fileLogEntryIndex.getMinLogIndex());
             return null;
         }
-        if (index > getLastLogMetaData().getIndex()) {
-            log.debug("index[{}] > lastLogIndex", index);
+        int lastLogIndex = getLastLogMetaData().getIndex();
+        if (index > lastLogIndex) {
+            log.debug("index[{}] > lastLogIndex[{}]", index, lastLogIndex);
             return null;
         }
         if (index > fileLogEntryIndex.getMaxLogIndex()) {
-            log.debug("index[{}] > maxEntryIndex[{}]", index, fileLogEntryIndex.getMaxLogIndex());
+            log.debug("index[{}] > maxEntryIndex[{}], find log from pending.", index, fileLogEntryIndex.getMaxLogIndex());
             return pending.get(index - fileLogEntryIndex.getMaxLogIndex() - 1);
         }
         long startOffset = fileLogEntryIndex.getEntryOffset(index);
@@ -183,9 +205,7 @@ public class YoungGeneration extends AbstractGeneration {
         if (from > maxLogIndex) {
             from = from - maxLogIndex - 1;
             to = to - maxLogIndex - 1;
-            for (int i = from; i < to; i++) {
-                res.add(pending.get(i));
-            }
+            IntStream.range(from, to).forEach(index -> res.add(pending.get(index)));
             return res;
         }
         long start = fileLogEntryIndex.getEntryOffset(from);
@@ -210,10 +230,8 @@ public class YoungGeneration extends AbstractGeneration {
             offset += cmdLength;
             res.add(LogEntryFactory.createEntry(type, term, index, cmd));
         }
-        offset = to - maxLogIndex - 1;
-        for (int i = 0; i < offset; i++) {
-            res.add(pending.get(i));
-        }
+        to = to - maxLogIndex - 1;
+        IntStream.range(0, to).forEach(index -> res.add(pending.get(index)));
         return res;
     }
 

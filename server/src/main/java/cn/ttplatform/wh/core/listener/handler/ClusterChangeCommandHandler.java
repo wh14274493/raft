@@ -5,7 +5,7 @@ import cn.ttplatform.wh.cmd.RequestFailedCommand;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.group.EndpointMetaData;
 import cn.ttplatform.wh.constant.ErrorMessage;
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.StateMachine;
 import cn.ttplatform.wh.core.group.Cluster;
 import cn.ttplatform.wh.core.group.Phase;
@@ -25,7 +25,7 @@ public class ClusterChangeCommandHandler extends AbstractDistributableHandler {
 
     private final RequestFailedCommand requestFailedCommand = new RequestFailedCommand();
 
-    public ClusterChangeCommandHandler(NodeContext context) {
+    public ClusterChangeCommandHandler(GlobalContext context) {
         super(context);
     }
 

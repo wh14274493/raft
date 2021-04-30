@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.listener.nio;
 
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.support.CoreChannelInitializer;
 import cn.ttplatform.wh.core.listener.Listener;
 import io.netty.bootstrap.ServerBootstrap;
@@ -15,23 +15,23 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NioListener implements Listener {
 
-    private final NodeContext nodeContext;
+    private final GlobalContext globalContext;
     private final EventLoopGroup boss;
     private final EventLoopGroup worker;
     private final int port;
 
-    public NioListener(NodeContext nodeContext) {
-        this.nodeContext = nodeContext;
-        this.boss = nodeContext.getBoss();
-        this.worker = nodeContext.getWorker();
-        this.port = nodeContext.getProperties().getPort();
+    public NioListener(GlobalContext globalContext) {
+        this.globalContext = globalContext;
+        this.boss = globalContext.getBoss();
+        this.worker = globalContext.getWorker();
+        this.port = globalContext.getProperties().getPort();
     }
 
     @Override
     public void listen() {
         ServerBootstrap serverBootstrap = new ServerBootstrap().group(boss, worker)
             .channel(NioServerSocketChannel.class)
-            .childHandler(new CoreChannelInitializer(nodeContext));
+            .childHandler(new CoreChannelInitializer(globalContext));
         try {
             serverBootstrap.bind(port).addListener(future -> {
                 if (future.isSuccess()) {

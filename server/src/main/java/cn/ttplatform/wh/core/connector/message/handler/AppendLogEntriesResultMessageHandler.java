@@ -4,7 +4,7 @@ import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
 import cn.ttplatform.wh.support.Distributable;
 import cn.ttplatform.wh.support.Message;
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesResultMessage;
 import cn.ttplatform.wh.core.group.Cluster;
 import cn.ttplatform.wh.core.group.Endpoint;
@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AppendLogEntriesResultMessageHandler extends AbstractDistributableHandler {
 
-    public AppendLogEntriesResultMessageHandler(NodeContext context) {
+    public AppendLogEntriesResultMessageHandler(GlobalContext context) {
         super(context);
     }
 
@@ -46,7 +46,7 @@ public class AppendLogEntriesResultMessageHandler extends AbstractDistributableH
         int term = message.getTerm();
         int currentTerm = context.getNode().getTerm();
         if (term > currentTerm) {
-            context.changeToFollower(term, null, null, 0);
+            context.changeToFollower(term, null, null, 0, 0, 0L);
             return;
         }
         if (context.isLeader()) {
@@ -55,8 +55,9 @@ public class AppendLogEntriesResultMessageHandler extends AbstractDistributableH
                 log.warn("endpoint[{}] is not in cluster.", message.getSourceId());
                 return;
             }
+            boolean doReplication = true;
             if (message.isSuccess()) {
-                endpoint.updateReplicationState(message.getLastLogIndex());
+                doReplication = endpoint.updateReplicationState(message.getLastLogIndex());
                 int newCommitIndex = context.getCluster().getNewCommitIndex();
                 if (context.getLog().advanceCommitIndex(newCommitIndex, currentTerm)) {
                     context.advanceLastApplied(newCommitIndex);
@@ -65,7 +66,9 @@ public class AppendLogEntriesResultMessageHandler extends AbstractDistributableH
                 endpoint.backoffNextIndex();
                 endpoint.setLastHeartBeat(0L);
             }
-            context.doLogReplication();
+            if (doReplication) {
+                context.doLogReplication(endpoint, currentTerm);
+            }
         }
     }
 }

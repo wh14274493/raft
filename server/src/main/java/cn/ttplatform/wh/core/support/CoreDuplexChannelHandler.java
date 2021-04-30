@@ -2,7 +2,7 @@ package cn.ttplatform.wh.core.support;
 
 import cn.ttplatform.wh.cmd.Command;
 import cn.ttplatform.wh.cmd.RedirectCommand;
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.role.Follower;
 import cn.ttplatform.wh.support.Message;
 import io.netty.channel.ChannelDuplexHandler;
@@ -16,10 +16,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
 
-    private final NodeContext context;
+    private final GlobalContext context;
     private final CommonDistributor distributor;
 
-    public CoreDuplexChannelHandler(NodeContext context) {
+    public CoreDuplexChannelHandler(GlobalContext context) {
         this.context = context;
         this.distributor = context.getDistributor();
     }
@@ -28,6 +28,7 @@ public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         if (msg instanceof Command) {
             Command command = (Command) msg;
+            log.debug("receive a command {} from {}.", command, command.getId());
             if (!canHandler(command, ctx)) {
                 return;
             }
@@ -35,6 +36,7 @@ public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
             distributor.distribute(command);
         } else if (msg instanceof Message) {
             String remoteId = ((Message) msg).getSourceId();
+            log.debug("receive a msg {} from {}.", msg, remoteId);
             ChannelPool.cacheChannel(remoteId, ctx.channel());
             distributor.distribute((Message) msg);
         } else {
@@ -55,5 +57,10 @@ public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        log.error(cause.toString());
     }
 }

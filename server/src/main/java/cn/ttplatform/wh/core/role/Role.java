@@ -32,4 +32,5 @@ public interface Role {
      * @return res
      */
     boolean compareState(Role oldRole);
+
 }

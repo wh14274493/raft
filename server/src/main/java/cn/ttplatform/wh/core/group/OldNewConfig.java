@@ -14,6 +14,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 class OldNewConfig {
 
-    private Set<EndpointMetaData> newConfigs;
     private Set<EndpointMetaData> oldConfigs;
+    private Set<EndpointMetaData> newConfigs;
 }

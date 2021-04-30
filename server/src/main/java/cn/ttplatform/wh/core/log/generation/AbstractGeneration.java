@@ -14,17 +14,17 @@ import java.nio.ByteBuffer;
  */
 public abstract class AbstractGeneration implements Generation {
 
-    File file;
-    FileSnapshot fileSnapshot;
-    FileLogEntry fileLogEntry;
-    FileLogEntryIndex fileLogEntryIndex;
+    protected File file;
+    protected FileSnapshot fileSnapshot;
+    protected FileLogEntry fileLogEntry;
+    protected FileLogEntryIndex fileLogEntryIndex;
 
-    AbstractGeneration(File file, BufferPool<ByteBuffer> pool,boolean isOldGeneration) {
+    AbstractGeneration(File file, BufferPool<ByteBuffer> pool, boolean isOldGeneration) {
         if (!file.exists() && !file.mkdir()) {
             throw new OperateFileException("create file[" + file.getPath() + "] error");
         }
         this.file = file;
-        this.fileSnapshot = new FileSnapshot(file, pool,isOldGeneration);
+        this.fileSnapshot = new FileSnapshot(file, pool, isOldGeneration);
     }
 
     public int getLastIncludeIndex() {

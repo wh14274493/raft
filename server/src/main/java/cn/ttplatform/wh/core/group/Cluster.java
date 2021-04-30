@@ -2,7 +2,7 @@ package cn.ttplatform.wh.core.group;
 
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.constant.ErrorMessage;
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.exception.ClusterConfigException;
 import cn.ttplatform.wh.support.BufferPool;
@@ -30,10 +30,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Cluster {
 
-    private static final int MIN_CLUSTER_SIZE = 3;
+    private static final int MIN_CLUSTER_SIZE = 2;
     private Mode mode;
     private final String selfId;
-    private final NodeContext context;
+    private final GlobalContext context;
     private final Map<String, Endpoint> newConfigMap = new HashMap<>();
     private final Map<String, Endpoint> endpointMap;
     private final NewConfigFactory newConfigFactory;
@@ -41,7 +41,7 @@ public class Cluster {
     private Phase phase;
     private int logSynCompleteState;
 
-    public Cluster(NodeContext context) {
+    public Cluster(GlobalContext context) {
         this.context = context;
         Set<Endpoint> endpoints = initClusterEndpoints(context.getProperties());
         this.endpointMap = buildMap(endpoints);
@@ -121,23 +121,31 @@ public class Cluster {
 
     public int getNewCommitIndex() {
         if (phase == Phase.OLD_NEW) {
-            return Math.min(getNewCommitIndexFrom(endpointMap), getNewCommitIndexFrom(newConfigMap));
+            int oldConfigCommitIndex = getNewCommitIndexFrom(endpointMap);
+            int newConfigCommitIndex = getNewCommitIndexFrom(newConfigMap);
+            log.debug("oldConfigCommitIndex is {}.", oldConfigCommitIndex);
+            log.debug("newConfigCommitIndex is {}.", newConfigCommitIndex);
+            return Math.min(oldConfigCommitIndex, newConfigCommitIndex);
         }
         if (phase == Phase.NEW) {
-            return getNewCommitIndexFrom(newConfigMap);
+            int newConfigCommitIndex = getNewCommitIndexFrom(newConfigMap);
+            log.debug("newConfigCommitIndex is {}.", newConfigCommitIndex);
+            return newConfigCommitIndex;
         }
-        return getNewCommitIndexFrom(endpointMap);
+        int oldConfigCommitIndex = getNewCommitIndexFrom(endpointMap);
+        log.debug("oldConfigCommitIndex is {}.", oldConfigCommitIndex);
+        return oldConfigCommitIndex;
     }
 
     private int getNewCommitIndexFrom(Map<String, Endpoint> endpointMap) {
-        List<Endpoint> endpoints = new ArrayList<>(endpointMap.size() - 1);
+        List<Endpoint> endpoints = new ArrayList<>(endpointMap.size());
         endpointMap.forEach((id, endpoint) -> {
             if (!selfId.equals(id)) {
                 endpoints.add(endpoint);
             }
         });
         int size = endpoints.size();
-        if (size < MIN_CLUSTER_SIZE - 1) {
+        if (size < MIN_CLUSTER_SIZE) {
             throw new ClusterConfigException(ErrorMessage.CLUSTER_SIZE_ERROR);
         }
         Collections.sort(endpoints);
@@ -169,6 +177,10 @@ public class Cluster {
 
     public boolean inNewConfig(String nodeId) {
         return newConfigMap.containsKey(nodeId);
+    }
+
+    public boolean inOldConfig(String nodeId) {
+        return endpointMap.containsKey(nodeId);
     }
 
     public void enterSyncingPhase() {
@@ -217,7 +229,7 @@ public class Cluster {
             return;
         }
         if (!inNewConfig(selfId)) {
-            context.changeToFollower(context.getNode().getTerm(), null, null, 0);
+            context.changeToFollower(context.getNode().getTerm(), null, null, 0, 0, 0L);
         }
         endpointMap.clear();
         if (inNewConfig(selfId)) {

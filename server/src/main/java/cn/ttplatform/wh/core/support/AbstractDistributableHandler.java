@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.support;
 
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.support.Distributable;
 import cn.ttplatform.wh.support.DistributableHandler;
 
@@ -10,9 +10,9 @@ import cn.ttplatform.wh.support.DistributableHandler;
  */
 public abstract class AbstractDistributableHandler implements DistributableHandler {
 
-    protected NodeContext context;
+    protected GlobalContext context;
 
-    protected AbstractDistributableHandler(NodeContext context) {
+    protected AbstractDistributableHandler(GlobalContext context) {
         this.context = context;
     }
 

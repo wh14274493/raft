@@ -1,8 +1,5 @@
-package cn.ttplatform.wh.core.support;
+package cn.ttplatform.wh.support;
 
-import cn.ttplatform.wh.support.Distributable;
-import cn.ttplatform.wh.support.DistributableFactory;
-import cn.ttplatform.wh.support.DistributableFactoryManager;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;

@@ -3,7 +3,7 @@ package cn.ttplatform.wh.core.listener.handler;
 import cn.ttplatform.wh.cmd.Command;
 import cn.ttplatform.wh.cmd.GetClusterInfoResultCommand;
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.group.Cluster;
 import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
 import cn.ttplatform.wh.core.support.ChannelPool;
@@ -15,7 +15,7 @@ import cn.ttplatform.wh.support.Distributable;
  */
 public class GetClusterInfoCommandHandler extends AbstractDistributableHandler {
 
-    public GetClusterInfoCommandHandler(NodeContext context) {
+    public GetClusterInfoCommandHandler(GlobalContext context) {
         super(context);
     }
 

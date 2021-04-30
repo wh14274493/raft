@@ -30,4 +30,15 @@ public class InstallSnapshotMessage extends AbstractMessage {
         return DistributableType.INSTALL_SNAPSHOT;
     }
 
+    @Override
+    public String toString() {
+        return "InstallSnapshotMessage{" +
+            "term=" + term +
+            ", lastIncludeIndex=" + lastIncludeIndex +
+            ", lastIncludeTerm=" + lastIncludeTerm +
+            ", offset=" + offset +
+            ", chunkLength=" + (chunk == null ? 0 : chunk.length) +
+            ", done=" + done +
+            '}';
+    }
 }

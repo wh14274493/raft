@@ -17,28 +17,23 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ByteBufferWriter implements ReadableAndWriteableFile {
 
-    FileChannel channel;
-    BufferPool<ByteBuffer> bufferPool;
+    private final FileChannel fileChannel;
+    private final BufferPool<ByteBuffer> bufferPool;
+    /**
+     * Not safe in the case of multi-threaded operations
+     */
+    private long fileSize;
 
     public ByteBufferWriter(File file, BufferPool<ByteBuffer> bufferPool) {
         try {
             this.bufferPool = bufferPool;
-            channel = FileChannel
+            this.fileChannel = FileChannel
                 .open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE,
-                    StandardOpenOption.DSYNC,StandardOpenOption.DELETE_ON_CLOSE);
+                    StandardOpenOption.DSYNC);
+            fileSize = fileChannel.size();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new OperateFileException("open file channel error.");
         }
-    }
-
-    @Override
-    public void seek(long position) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void writeInt(int data) {
-        writeIntAt(size(), data);
     }
 
     @Override
@@ -46,20 +41,12 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
         ByteBuffer byteBuffer = bufferPool.allocate(Integer.BYTES);
         byteBuffer.putInt(data);
         write(byteBuffer, position);
-    }
-
-    @Override
-    public int readInt() {
-        long fileSize = size();
-        if (fileSize < Integer.BYTES) {
-            throw new OperateFileException(ErrorMessage.READ_FAILED);
-        }
-        return readIntAt(fileSize - Integer.BYTES);
+        fileSize = getActualSize();
     }
 
     @Override
     public int readIntAt(long position) {
-        if (position < 0 || size() - position < Integer.BYTES) {
+        if (position < 0 || fileSize - position < Integer.BYTES) {
             throw new OperateFileException(ErrorMessage.READ_FAILED);
         }
         ByteBuffer byteBuffer = bufferPool.allocate(Integer.BYTES);
@@ -74,73 +61,27 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
     }
 
     @Override
-    public void writeLong(long data) {
-        writeLongAt(size(), data);
-    }
-
-    @Override
-    public void writeLongAt(long position, long data) {
+    public void writeBytesAt(long position, byte[] chunk) {
         if (position < 0) {
             throw new UnsupportedOperationException("position can not be less than 0");
         }
-        ByteBuffer byteBuffer = bufferPool.allocate(Long.BYTES);
-        byteBuffer.putLong(data);
+        ByteBuffer byteBuffer = bufferPool.allocate(chunk.length);
+        byteBuffer.put(chunk);
         write(byteBuffer, position);
+        fileSize = getActualSize();
     }
 
     @Override
-    public long readLong() {
-        long fileSize = size();
-        if (fileSize < Long.BYTES) {
-            throw new OperateFileException(ErrorMessage.READ_FAILED);
-        }
-        return readLongAt(fileSize - Long.BYTES);
-    }
-
-    @Override
-    public long readLongAt(long position) {
-        if (position < 0 || size() - position < Long.BYTES) {
-            throw new OperateFileException("not enough content to read");
-        }
-        ByteBuffer byteBuffer = bufferPool.allocate(Long.BYTES);
-        int read = read(byteBuffer, position);
-        if (read < Long.BYTES) {
-            throw new OperateFileException("read an long data from file[index(" + position + ")] tail");
-        }
-        byteBuffer.flip();
-        long res = byteBuffer.getLong();
-        bufferPool.recycle(byteBuffer);
-        return res;
-    }
-
-    @Override
-    public void writeBytes(byte[] data) {
-        writeBytesAt(size(), data);
-    }
-
-    @Override
-    public void writeBytesAt(long position, byte[] data) {
-        if (position < 0) {
-            throw new UnsupportedOperationException("position can not be less than 0");
-        }
-        ByteBuffer byteBuffer = bufferPool.allocate(data.length);
-        byteBuffer.put(data);
-        write(byteBuffer, position);
-    }
-
-    @Override
-    public void append(byte[] data) {
-        writeBytes(data);
-    }
-
-    @Override
-    public byte[] readBytes(int size) {
-        throw new UnsupportedOperationException();
+    public void append(byte[] chunk) {
+        ByteBuffer byteBuffer = bufferPool.allocate(chunk.length);
+        byteBuffer.put(chunk);
+        write(byteBuffer, fileSize);
+        fileSize += chunk.length;
     }
 
     @Override
     public byte[] readBytesAt(long position, int size) {
-        if (position < 0 || size() - position < size) {
+        if (position < 0 || fileSize - position < size) {
             throw new OperateFileException("not enough content to read");
         }
         ByteBuffer byteBuffer = bufferPool.allocate(size);
@@ -159,13 +100,43 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
 
     @Override
     public void truncate(long position) {
-        if (position > size()) {
+        if (position > fileSize) {
             throw new UnsupportedOperationException("position can not be greater than file size");
         }
         try {
-            channel.truncate(Math.max(0L, position));
+            position = Math.max(0L, position);
+            fileChannel.truncate(position);
+            fileSize = position;
         } catch (IOException e) {
             throw new OperateFileException("truncate a file[index(" + position + ")] error");
+        }
+    }
+
+
+    private void write(ByteBuffer byteBuffer, long position) {
+        byteBuffer.flip();
+        try {
+            fileChannel.write(byteBuffer, position);
+        } catch (IOException e) {
+            throw new OperateFileException("write an byte[] data to file[index(" + position + ")] error");
+        } finally {
+            bufferPool.recycle(byteBuffer);
+        }
+    }
+
+    private int read(ByteBuffer byteBuffer, long position) {
+        try {
+            return fileChannel.read(byteBuffer, position);
+        } catch (IOException e) {
+            throw new OperateFileException("read an byte[] data to file[index(" + position + ")] error");
+        }
+    }
+
+    private long getActualSize() {
+        try {
+            return fileChannel.size();
+        } catch (IOException e) {
+            throw new OperateFileException("get file size error.");
         }
     }
 
@@ -176,45 +147,23 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
 
     @Override
     public boolean isEmpty() {
-        return size() == 0L;
+        return fileSize == 0L;
+    }
+
+    @Override
+    public long size() {
+        return fileSize;
     }
 
     @Override
     public void close() {
         try {
-            if (channel.isOpen()) {
-                channel.close();
+            if (fileChannel.isOpen()) {
+                fileChannel.close();
             }
         } catch (IOException e) {
             throw new OperateFileException("close a file channel error");
         }
     }
 
-    @Override
-    public long size() {
-        try {
-            return channel.size();
-        } catch (IOException e) {
-            throw new OperateFileException("read file size error");
-        }
-    }
-
-    private void write(ByteBuffer byteBuffer, long position) {
-        byteBuffer.flip();
-        try {
-            channel.write(byteBuffer, position);
-        } catch (IOException e) {
-            throw new OperateFileException("write an byte[] data to file[index(" + position + ")] error");
-        } finally {
-            bufferPool.recycle(byteBuffer);
-        }
-    }
-
-    private int read(ByteBuffer byteBuffer, long position) {
-        try {
-            return channel.read(byteBuffer, position);
-        } catch (IOException e) {
-            throw new OperateFileException("read an byte[] data to file[index(" + position + ")] error");
-        }
-    }
 }

@@ -1,19 +1,23 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.message.PreVoteMessage;
 import cn.ttplatform.wh.core.connector.message.PreVoteResultMessage;
+import cn.ttplatform.wh.core.role.Follower;
+import cn.ttplatform.wh.core.role.Role;
 import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
 import cn.ttplatform.wh.support.Distributable;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Wang Hao
  * @date 2021/2/17 1:39
  */
+@Slf4j
 public class PreVoteMessageHandler extends AbstractDistributableHandler {
 
-    public PreVoteMessageHandler(NodeContext context) {
+    public PreVoteMessageHandler(GlobalContext context) {
         super(context);
     }
 
@@ -24,6 +28,12 @@ public class PreVoteMessageHandler extends AbstractDistributableHandler {
 
     @Override
     public void doHandle(Distributable distributable) {
+        Role role = context.getNode().getRole();
+        if (context.isFollower() && System.currentTimeMillis() - ((Follower) role).getLastHeartBeat() < context.getProperties()
+            .getMinElectionTimeout()) {
+            log.debug("current leader is alive, reject this pre request vote message.");
+            return;
+        }
         PreVoteMessage message = (PreVoteMessage) distributable;
         PreVoteResultMessage preVoteResultMessage = PreVoteResultMessage.builder()
             .isVoted(!context.getLog().isNewerThan(message.getLastLogIndex(), message.getLastLogTerm()))

@@ -60,7 +60,7 @@ public class FileSnapshot {
             .lastIncludeTerm(lastIncludeTerm).size(size).contentLength(contentLength).build();
         byte[] header = logEntryFactory.transferSnapshotHeaderToBytes(newSnapshotHeader);
         file.clear();
-        file.writeBytesAt(0L, header);
+        file.append(header);
         file.append(content);
         snapshotHeader = newSnapshotHeader;
     }

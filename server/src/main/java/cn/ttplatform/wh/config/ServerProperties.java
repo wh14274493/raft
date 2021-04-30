@@ -60,7 +60,7 @@ public class ServerProperties {
     /**
      * replicationHeartBeat should less than {@code logReplicationInterval} milliseconds6
      */
-    private long replicationHeartBeat;
+    private long retryTimeout;
 
     /**
      * all the data will be stored in {@code basePath}
@@ -141,7 +141,7 @@ public class ServerProperties {
         maxElectionTimeout = Integer.parseInt(properties.getProperty("maxElectionTimeout", "4000"));
         logReplicationDelay = Long.parseLong(properties.getProperty("logReplicationDelay", "1000"));
         logReplicationInterval = Long.parseLong(properties.getProperty("logReplicationInterval", "1000"));
-        replicationHeartBeat = Long.parseLong(properties.getProperty("replicationHeartBeat", "800"));
+        retryTimeout = Long.parseLong(properties.getProperty("retryTimeout", "800"));
         basePath = properties.getProperty("basePath", System.getProperty("user.home"));
         snapshotGenerateThreshold = Integer
             .parseInt(properties.getProperty("snapshotGenerateThreshold", String.valueOf(1024 * 1024 * 10)));

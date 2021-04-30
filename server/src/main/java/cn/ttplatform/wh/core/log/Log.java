@@ -128,8 +128,9 @@ public interface Log {
      * pending an log entry
      *
      * @param logEntry log entry
+     * @return
      */
-    void pendingEntry(LogEntry logEntry);
+    int pendingEntry(LogEntry logEntry);
 
     /**
      * load snapshot snapshot date into state machine

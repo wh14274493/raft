@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesResultMessage;
 import cn.ttplatform.wh.core.group.Cluster;
@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AppendLogEntriesMessageHandler extends AbstractDistributableHandler {
 
-    public AppendLogEntriesMessageHandler(NodeContext context) {
+    public AppendLogEntriesMessageHandler(GlobalContext context) {
         super(context);
     }
 
@@ -66,10 +66,11 @@ public class AppendLogEntriesMessageHandler extends AbstractDistributableHandler
     }
 
     private boolean appendEntries(AppendLogEntriesMessage message) {
-        context.changeToFollower(message.getTerm(), message.getLeaderId(), null, 0);
+        context.changeToFollower(message.getTerm(), message.getLeaderId(), null, 0, 0, System.currentTimeMillis());
         Log log = context.getLog();
         int preLogIndex = message.getPreLogIndex();
         if (log.checkIndexAndTermIfMatched(preLogIndex, message.getPreLogTerm())) {
+            AppendLogEntriesMessageHandler.log.debug("checkIndexAndTerm Matched");
             log.pendingEntries(preLogIndex, message.getLogEntries());
             if (log.advanceCommitIndex(message.getLeaderCommitIndex(), message.getTerm())) {
                 context.advanceLastApplied(message.getLeaderCommitIndex());

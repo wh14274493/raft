@@ -18,7 +18,7 @@ public class Endpoint implements Comparable<Endpoint> {
     private int nextIndex;
     private long snapshotOffset;
     private long lastHeartBeat;
-    private boolean snapshotReplicating;
+    private boolean replicating;
 
     public Endpoint(String metaData) {
         this.metaData = new EndpointMetaData(metaData);
@@ -40,10 +40,16 @@ public class Endpoint implements Comparable<Endpoint> {
         return metaData.getNodeId();
     }
 
-    public void updateReplicationState(int matchIndex) {
+    public boolean updateReplicationState(int matchIndex) {
+        if (this.matchIndex == matchIndex) {
+            log.debug("No change in matchIndex, stop replication.");
+            replicating = false;
+            return false;
+        }
         this.matchIndex = matchIndex;
         this.nextIndex = matchIndex + 1;
         log.debug("update {} replicationState[matchIndex={},nextIndex={}]", metaData.getNodeId(), matchIndex, nextIndex);
+        return true;
     }
 
     public void backoffNextIndex() {

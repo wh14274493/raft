@@ -58,4 +58,5 @@ public class Follower extends AbstractRole {
         return Objects.equals(voteTo, old.getVoteTo()) && Objects.equals(leaderId, old.getLeaderId())
             && preVoteCounts == old.getPreVoteCounts();
     }
+
 }

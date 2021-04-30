@@ -48,6 +48,7 @@ import cn.ttplatform.wh.core.role.Candidate;
 import cn.ttplatform.wh.core.role.Follower;
 import cn.ttplatform.wh.core.role.Leader;
 import cn.ttplatform.wh.core.role.Role;
+import cn.ttplatform.wh.core.role.RoleType;
 import cn.ttplatform.wh.core.support.CommonDistributor;
 import cn.ttplatform.wh.core.executor.Scheduler;
 import cn.ttplatform.wh.core.executor.SingleThreadScheduler;
@@ -74,10 +75,11 @@ import org.slf4j.LoggerFactory;
  * @date 2020/6/30 下午9:39
  */
 @Getter
-public class NodeContext {
+public class GlobalContext {
 
-    private final Logger logger = LoggerFactory.getLogger(NodeContext.class);
+    private final Logger logger = LoggerFactory.getLogger(GlobalContext.class);
     private Node node;
+    private final RoleCache roleCache;
     private final File basePath;
     private final BufferPool<LinkedBuffer> linkedBufferPool;
     private final BufferPool<ByteBuffer> byteBufferPool;
@@ -94,9 +96,9 @@ public class NodeContext {
     private final EventLoopGroup worker;
     private final StateMachine stateMachine;
 
-    public NodeContext(ServerProperties properties) {
+    public GlobalContext(ServerProperties properties) {
         this.properties = properties;
-
+        this.roleCache = new RoleCache();
         this.basePath = new File(properties.getBasePath());
         this.linkedBufferPool = new FixedSizeLinkedBufferPool(properties.getLinkedBuffPollSize());
         if (ReadWriteFileStrategy.DIRECT.equals(properties.getReadWriteFileStrategy())) {
@@ -178,13 +180,15 @@ public class NodeContext {
             return;
         }
         int currentTerm = node.getTerm();
-        int newTerm = currentTerm + 1;
         if (isCandidate()) {
-            startElection(newTerm);
+            startElection(currentTerm + 1);
         } else {
-            changeToFollower(currentTerm, null, null, 1);
+            String selfId = cluster.getSelfId();
+            int oldCounts = cluster.inOldConfig(selfId) ? 1 : 0;
+            int newCounts = cluster.inNewConfig(selfId) ? 1 : 0;
+            changeToFollower(currentTerm, null, null, oldCounts, newCounts, 0L);
             PreVoteMessage preVoteMessage = PreVoteMessage.builder()
-                .nodeId(node.getSelfId())
+                .nodeId(selfId)
                 .lastLogTerm(log.getLastLogTerm())
                 .lastLogIndex(log.getLastLogIndex())
                 .build();
@@ -193,9 +197,12 @@ public class NodeContext {
     }
 
     public void startElection(int term) {
-        changeToCandidate(term, 1);
+        changeToCandidate(term, 0, 0);
+        logger.debug("startElection in term[{}].", term);
+        String selfId = cluster.getSelfId();
+        changeToCandidate(term, cluster.inOldConfig(selfId) ? 1 : 0, cluster.inOldConfig(selfId) ? 1 : 0);
         RequestVoteMessage requestVoteMessage = RequestVoteMessage.builder()
-            .candidateId(node.getSelfId())
+            .candidateId(selfId)
             .lastLogIndex(log.getLastLogIndex())
             .lastLogTerm(log.getLastLogTerm())
             .term(term)
@@ -214,27 +221,30 @@ public class NodeContext {
     public void doLogReplication() {
         int currentTerm = node.getTerm();
         cluster.getAllEndpointExceptSelf().forEach(endpoint -> {
-            long now = System.currentTimeMillis();
-            // If the log snapshot is not being transmitted, the heartbeat detection information will be sent every time
+            // If the log is not being transmitted, the heartbeat detection information will be sent every time
             // the scheduled task is executed, otherwise the message will be sent only when a certain time has passed.
             // Doing so will cause a problem that the results of the slave processing log snapshot messages may not be
             // returned in time, causing the master to resend the last message because it does not receive a reply. If
             // the slave does not handle it, an unknown error will occur.
-            if (!endpoint.isSnapshotReplicating() && now - endpoint.getLastHeartBeat() >= properties
-                .getReplicationHeartBeat()) {
-                Message message = log
-                    .createAppendLogEntriesMessage(node.getSelfId(), currentTerm, endpoint.getNextIndex(),
-                        properties.getMaxTransferLogs());
-                if (message == null) {
-                    message = log.createInstallSnapshotMessage(currentTerm, endpoint.getSnapshotOffset(),
-                        properties.getMaxTransferSize());
-                    // start snapshot replication
-                    endpoint.setSnapshotReplicating(true);
-                }
-                endpoint.setLastHeartBeat(System.currentTimeMillis());
-                sendMessage(message, endpoint);
+            if (!endpoint.isReplicating() || System.currentTimeMillis() - endpoint.getLastHeartBeat() >= properties
+                .getRetryTimeout()) {
+                doLogReplication(endpoint, currentTerm);
             }
         });
+    }
+
+    public void doLogReplication(Endpoint endpoint, int currentTerm) {
+
+        Message message = log.createAppendLogEntriesMessage(node.getSelfId(), currentTerm, endpoint.getNextIndex(),
+            properties.getMaxTransferLogs());
+        if (message == null) {
+            // start snapshot replication
+            message = log
+                .createInstallSnapshotMessage(currentTerm, endpoint.getSnapshotOffset(), properties.getMaxTransferSize());
+        }
+        sendMessage(message, endpoint);
+        endpoint.setReplicating(true);
+        endpoint.setLastHeartBeat(System.currentTimeMillis());
     }
 
     public void sendMessageToOthers(Message message) {
@@ -292,8 +302,8 @@ public class NodeContext {
         stateMachine.applySnapshotData(snapshotData, lastIncludeIndex);
     }
 
-    public void pendingLog(int type, byte[] config) {
-        log.pendingEntry(LogEntryFactory.createEntry(type, node.getTerm(), 0, config));
+    public int pendingLog(int type, byte[] cmd) {
+        return log.pendingEntry(LogEntryFactory.createEntry(type, node.getTerm(), 0, cmd));
     }
 
     public boolean isLeader() {
@@ -308,36 +318,94 @@ public class NodeContext {
         return node.getRole() instanceof Candidate;
     }
 
-    public void changeToFollower(int term, String leaderId, String voteTo, int preVoteCounts) {
-        Follower follower = Follower.builder().scheduledFuture(electionTimeoutTask())
-            .term(term)
-            .leaderId(leaderId)
-            .voteTo(voteTo)
-            .preVoteCounts(preVoteCounts)
-            .build();
-        changeToRole(follower);
+    private int getVoteCounts(int oldVoteCounts, int newVoteCounts) {
+        switch (cluster.getPhase()) {
+            case NEW:
+                return newVoteCounts;
+            case OLD_NEW:
+                return oldVoteCounts | (newVoteCounts << 16);
+            default:
+                return oldVoteCounts;
+        }
     }
 
-    public void changeToCandidate(int term, int voteCounts) {
-        Candidate candidate = Candidate.builder()
-            .scheduledFuture(electionTimeoutTask())
-            .voteCounts(voteCounts)
-            .term(term)
-            .build();
-        changeToRole(candidate);
-    }
-
-    public void changeToRole(Role newRole) {
+    public void changeToFollower(int term, String leaderId, String voteTo, int oldVoteCounts, int newVoteCounts,
+        long lastHeartBeat) {
+        int voteCounts = getVoteCounts(oldVoteCounts, newVoteCounts);
         Role role = node.getRole();
-        role.cancelTask();
-        if (newRole.compareState(role)) {
-            nodeState.setCurrentTerm(newRole.getTerm());
-            nodeState.setVoteTo(newRole instanceof Follower ? ((Follower) newRole).getVoteTo() : null);
+        Follower follower;
+        if (role.getType() != RoleType.FOLLOWER) {
+            nodeState.setCurrentTerm(term);
+            nodeState.setVoteTo(voteTo);
+            roleCache.recycle(role);
+            follower = roleCache.getFollower();
+        } else {
+            if (term != role.getTerm()) {
+                nodeState.setCurrentTerm(term);
+                nodeState.setVoteTo(voteTo);
+            }
+            follower = (Follower) role;
+            role.cancelTask();
         }
-        if (newRole instanceof Leader) {
-            cluster.resetReplicationStates(log.getNextIndex());
+        follower.setTerm(term);
+        follower.setScheduledFuture(electionTimeoutTask());
+        follower.setLeaderId(leaderId);
+        follower.setPreVoteCounts(voteCounts);
+        follower.setVoteTo(voteTo);
+        follower.setLastHeartBeat(lastHeartBeat);
+        node.setRole(follower);
+    }
+
+    public void changeToCandidate(int term, int oldVoteCounts, int newVoteCounts) {
+        int voteCounts = getVoteCounts(oldVoteCounts, newVoteCounts);
+        Role role = node.getRole();
+        Candidate candidate;
+        if (role.getType() != RoleType.CANDIDATE) {
+            nodeState.setCurrentTerm(term);
+            nodeState.setVoteTo(null);
+            roleCache.recycle(role);
+            candidate = roleCache.getCandidate();
+
+        } else {
+            if (term != role.getTerm()) {
+                nodeState.setCurrentTerm(term);
+                nodeState.setVoteTo(null);
+            }
+            candidate = (Candidate) role;
+            candidate.cancelTask();
         }
-        node.setRole(newRole);
+        candidate.setTerm(term);
+        candidate.setScheduledFuture(electionTimeoutTask());
+        candidate.setVoteCounts(voteCounts);
+        node.setRole(candidate);
+    }
+
+    public void changeToLeader(int term) {
+        Role role = node.getRole();
+        Leader leader;
+        if (role.getType() != RoleType.LEADER) {
+            nodeState.setCurrentTerm(term);
+            nodeState.setVoteTo(null);
+            roleCache.recycle(role);
+            leader = roleCache.getLeader();
+        } else {
+            if (term != role.getTerm()) {
+                nodeState.setCurrentTerm(term);
+                nodeState.setVoteTo(null);
+            }
+            leader = (Leader) role;
+            leader.cancelTask();
+        }
+        leader.setTerm(term);
+        leader.setScheduledFuture(logReplicationTask());
+        node.setRole(leader);
+        int index = pendingLog(LogEntry.NO_OP_TYPE, new byte[0]);
+        cluster.resetReplicationStates(index);
+        if (logger.isDebugEnabled()) {
+            logger.debug("become leader.");
+            logger.debug("reset all node replication state with nextIndex[{}]", index);
+            logger.debug("pending first no op log in this term, then start log replicating");
+        }
     }
 
     public void close() {
@@ -345,6 +413,71 @@ public class NodeContext {
         nodeState.close();
         executor.close();
         scheduler.close();
+    }
+
+
+    public static final class RoleCache {
+
+        private Follower follower;
+        private Leader leader;
+        private Candidate candidate;
+
+        public void recycle(Role role) {
+            switch (role.getType()) {
+                case LEADER:
+                    recycleLeader((Leader) role);
+                    break;
+                case CANDIDATE:
+                    recycleCandidate((Candidate) role);
+                    break;
+                default:
+                    recycleFollower((Follower) role);
+            }
+        }
+
+        public Candidate getCandidate() {
+            if (candidate == null) {
+                candidate = new Candidate();
+            }
+            return candidate;
+        }
+
+        private void recycleCandidate(Candidate candidate) {
+            candidate.cancelTask();
+            candidate.setTerm(0);
+            candidate.setScheduledFuture(null);
+            candidate.setVoteCounts(0);
+            this.candidate = candidate;
+        }
+
+        public Follower getFollower() {
+            if (follower == null) {
+                follower = new Follower();
+            }
+            return follower;
+        }
+
+        private void recycleFollower(Follower follower) {
+            follower.cancelTask();
+            follower.setTerm(0);
+            follower.setScheduledFuture(null);
+            follower.setLeaderId(null);
+            follower.setPreVoteCounts(0);
+            follower.setVoteTo(null);
+            follower.setLastHeartBeat(0L);
+        }
+
+        public Leader getLeader() {
+            if (leader == null) {
+                leader = new Leader();
+            }
+            return leader;
+        }
+
+        private void recycleLeader(Leader leader) {
+            leader.cancelTask();
+            leader.setTerm(0);
+        }
     }
 
 }

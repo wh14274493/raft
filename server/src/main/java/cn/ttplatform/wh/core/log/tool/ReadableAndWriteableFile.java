@@ -6,31 +6,13 @@ package cn.ttplatform.wh.core.log.tool;
  */
 public interface ReadableAndWriteableFile {
 
-    void seek(long position);
-
-    void writeInt(int data);
-
     void writeIntAt(long position, int data);
-
-    int readInt();
 
     int readIntAt(long position);
 
-    void writeLong(long data);
+    void writeBytesAt(long position, byte[] chunk);
 
-    void writeLongAt(long position, long data);
-
-    long readLong();
-
-    long readLongAt(long position);
-
-    void writeBytes(byte[] data);
-
-    void writeBytesAt(long position, byte[] data);
-
-    void append(byte[] data);
-
-    byte[] readBytes(int size);
+    void append(byte[] chunk);
 
     byte[] readBytesAt(long position, int size);
 

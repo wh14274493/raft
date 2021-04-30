@@ -2,7 +2,7 @@ package cn.ttplatform.wh.core.listener.handler;
 
 import cn.ttplatform.wh.cmd.GetCommand;
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
 import cn.ttplatform.wh.support.Distributable;
 
@@ -12,7 +12,7 @@ import cn.ttplatform.wh.support.Distributable;
  */
 public class GetCommandHandler extends AbstractDistributableHandler {
 
-    public GetCommandHandler(NodeContext context) {
+    public GetCommandHandler(GlobalContext context) {
         super(context);
     }
 

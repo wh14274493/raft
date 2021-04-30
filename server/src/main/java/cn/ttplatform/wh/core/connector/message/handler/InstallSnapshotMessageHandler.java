@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotResultMessage;
 import cn.ttplatform.wh.core.role.Role;
@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class InstallSnapshotMessageHandler extends AbstractDistributableHandler {
 
-    public InstallSnapshotMessageHandler(NodeContext context) {
+    public InstallSnapshotMessageHandler(GlobalContext context) {
         super(context);
     }
 
@@ -55,7 +55,7 @@ public class InstallSnapshotMessageHandler extends AbstractDistributableHandler 
     }
 
     private InstallSnapshotResultMessage installSnapshot(InstallSnapshotMessage message) {
-        context.changeToFollower(message.getTerm(), null, null, 0);
+        context.changeToFollower(message.getTerm(), null, null, 0, 0, System.currentTimeMillis());
         boolean installRes;
         try {
             installRes = context.getLog().installSnapshot(message);

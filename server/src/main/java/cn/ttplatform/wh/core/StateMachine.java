@@ -33,14 +33,14 @@ import lombok.extern.slf4j.Slf4j;
 public class StateMachine {
 
     private Data data = new Data();
-    private final NodeContext context;
+    private final GlobalContext context;
     private final DataFactory dataFactory;
     private volatile int lastApplied;
     private ClusterChangeCommand clusterChangeCommand;
     private final Map<Integer, List<GetCommand>> pendingGetCommandMap = new HashMap<>();
     private final Map<Integer, SetCommand> pendingSetCommandMap = new HashMap<>();
 
-    public StateMachine(NodeContext context) {
+    public StateMachine(GlobalContext context) {
         this.context = context;
         this.dataFactory = new DataFactory(context.getLinkedBufferPool());
     }

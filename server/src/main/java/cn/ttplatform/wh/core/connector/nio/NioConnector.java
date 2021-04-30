@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.connector.nio;
 
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.Connector;
 import cn.ttplatform.wh.core.group.EndpointMetaData;
 import cn.ttplatform.wh.core.support.ChannelPool;
@@ -27,9 +27,9 @@ import lombok.extern.slf4j.Slf4j;
 public class NioConnector implements Connector {
 
     private final Bootstrap bootstrap;
-    private final NodeContext context;
+    private final GlobalContext context;
 
-    public NioConnector(NodeContext context) {
+    public NioConnector(GlobalContext context) {
         this.context = context;
         this.bootstrap = newBootstrap(context.getWorker());
     }

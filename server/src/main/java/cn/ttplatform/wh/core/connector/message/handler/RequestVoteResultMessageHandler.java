@@ -2,13 +2,11 @@ package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.Node;
-import cn.ttplatform.wh.core.NodeContext;
+import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.message.RequestVoteResultMessage;
 import cn.ttplatform.wh.core.group.Cluster;
 import cn.ttplatform.wh.core.group.Phase;
-import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.core.role.Candidate;
-import cn.ttplatform.wh.core.role.Leader;
 import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
 import cn.ttplatform.wh.support.Distributable;
 import cn.ttplatform.wh.support.Message;
@@ -21,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RequestVoteResultMessageHandler extends AbstractDistributableHandler {
 
-    public RequestVoteResultMessageHandler(NodeContext context) {
+    public RequestVoteResultMessageHandler(GlobalContext context) {
         super(context);
     }
 
@@ -38,27 +36,18 @@ public class RequestVoteResultMessageHandler extends AbstractDistributableHandle
         int currentTerm = node.getRole().getTerm();
         boolean voted = message.isVoted();
         if (term > currentTerm) {
-            context.changeToFollower(term, null, null, 0);
+            context.changeToFollower(term, null, null, 0, 0, 0L);
+            log.debug("term[{}] > currentTerm[{}], become follower.", term, currentTerm);
             return;
         }
         if (context.isCandidate() && voted) {
             Candidate candidate = (Candidate) node.getRole();
             if (checkVoteCounts(message, candidate)) {
-                Leader leader = Leader.builder().term(currentTerm).scheduledFuture(context.logReplicationTask())
-                    .build();
-                context.changeToRole(leader);
-                int nextIndex = context.getLog().getNextIndex();
-                context.getCluster().resetReplicationStates(nextIndex);
-                context.pendingLog(LogEntry.NO_OP_TYPE, new byte[0]);
-                if (log.isDebugEnabled()) {
-                    log.debug("become leader.");
-                    log.debug("reset all node replication state by nextIndex[{}]", nextIndex);
-                    log.debug("pending first no op log in this term, then start log replicating");
-                }
+                context.changeToLeader(currentTerm);
                 context.doLogReplication();
             } else {
                 log.debug("need more votes");
-                context.changeToCandidate(term, candidate.getVoteCounts());
+                context.changeToCandidate(term, candidate.getOldConfigVoteCounts(), candidate.getNewConfigVoteCounts());
             }
         }
     }
@@ -72,8 +61,8 @@ public class RequestVoteResultMessageHandler extends AbstractDistributableHandle
             log.debug("countOfNewConfig is {}", countOfNewConfig);
         }
         Phase phase = cluster.getPhase();
-        int oldCounts;
-        int newCounts;
+        int oldCounts = candidate.getOldConfigVoteCounts();
+        int newCounts = candidate.getNewConfigVoteCounts();
         switch (phase) {
             case NEW:
                 newCounts = candidate.incrementNewCountsAndGet();
@@ -84,10 +73,9 @@ public class RequestVoteResultMessageHandler extends AbstractDistributableHandle
                 if (cluster.inNewConfig(e.getSourceId())) {
                     log.debug("receive a vote msg from newConfigNode[{}].", e.getSourceId());
                     newCounts = candidate.incrementNewCountsAndGet();
-                    oldCounts = candidate.getOldConfigVoteCounts();
-                } else {
+                }
+                if (cluster.inOldConfig(e.getSourceId())) {
                     log.debug("receive a vote msg from oldConfigNode[{}].", e.getSourceId());
-                    newCounts = candidate.getNewConfigVoteCounts();
                     oldCounts = candidate.incrementOldCountsAndGet();
                 }
                 if (log.isDebugEnabled()) {
