@@ -1,21 +1,20 @@
 package cn.ttplatform.wh.core.log.tool;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import cn.ttplatform.wh.support.BufferPool;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.StandardOpenOption;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * @author Wang Hao
@@ -26,14 +25,14 @@ class ByteBufferWriterTest {
 
     ByteBufferWriter byteBufferWriter;
 
-    @BeforeEach
+    @Before
     void setUp() {
         BufferPool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
         String path = Objects.requireNonNull(ByteBufferWriterTest.class.getClassLoader().getResource("test.txt")).getPath();
         byteBufferWriter = new ByteBufferWriter(new File(path), bufferPool);
     }
 
-    @AfterEach
+    @After
     void tearDown() {
         byteBufferWriter.clear();
     }

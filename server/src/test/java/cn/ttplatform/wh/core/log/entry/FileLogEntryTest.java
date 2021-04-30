@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.log.entry;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.assertEquals;
 
 import cn.ttplatform.wh.core.log.tool.DirectByteBufferPool;
 import cn.ttplatform.wh.support.BufferPool;
@@ -14,11 +14,9 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Assert;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * @author Wang Hao
@@ -29,14 +27,14 @@ class FileLogEntryTest {
 
     FileLogEntry fileLogEntry;
 
-    @BeforeEach
+        @Before
     void setUp() {
         BufferPool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
         String path = Objects.requireNonNull(FileLogEntryIndexTest.class.getClassLoader().getResource("")).getPath();
         fileLogEntry = new FileLogEntry(new File(path), bufferPool);
     }
 
-    @AfterEach
+    @After
     void tearDown() {
         fileLogEntry.removeAfter(0L);
         assertEquals(0, fileLogEntry.size());

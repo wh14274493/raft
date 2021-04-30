@@ -1,5 +1,9 @@
 package cn.ttplatform.wh.core.log.entry;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 import cn.ttplatform.wh.core.log.tool.DirectByteBufferPool;
 import cn.ttplatform.wh.support.BufferPool;
 import java.io.File;
@@ -10,10 +14,9 @@ import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * @author Wang Hao
@@ -24,14 +27,14 @@ class FileLogEntryIndexTest {
 
     FileLogEntryIndex fileLogEntryIndex;
 
-    @BeforeEach
+    @Before
     void setUp() {
         BufferPool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
         String path = Objects.requireNonNull(FileLogEntryIndexTest.class.getClassLoader().getResource("")).getPath();
         fileLogEntryIndex = new FileLogEntryIndex(new File(path), bufferPool, 0);
     }
 
-    @AfterEach
+    @After
     void tearDown() {
         fileLogEntryIndex.removeAfter(0);
         fileLogEntryIndex.close();
@@ -41,25 +44,25 @@ class FileLogEntryIndexTest {
     void getLastEntryIndex() {
         fileLogEntryIndex.append(LogEntryFactory.createEntry(1, 1, 1, new byte[0]), 0L);
         LogEntryIndex lastEntryIndex = fileLogEntryIndex.getLastEntryIndex();
-        Assertions.assertNotNull(lastEntryIndex);
+        assertNotNull(lastEntryIndex);
     }
 
     @Test
     void getEntryOffset() {
         fileLogEntryIndex.append(LogEntryFactory.createEntry(1, 1, 1, new byte[0]), 0L);
         long entryOffset = fileLogEntryIndex.getEntryOffset(1);
-        Assertions.assertEquals(0, entryOffset);
+        assertEquals(0, entryOffset);
         entryOffset = fileLogEntryIndex.getEntryOffset(2);
-        Assertions.assertEquals(-1, entryOffset);
+        assertEquals(-1, entryOffset);
     }
 
     @Test
     void getEntryMetaData() {
         fileLogEntryIndex.append(LogEntryFactory.createEntry(1, 1, 1, new byte[0]), 0L);
         LogEntryIndex entryMetaData = fileLogEntryIndex.getEntryMetaData(1);
-        Assertions.assertEquals(0, entryMetaData.getOffset());
+        assertEquals(0, entryMetaData.getOffset());
         entryMetaData = fileLogEntryIndex.getEntryMetaData(2);
-        Assertions.assertNull(entryMetaData);
+        assertNull(entryMetaData);
     }
 
     @Test

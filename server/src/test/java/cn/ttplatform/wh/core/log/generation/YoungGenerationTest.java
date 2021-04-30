@@ -1,5 +1,10 @@
 package cn.ttplatform.wh.core.log.generation;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.core.log.entry.LogEntryFactory;
 import cn.ttplatform.wh.core.log.entry.LogEntryIndex;
@@ -16,10 +21,9 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * @author Wang Hao
@@ -30,7 +34,7 @@ class YoungGenerationTest {
 
     YoungGeneration youngGeneration;
 
-    @BeforeEach
+    @Before
     void setUp() {
         BufferPool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
         String path = Objects.requireNonNull(YoungGenerationTest.class.getClassLoader().getResource("")).getPath();
@@ -39,7 +43,7 @@ class YoungGenerationTest {
         youngGeneration = new YoungGeneration(file, bufferPool, 0);
     }
 
-    @AfterEach
+    @After
     void tearDown() throws NoSuchFieldException {
         youngGeneration.fileLogEntry.removeAfter(0);
         youngGeneration.fileLogEntryIndex.removeAfter(0);
@@ -110,21 +114,21 @@ class YoungGenerationTest {
     void getEntry() {
         appendLogEntries();
         LogEntry entry = youngGeneration.getEntry(1000);
-        Assertions.assertEquals(1000, entry.getIndex());
+        assertEquals(1000, entry.getIndex());
     }
 
     @Test
     void getEntryMetaData() {
         appendLogEntries();
         LogEntryIndex entryMetaData = youngGeneration.getEntryMetaData(1000);
-        Assertions.assertEquals(1000, entryMetaData.getIndex());
+        assertEquals(1000, entryMetaData.getIndex());
     }
 
     @Test
     void subList() {
         appendLogEntries();
         List<LogEntry> logEntries = youngGeneration.subList(1, 1000);
-        Assertions.assertEquals(998, logEntries.size());
+        assertEquals(998, logEntries.size());
     }
 
     @Test
@@ -132,9 +136,9 @@ class YoungGenerationTest {
         appendLogEntries();
         youngGeneration.removeAfter(1000);
         LogEntryIndex entryMetaData = youngGeneration.getEntryMetaData(1000);
-        Assertions.assertEquals(1000, entryMetaData.getIndex());
+        assertEquals(1000, entryMetaData.getIndex());
         entryMetaData = youngGeneration.getEntryMetaData(1001);
-        Assertions.assertNull(entryMetaData);
+        assertNull(entryMetaData);
     }
 
     @Test
@@ -151,15 +155,15 @@ class YoungGenerationTest {
     @Test
     void clearSnapshot() {
         generateSnapshot();
-        Assertions.assertFalse(youngGeneration.fileSnapshot.isEmpty());
+        assertFalse(youngGeneration.fileSnapshot.isEmpty());
         youngGeneration.clearSnapshot();
-        Assertions.assertTrue(youngGeneration.fileSnapshot.isEmpty());
+        assertTrue(youngGeneration.fileSnapshot.isEmpty());
     }
 
     @Test
     void isEmpty() {
-        Assertions.assertTrue(youngGeneration.isEmpty());
+        assertTrue(youngGeneration.isEmpty());
         appendLogEntries();
-        Assertions.assertFalse(youngGeneration.isEmpty());
+        assertFalse(youngGeneration.isEmpty());
     }
 }
