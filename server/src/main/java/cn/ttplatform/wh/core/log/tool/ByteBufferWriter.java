@@ -30,6 +30,7 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
             this.fileChannel = FileChannel
                 .open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE,
                     StandardOpenOption.DSYNC);
+            log.info("open file[{}].", file);
             fileSize = fileChannel.size();
         } catch (IOException e) {
             throw new OperateFileException("open file channel error.");

@@ -2,6 +2,7 @@ package cn.ttplatform.wh.core.log;
 
 
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
+import cn.ttplatform.wh.core.group.Endpoint;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.support.Message;
 import java.util.List;
@@ -83,11 +84,11 @@ public interface Log {
      *
      * @param leaderId  self id
      * @param term      current term
-     * @param nextIndex the first log index in log entries
+     * @param endpoint the first log index in log entries
      * @param size      log entries size in message
      * @return an AppendLogEntriesMessage
      */
-    Message createAppendLogEntriesMessage(String leaderId, int term, int nextIndex, int size);
+    Message createAppendLogEntriesMessage(String leaderId, int term, Endpoint endpoint, int size);
 
     /**
      * create an InstallSnapshotMessage with the offset of a endpoint replication state

@@ -81,6 +81,10 @@ public class FileSnapshot {
         return file.isEmpty();
     }
 
+    public long size() {
+        return file.size();
+    }
+
     public void clear() {
         file.clear();
     }

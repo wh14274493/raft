@@ -21,6 +21,7 @@ import lombok.experimental.SuperBuilder;
 public class AppendLogEntriesMessage extends AbstractMessage {
 
     private int term;
+    private boolean matched;
     private String leaderId;
     private int preLogIndex;
     private int preLogTerm;
@@ -41,6 +42,7 @@ public class AppendLogEntriesMessage extends AbstractMessage {
     public String toString() {
         return "AppendLogEntriesMessage{" +
             "term=" + term +
+            ", matched=" + matched +
             ", leaderId='" + leaderId + '\'' +
             ", preLogIndex=" + preLogIndex +
             ", preLogTerm=" + preLogTerm +

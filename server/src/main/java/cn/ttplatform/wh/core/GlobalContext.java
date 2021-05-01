@@ -235,8 +235,8 @@ public class GlobalContext {
 
     public void doLogReplication(Endpoint endpoint, int currentTerm) {
 
-        Message message = log.createAppendLogEntriesMessage(node.getSelfId(), currentTerm, endpoint.getNextIndex(),
-            properties.getMaxTransferLogs());
+        Message message = log
+            .createAppendLogEntriesMessage(node.getSelfId(), currentTerm, endpoint, properties.getMaxTransferLogs());
         if (message == null) {
             // start snapshot replication
             message = log
@@ -400,7 +400,7 @@ public class GlobalContext {
         leader.setScheduledFuture(logReplicationTask());
         node.setRole(leader);
         int index = pendingLog(LogEntry.NO_OP_TYPE, new byte[0]);
-        cluster.resetReplicationStates(index);
+        cluster.resetReplicationStates(log.getLastIncludeIndex() + 1, index);
         if (logger.isDebugEnabled()) {
             logger.info("become leader.");
             logger.info("reset all node replication state with nextIndex[{}]", index);

@@ -3,6 +3,7 @@ package cn.ttplatform.wh.core.group;
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.GlobalContext;
+import cn.ttplatform.wh.core.log.Log;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.exception.ClusterConfigException;
 import cn.ttplatform.wh.support.BufferPool;
@@ -62,10 +63,10 @@ public class Cluster {
         return Arrays.stream(clusterInfo.split(" ")).map(Endpoint::new).collect(Collectors.toSet());
     }
 
-    public void resetReplicationStates(int nextIndex) {
-        endpointMap.values().forEach(endpoint -> endpoint.resetReplicationState(nextIndex));
+    public void resetReplicationStates(int initLeftEdge, int initRightEdge) {
+        endpointMap.values().forEach(endpoint -> endpoint.resetReplicationState(initLeftEdge, initRightEdge));
         if (phase != Phase.STABLE) {
-            newConfigMap.forEach((id, endpoint) -> endpoint.resetReplicationState(nextIndex));
+            newConfigMap.forEach((id, endpoint) -> endpoint.resetReplicationState(initLeftEdge, initRightEdge));
         }
     }
 
@@ -242,20 +243,20 @@ public class Cluster {
 
     public boolean updateNewConfigMap(Set<EndpointMetaData> metaData) {
         AtomicInteger count = new AtomicInteger();
-        int nextIndex = context.getLog().getNextIndex();
         newConfigMap.clear();
+        Log log = context.getLog();
         metaData.forEach(endpointMetaData -> {
             Endpoint endpoint = endpointMap.get(endpointMetaData.getNodeId());
             if (endpoint == null) {
                 endpoint = new Endpoint(endpointMetaData);
-                endpoint.resetReplicationState(nextIndex);
+                endpoint.resetReplicationState(log.getLastIncludeIndex(), log.getNextIndex());
                 count.getAndIncrement();
             } else {
                 endpoint.setMetaData(endpointMetaData);
             }
             newConfigMap.put(endpointMetaData.getNodeId(), endpoint);
         });
-        log.debug("updateNewConfigMap {}", metaData);
+        Cluster.log.debug("updateNewConfigMap {}", metaData);
         return count.get() == 0;
     }
 

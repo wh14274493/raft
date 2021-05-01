@@ -16,12 +16,17 @@ public class OldGeneration extends AbstractGeneration {
         super(file, pool, true);
     }
 
-    public byte[] readSnapshot(long offset, int size) {
+    public byte[] readSnapshot(long offset, long size) {
         if (fileSnapshot.isEmpty()) {
             log.debug("snapshot file is empty.");
             return new byte[0];
         }
-        return fileSnapshot.read(offset, size);
+        long fileSize = fileSnapshot.size();
+        if (offset > fileSize) {
+            throw new IllegalStateException("offset[" + offset + "] out of bound[" + fileSize + "]");
+        }
+        size = Math.min(size, fileSize - offset);
+        return fileSnapshot.read(offset, (int) size);
     }
 
     public byte[] readSnapshot() {

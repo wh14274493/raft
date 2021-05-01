@@ -4,6 +4,7 @@ import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.core.group.Cluster;
+import cn.ttplatform.wh.core.group.Endpoint;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.core.log.generation.FileName;
 import cn.ttplatform.wh.core.log.generation.OldGeneration;
@@ -23,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FileLog implements Log {
 
-    private static final Pattern DIR_NAME_PATTERN = Pattern.compile("log-(\\d+)");
+    private static final Pattern DIR_NAME_PATTERN = Pattern.compile("log-(\\d+)-(\\d+)");
     private final GlobalContext context;
     private YoungGeneration youngGeneration;
     private OldGeneration oldGeneration;
@@ -58,7 +59,7 @@ public class FileLog implements Log {
                 String[] o1Pieces = o1Name.split("-");
                 String o2Name = o2.getName();
                 String[] o2Pieces = o2Name.split("-");
-                return Integer.parseInt(o2Pieces[1]) - Integer.parseInt(o1Pieces[1]);
+                return Integer.parseInt(o2Pieces[2]) - Integer.parseInt(o1Pieces[2]);
             });
         return fileOptional.orElse(new File(parent, FileName.EMPTY_FILE_NAME));
     }
@@ -154,23 +155,27 @@ public class FileLog implements Log {
     }
 
     @Override
-    public Message createAppendLogEntriesMessage(String leaderId, int term, int nextIndex, int size) {
+    public Message createAppendLogEntriesMessage(String leaderId, int term, Endpoint endpoint, int size) {
         log.debug("create AppendLogEntriesMessage.");
         int lastIncludeIndex = oldGeneration.getLastIncludeIndex();
         int lastIncludeTerm = oldGeneration.getLastIncludeTerm();
-        if (nextIndex <= lastIncludeIndex) {
+        int endpointNextIndex = endpoint.getNextIndex();
+        if (endpointNextIndex <= lastIncludeIndex) {
             return null;
         }
         AppendLogEntriesMessage message = AppendLogEntriesMessage.builder()
             .leaderCommitIndex(commitIndex)
             .term(term)
+            .matched(endpoint.isMatched())
             .leaderId(leaderId)
-            .logEntries(subList(nextIndex, nextIndex + size))
             .build();
+        if (endpoint.isMatched()) {
+            message.setLogEntries(subList(endpointNextIndex, endpointNextIndex + size));
+        }
         int preIndex = lastIncludeIndex;
         int preTerm = lastIncludeTerm;
-        if (nextIndex - 1 > lastIncludeIndex) {
-            LogEntry logEntry = getEntry(nextIndex - 1);
+        if (endpointNextIndex - 1 > lastIncludeIndex) {
+            LogEntry logEntry = getEntry(endpointNextIndex - 1);
             preIndex = logEntry.getIndex();
             preTerm = logEntry.getTerm();
         }
@@ -225,11 +230,11 @@ public class FileLog implements Log {
         String messageSourceId = message.getSourceId();
         String snapshotSource = youngGeneration.getSnapshotSource();
         long offset = message.getOffset();
-        if (lastIncludeIndex != youngGeneration.getLastIncludeIndex()
-            || lastIncludeTerm != youngGeneration.getLastIncludeTerm()) {
-            log.warn("lastIncludeIndex[{}] and lastIncludeTerm[{}] is unexpect.", lastIncludeIndex, lastIncludeTerm);
-            return false;
-        }
+//        if (lastIncludeIndex != youngGeneration.getLastIncludeIndex()
+//            || lastIncludeTerm != youngGeneration.getLastIncludeTerm()) {
+//            log.warn("lastIncludeIndex[{}] and lastIncludeTerm[{}] is unexpect.", lastIncludeIndex, lastIncludeTerm);
+//            return false;
+//        }
         if (!messageSourceId.equals(snapshotSource) && offset != 0L) {
             // The leader has changed and needs to start transmission from offset==0 again
             log.warn("The snapshotSource has changed and needs to start transmission from offset==0 again");

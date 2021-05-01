@@ -69,7 +69,11 @@ public class AppendLogEntriesMessageHandler extends AbstractDistributableHandler
         context.changeToFollower(message.getTerm(), message.getLeaderId(), null, 0, 0, System.currentTimeMillis());
         Log log = context.getLog();
         int preLogIndex = message.getPreLogIndex();
-        if (log.checkIndexAndTermIfMatched(preLogIndex, message.getPreLogTerm())) {
+        boolean checkIndexAndTermIfMatched = log.checkIndexAndTermIfMatched(preLogIndex, message.getPreLogTerm());
+        if (checkIndexAndTermIfMatched&&!message.isMatched()){
+            return true;
+        }
+        if (checkIndexAndTermIfMatched) {
             AppendLogEntriesMessageHandler.log.debug("checkIndexAndTerm Matched");
             log.pendingEntries(preLogIndex, message.getLogEntries());
             if (log.advanceCommitIndex(message.getLeaderCommitIndex(), message.getTerm())) {

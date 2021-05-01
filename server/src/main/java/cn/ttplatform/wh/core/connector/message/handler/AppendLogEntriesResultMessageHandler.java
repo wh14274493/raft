@@ -63,7 +63,7 @@ public class AppendLogEntriesResultMessageHandler extends AbstractDistributableH
                     context.advanceLastApplied(newCommitIndex);
                 }
             } else {
-                endpoint.backoffNextIndex();
+                endpoint.updateNextIndex(false);
                 endpoint.setLastHeartBeat(0L);
             }
             if (doReplication) {

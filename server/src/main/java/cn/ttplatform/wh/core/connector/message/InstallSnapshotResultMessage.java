@@ -28,4 +28,13 @@ public class InstallSnapshotResultMessage extends AbstractMessage{
         return DistributableType.INSTALL_SNAPSHOT_RESULT;
     }
 
+    @Override
+    public String toString() {
+        return "InstallSnapshotResultMessage{" +
+            "term=" + term +
+            ", done=" + done +
+            ", offset=" + offset +
+            ", success=" + success +
+            '}';
+    }
 }
