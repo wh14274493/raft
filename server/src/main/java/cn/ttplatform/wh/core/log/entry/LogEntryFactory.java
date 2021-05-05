@@ -70,8 +70,7 @@ public class LogEntryFactory {
         int term = bytesToInt(content, start + 4);
         int type = bytesToInt(content, start + 8);
         long offset = bytesToLong(content, start + 12);
-        return LogEntryIndex.builder().type(type).term(term).offset(offset).index(index)
-            .build();
+        return LogEntryIndex.builder().type(type).term(term).offset(offset).index(index).build();
     }
 
     /**
@@ -92,64 +91,5 @@ public class LogEntryFactory {
         byte[] cmd = Arrays.copyOfRange(content, 16, content.length);
         return createEntry(type, term, index, cmd);
     }
-
-    /**
-     * Convert a {@link SnapshotHeader} object to byte array
-     *
-     * @param snapshotHeader source object
-     * @return res
-     */
-    public byte[] transferSnapshotHeaderToBytes(SnapshotHeader snapshotHeader) {
-        byte[] res = new byte[FileSnapshot.HEADER_LENGTH];
-        fillLongBytes(snapshotHeader.getSize(), res, 7);
-        fillIntBytes(snapshotHeader.getLastIncludeIndex(), res, 11);
-        fillIntBytes(snapshotHeader.getLastIncludeTerm(), res, 15);
-        return res;
-    }
-
-    /**
-     * Convert a {@link LogEntry} object to byte array
-     *
-     * @param logEntry source object
-     * @return res
-     */
-    public byte[] transferLogEntryToBytes(LogEntry logEntry) {
-        byte[] command = logEntry.getCommand();
-        byte[] res = new byte[FileLogEntry.LOG_ENTRY_HEADER_SIZE + command.length];
-        // index[0-3]
-        fillIntBytes(logEntry.getIndex(), res, 3);
-        // term[4-7]
-        fillIntBytes(logEntry.getTerm(), res, 7);
-        // type[8,11]
-        fillIntBytes(logEntry.getType(), res, 11);
-        // commandLength[12,15]
-        fillIntBytes(command.length, res, 15);
-        // cmd[16,content.length]
-        int index = 16;
-        for (byte b : command) {
-            res[index++] = b;
-        }
-        return res;
-    }
-
-    /**
-     * Convert a {@link LogEntryIndex} object to byte array
-     *
-     * @param logEntryIndex source object
-     * @return res
-     */
-    public byte[] transferLogEntryIndexToBytes(LogEntryIndex logEntryIndex) {
-        byte[] res = new byte[FileLogEntryIndex.ITEM_LENGTH];
-        // index[0-3]
-        fillIntBytes(logEntryIndex.getIndex(), res, 3);
-        // term[4-7]
-        fillIntBytes(logEntryIndex.getTerm(), res, 7);
-        // term[8-11]
-        fillIntBytes(logEntryIndex.getType(), res, 11);
-        // term[12-19]
-        fillLongBytes(logEntryIndex.getOffset(), res, 19);
-        return res;
-    }
-
 
 }

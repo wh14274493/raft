@@ -3,10 +3,18 @@ package cn.ttplatform.wh.core.support;
 import cn.ttplatform.wh.cmd.Command;
 import cn.ttplatform.wh.cmd.RedirectCommand;
 import cn.ttplatform.wh.core.GlobalContext;
+import cn.ttplatform.wh.core.Node;
 import cn.ttplatform.wh.core.role.Follower;
 import cn.ttplatform.wh.support.Message;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.util.Attribute;
+import io.netty.util.AttributeKey;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -26,28 +34,45 @@ public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
+        Channel channel = ctx.channel();
         if (msg instanceof Command) {
             Command command = (Command) msg;
-            log.debug("receive a command {} from {}.", command, command.getId());
+            String commandId = command.getId();
+            log.debug("receive a command {} from {}.", command, commandId);
             if (!canHandler(command, ctx)) {
                 return;
             }
-            ChannelPool.cacheChannel(command.getId(), ctx.channel());
+            ChannelPool.cacheChannel(commandId, channel);
+            recordIds(commandId, channel);
             distributor.distribute(command);
         } else if (msg instanceof Message) {
-            String remoteId = ((Message) msg).getSourceId();
-            log.debug("receive a msg {} from {}.", msg, remoteId);
-            ChannelPool.cacheChannel(remoteId, ctx.channel());
+            String sourceId = ((Message) msg).getSourceId();
+            log.debug("receive a msg {} from {}.", msg, sourceId);
+            ChannelPool.cacheChannel(sourceId, channel);
+            recordIds(sourceId, channel);
             distributor.distribute((Message) msg);
         } else {
             log.error("unknown message type, msg is {}", msg);
+            channel.close();
         }
     }
 
+    private void recordIds(String id, Channel channel) {
+        AttributeKey<Set<String>> attributeKey = AttributeKey.valueOf("ids");
+        Attribute<Set<String>> idsAttribute = channel.attr(attributeKey);
+        Set<String> ids = idsAttribute.get();
+        if (ids == null) {
+            ids = new HashSet<>();
+            idsAttribute.set(ids);
+        }
+        ids.add(id);
+    }
+
     private boolean canHandler(Command command, ChannelHandlerContext ctx) {
-        if (!context.isLeader()) {
+        Node node = context.getNode();
+        if (!node.isLeader()) {
             String leaderId = null;
-            if (context.isFollower()) {
+            if (node.isFollower()) {
                 Follower role = (Follower) context.getNode().getRole();
                 leaderId = role.getLeaderId();
             }
@@ -62,5 +87,11 @@ public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         log.error(cause.toString());
+        Channel channel = ctx.channel();
+        if (!channel.isOpen()) {
+            AttributeKey<Set<String>> idsAttributeKey = AttributeKey.valueOf("ids");
+            Attribute<Set<String>> attribute = channel.attr(idsAttributeKey);
+            Optional.ofNullable(attribute.get()).orElse(Collections.emptySet()).forEach(ChannelPool::removeChannel);
+        }
     }
 }

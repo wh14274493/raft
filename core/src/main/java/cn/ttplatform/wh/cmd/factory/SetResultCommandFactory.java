@@ -3,7 +3,7 @@ package cn.ttplatform.wh.cmd.factory;
 import cn.ttplatform.wh.cmd.SetResultCommand;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.support.AbstractDistributableFactory;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.support.Distributable;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
@@ -18,7 +18,7 @@ public class SetResultCommandFactory extends AbstractDistributableFactory {
 
     private final Schema<SetResultCommand> schema = RuntimeSchema.getSchema(SetResultCommand.class);
 
-    public SetResultCommandFactory(BufferPool<LinkedBuffer> pool) {
+    public SetResultCommandFactory(Pool<LinkedBuffer> pool) {
         super(pool);
     }
 
@@ -28,9 +28,9 @@ public class SetResultCommandFactory extends AbstractDistributableFactory {
     }
 
     @Override
-    public Distributable create(byte[] content) {
+    public Distributable create(byte[] content, int length) {
         SetResultCommand command = new SetResultCommand();
-        ProtostuffIOUtil.mergeFrom(content, command, schema);
+        ProtostuffIOUtil.mergeFrom(content, 0, length, command, schema);
         return command;
     }
 

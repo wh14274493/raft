@@ -3,10 +3,11 @@ package cn.ttplatform.wh.core.group;
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.GlobalContext;
+import cn.ttplatform.wh.core.connector.message.SyncingMessage;
 import cn.ttplatform.wh.core.log.Log;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.exception.ClusterConfigException;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Pool;
 import io.protostuff.LinkedBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,7 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 public class Cluster {
 
     private static final int MIN_CLUSTER_SIZE = 2;
-    private Mode mode;
     private final String selfId;
     private final GlobalContext context;
     private final Map<String, Endpoint> newConfigMap = new HashMap<>();
@@ -48,7 +48,7 @@ public class Cluster {
         this.endpointMap = buildMap(endpoints);
         this.selfId = context.getProperties().getNodeId();
         this.phase = Phase.STABLE;
-        BufferPool<LinkedBuffer> linkedBufferPool = context.getLinkedBufferPool();
+        Pool<LinkedBuffer> linkedBufferPool = context.getLinkedBufferPool();
         this.newConfigFactory = new NewConfigFactory(linkedBufferPool);
         this.oldNewConfigFactory = new OldNewConfigFactory(linkedBufferPool);
     }
@@ -56,15 +56,19 @@ public class Cluster {
     private Set<Endpoint> initClusterEndpoints(ServerProperties properties) {
         String clusterInfo = properties.getClusterInfo();
         if (clusterInfo == null || "".equals(clusterInfo)) {
-            mode = Mode.SINGLE;
-            return Collections.emptySet();
+            throw new ClusterConfigException(ErrorMessage.CLUSTER_CONFIG_ERROR);
         }
-        mode = Mode.CLUSTER;
         return Arrays.stream(clusterInfo.split(" ")).map(Endpoint::new).collect(Collectors.toSet());
     }
 
+    /**
+     * When a node becomes the new leader, this method must be executed to reset the log replication status of the follower
+     *
+     * @param initLeftEdge  left edge
+     * @param initRightEdge right edge
+     */
     public void resetReplicationStates(int initLeftEdge, int initRightEdge) {
-        endpointMap.values().forEach(endpoint -> endpoint.resetReplicationState(initLeftEdge, initRightEdge));
+        endpointMap.forEach((id, endpoint) -> endpoint.resetReplicationState(initLeftEdge, initRightEdge));
         if (phase != Phase.STABLE) {
             newConfigMap.forEach((id, endpoint) -> endpoint.resetReplicationState(initLeftEdge, initRightEdge));
         }
@@ -120,6 +124,14 @@ public class Cluster {
         return result;
     }
 
+    /**
+     * Calculate the new commitIndex based on the current phase of the cluster: 1. If the cluster is in the STABLE phase, only the
+     * majority of nodes in oldConfig need to agree to submit the log. 2. If the cluster is in the NEW phase, only the majority of
+     * nodes in newConfig need to agree to submit the log. 3. If the cluster is in the OLD_NEW phase, you need to agree to the
+     * majority of nodes in newConfig and oldConfig before you can submit the log
+     *
+     * @return index needed to be committed
+     */
     public int getNewCommitIndex() {
         if (phase == Phase.OLD_NEW) {
             int oldConfigCommitIndex = getNewCommitIndexFrom(endpointMap);
@@ -149,10 +161,41 @@ public class Cluster {
         if (size < MIN_CLUSTER_SIZE) {
             throw new ClusterConfigException(ErrorMessage.CLUSTER_SIZE_ERROR);
         }
+        // After sorting from small to large according to the matchIndex, take
+        // the matchIndex of the left node of the middle node to be the new commitIndex
         Collections.sort(endpoints);
         return endpoints.get(size >> 1).getMatchIndex();
     }
 
+
+    public boolean inNewConfig(String nodeId) {
+        return newConfigMap.containsKey(nodeId);
+    }
+
+    public boolean inOldConfig(String nodeId) {
+        return endpointMap.containsKey(nodeId);
+    }
+
+    public void enterSyncingPhase() {
+        if (phase != Phase.STABLE) {
+            log.warn("current phase[{}] is not STABLE.", phase);
+            return;
+        }
+        logSynCompleteState = getNewCommitIndex();
+        log.info("logSynCompleteState is {}", logSynCompleteState);
+        phase = Phase.SYNCING;
+        log.info("enter SYNCING phase");
+        getAllEndpointExceptSelf().forEach(endpoint -> context.sendMessage(new SyncingMessage(), endpoint));
+    }
+
+    /**
+     * The SYNCING phase is added based on the original joint consensus. The task of this phase is to synchronize the logs of the
+     * newly added nodes. Only after the synchronization is completed can the OLD_NEW phase be entered. Therefore, this phase can
+     * be skipped directly if there is no new node. Only when all the newly added nodes have copied the expected set log (index =
+     * logSynCompleteState) is the synchronization completed.
+     *
+     * @return Is it done
+     */
     public boolean synHasComplete() {
         if (phase != Phase.SYNCING) {
             throw new UnsupportedOperationException(String.format(ErrorMessage.NOT_SYNCING_PHASE, phase));
@@ -176,34 +219,15 @@ public class Cluster {
         return res;
     }
 
-    public boolean inNewConfig(String nodeId) {
-        return newConfigMap.containsKey(nodeId);
-    }
-
-    public boolean inOldConfig(String nodeId) {
-        return endpointMap.containsKey(nodeId);
-    }
-
-    public void enterSyncingPhase() {
-        if (phase != Phase.STABLE) {
-            log.warn("current phase[{}] is not STABLE.", phase);
-            return;
-        }
-        logSynCompleteState = getNewCommitIndex();
-        log.info("logSynCompleteState is {}", logSynCompleteState);
-        phase = Phase.SYNCING;
-        log.info("enter SYNCING phase");
-    }
-
     /**
-     * All newly added nodes have synchronized logs to the specified state. Begin to enter the Coldnew phase
+     * All newly added nodes have synchronized logs to the specified state. Begin to enter the OLD_NEW phase
      */
     public void enterOldNewPhase() {
         if (phase != Phase.STABLE && phase != Phase.SYNCING) {
             log.warn("current phase[{}] is not STABLE or SYNCING.", phase);
             return;
         }
-        if (context.isLeader()) {
+        if (context.getNode().isLeader()) {
             context.pendingLog(LogEntry.OLD_NEW, getOldNewConfigBytes());
             log.info("pending OLD_NEW log");
         }
@@ -211,26 +235,37 @@ public class Cluster {
         log.info("enter OLD_NEW phase");
     }
 
+    /**
+     * Leader and follower enter the NEW phase at different times. The follower enters the NEW phase after receiving the NEW log
+     * from the leader, and the leader enters the NEW phase after submitting the OLD_NEW log. Moreover, after the leader enters
+     * the NEW phase, if it finds that it is not in the newConfig, it will not exit the cluster directly, but needs to wait for
+     * the NEW log to be submitted before exiting the cluster, but the follower will exit the cluster after receiving the NEW log
+     * and replying to the leader.
+     */
     public void enterNewPhase() {
         if (phase != Phase.OLD_NEW) {
             log.warn("current phase[{}] is not OLD_NEW.", phase);
             return;
         }
         phase = Phase.NEW;
-        if (context.isLeader()) {
+        if (context.getNode().isLeader()) {
             log.info("pending NEW log");
             context.pendingLog(LogEntry.NEW, getNewConfigBytes());
         }
         log.info("enter NEW phase.");
     }
 
+    /**
+     * Entering the STABLE stage indicates that the cluster change has been completed, and nodes not in newConfig will actively
+     * become followers. And newConfig will replace oldConfig.
+     */
     public void enterStablePhase() {
         if (phase != Phase.NEW) {
             log.warn("current phase[{}] is not NEW.", phase);
             return;
         }
         if (!inNewConfig(selfId)) {
-            context.changeToFollower(context.getNode().getTerm(), null, null, 0, 0, 0L);
+            context.getNode().changeToFollower(context.getNode().getTerm(), null, null, 0, 0, 0L);
         }
         endpointMap.clear();
         if (inNewConfig(selfId)) {
@@ -261,13 +296,13 @@ public class Cluster {
     }
 
     public void applyOldNewConfig(byte[] config) {
-        OldNewConfig oldNewConfig = oldNewConfigFactory.create(config);
+        OldNewConfig oldNewConfig = oldNewConfigFactory.create(config, config.length);
         updateNewConfigMap(oldNewConfig.getNewConfigs());
         log.debug("apply oldNew config, oldConfig is {}, newConfig is {}", endpointMap, newConfigMap);
     }
 
     public void applyNewConfig(byte[] config) {
-        NewConfig newConfig = newConfigFactory.create(config);
+        NewConfig newConfig = newConfigFactory.create(config, config.length);
         newConfigMap.clear();
         newConfig.getNewConfigs().forEach(
             endpointMetaData -> newConfigMap.put(endpointMetaData.getNodeId(), new Endpoint(endpointMetaData)));

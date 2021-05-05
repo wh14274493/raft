@@ -8,9 +8,9 @@ import io.protostuff.LinkedBuffer;
  */
 public abstract class AbstractDistributableFactory implements DistributableFactory {
 
-    BufferPool<LinkedBuffer> pool;
+    Pool<LinkedBuffer> pool;
 
-    protected AbstractDistributableFactory(BufferPool<LinkedBuffer> pool) {
+    protected AbstractDistributableFactory(Pool<LinkedBuffer> pool) {
         this.pool = pool;
     }
 

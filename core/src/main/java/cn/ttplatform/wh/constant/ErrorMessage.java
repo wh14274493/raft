@@ -10,6 +10,7 @@ public class ErrorMessage {
     }
 
     public static final String CLUSTER_SIZE_ERROR = "cluster size can't be less than 3";
+    public static final String CLUSTER_CONFIG_ERROR = "cluster config must not be null.";
     public static final String CREATE_FILE_ERROR = "create file error";
     public static final String RENAME_FILE_ERROR = "rename file error";
     public static final String CLOSE_FILE_ERROR = "close file error";
@@ -27,4 +28,6 @@ public class ErrorMessage {
     public static final String NOT_NEW_OR_OLD_NEW_PHASE = "current phase[%s] is not NEW or OLD_NEW.";
     public static final String NOT_STABLE_OR_SYNCING_PHASE = "current phase[%S] is not STABLE or SYNCING.";
     public static final String NOT_OLD_NEW_PHASE = "current phase[%S] is not OLD_NEW.";
+    public static final String ILLEGAL_MODE_STATE = "illegal mode state.";
+    public static final String MESSAGE_TYPE_ERROR = "Types of messages that cannot be processed.";
 }

@@ -3,12 +3,13 @@ package cn.ttplatform.wh.cmd.factory;
 import cn.ttplatform.wh.cmd.SetCommand;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.support.AbstractDistributableFactory;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.support.Distributable;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
+import java.util.Arrays;
 
 /**
  * @author Wang Hao
@@ -18,7 +19,7 @@ public class SetCommandFactory extends AbstractDistributableFactory {
 
     private final Schema<SetCommand> schema = RuntimeSchema.getSchema(SetCommand.class);
 
-    public SetCommandFactory(BufferPool<LinkedBuffer> pool) {
+    public SetCommandFactory(Pool<LinkedBuffer> pool) {
         super(pool);
     }
 
@@ -28,10 +29,10 @@ public class SetCommandFactory extends AbstractDistributableFactory {
     }
 
     @Override
-    public Distributable create(byte[] content) {
+    public Distributable create(byte[] content, int length) {
         SetCommand command = new SetCommand();
-        ProtostuffIOUtil.mergeFrom(content, command, schema);
-        command.setCmd(content);
+        ProtostuffIOUtil.mergeFrom(content, 0, length, command, schema);
+        command.setCmd(Arrays.copyOfRange(content, 0, length));
         return command;
     }
 

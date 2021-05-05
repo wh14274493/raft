@@ -20,15 +20,16 @@ public class ChannelPool {
     private static final Map<String, Channel> CACHE = new ConcurrentHashMap<>();
 
     public static void cacheChannel(String key, Channel channel) {
-        CACHE.computeIfAbsent(key, s -> {
-            log.debug("key:{} exist in cache.", key);
-            channel.closeFuture().addListener(future -> {
-                if (future.isSuccess()) {
-                    CACHE.remove(s);
-                }
-            });
-            return channel;
-        });
+//        CACHE.computeIfAbsent(key, s -> {
+//            log.debug("key:{} is not exist in cache.", key);
+//            channel.closeFuture().addListener(future -> {
+//                if (future.isSuccess()) {
+//                    CACHE.remove(s);
+//                }
+//            });
+//            return channel;
+//        });
+        CACHE.put(key, channel);
     }
 
     public static Channel removeChannel(String key) {
@@ -42,13 +43,7 @@ public class ChannelPool {
     public static ChannelFuture reply(String id, Command command) {
         Channel channel = removeChannel(id);
         if (channel != null) {
-            return channel.writeAndFlush(command).addListener(future -> {
-                if (future.isSuccess()) {
-                    log.debug("reply {} success", id);
-                } else {
-                    log.debug("reply {} failed", id);
-                }
-            });
+            return channel.writeAndFlush(command);
         }
         log.debug("channel for {} is null", id);
         return null;

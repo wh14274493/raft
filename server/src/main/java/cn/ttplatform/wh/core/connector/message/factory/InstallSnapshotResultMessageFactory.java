@@ -2,7 +2,7 @@ package cn.ttplatform.wh.core.connector.message.factory;
 
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.support.AbstractDistributableFactory;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotResultMessage;
 import cn.ttplatform.wh.support.Distributable;
 import io.protostuff.LinkedBuffer;
@@ -19,7 +19,7 @@ public class InstallSnapshotResultMessageFactory extends AbstractDistributableFa
     private final Schema<InstallSnapshotResultMessage> schema = RuntimeSchema
         .getSchema(InstallSnapshotResultMessage.class);
 
-    public InstallSnapshotResultMessageFactory(BufferPool<LinkedBuffer> pool) {
+    public InstallSnapshotResultMessageFactory(Pool<LinkedBuffer> pool) {
         super(pool);
     }
 
@@ -29,9 +29,9 @@ public class InstallSnapshotResultMessageFactory extends AbstractDistributableFa
     }
 
     @Override
-    public Distributable create(byte[] content) {
+    public Distributable create(byte[] content, int length) {
         InstallSnapshotResultMessage message = new InstallSnapshotResultMessage();
-        ProtostuffIOUtil.mergeFrom(content, message, schema);
+        ProtostuffIOUtil.mergeFrom(content, 0, length, message, schema);
         return message;
     }
 

@@ -36,7 +36,7 @@ public class Endpoint implements Comparable<Endpoint> {
 
     public boolean updateReplicationState(int matchIndex) {
         if (!matched) {
-            updateNextIndex(true);
+            quickMatchNextIndex(true);
         }
         if (this.matchIndex == matchIndex) {
             log.debug("No change in matchIndex, stop replication.");
@@ -50,7 +50,8 @@ public class Endpoint implements Comparable<Endpoint> {
         return true;
     }
 
-    public void updateNextIndex(boolean lastMatched) {
+    public void quickMatchNextIndex(boolean lastMatched) {
+        log.debug("match helper is {}", quickMatchHelper);
         if (!matched) {
             matched = quickMatchHelper.isMatched();
         }
@@ -58,6 +59,7 @@ public class Endpoint implements Comparable<Endpoint> {
             if (nextIndex > 0) {
                 nextIndex--;
             }
+            // at this point, we should use log snapshots to synchronize followerd logs
         } else {
             quickMatchHelper.update(lastMatched);
             nextIndex = quickMatchHelper.getIndex();
@@ -84,6 +86,9 @@ public class Endpoint implements Comparable<Endpoint> {
         return this.matchIndex - o.matchIndex;
     }
 
+    /**
+     * Use the binary search method to quickly locate the matchIndex and nextIndex of the follower
+     */
     static class QuickMatchHelper {
 
         int initLeftEdge;
@@ -99,7 +104,7 @@ public class Endpoint implements Comparable<Endpoint> {
         }
 
         public boolean isMatched() {
-            return leftEdge == rightEdge && leftEdge >= initLeftEdge && leftEdge <= initRightEdge;
+            return leftEdge >= rightEdge;
         }
 
         public int getIndex() {
@@ -112,8 +117,10 @@ public class Endpoint implements Comparable<Endpoint> {
         public void update(boolean lastMatched) {
             int mid = (rightEdge - leftEdge) / 2 + leftEdge;
             if (lastMatched) {
+                // means that nextIndex must be located between mid and rightEdge
                 leftEdge = mid + 1;
             } else {
+                // means that nextIndex must be located between leftEdge and mid
                 rightEdge = mid - 1;
             }
         }

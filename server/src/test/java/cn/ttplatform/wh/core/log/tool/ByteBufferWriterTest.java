@@ -4,7 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.ByteArrayPool;
+import cn.ttplatform.wh.support.Pool;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -27,9 +28,10 @@ class ByteBufferWriterTest {
 
     @Before
     void setUp() {
-        BufferPool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
+        Pool<byte[]> byteArrayPool = new ByteArrayPool(10, 10 * 1024 * 1024);
+        Pool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
         String path = Objects.requireNonNull(ByteBufferWriterTest.class.getClassLoader().getResource("test.txt")).getPath();
-        byteBufferWriter = new ByteBufferWriter(new File(path), bufferPool);
+        byteBufferWriter = new ByteBufferWriter(new File(path), bufferPool, byteArrayPool);
     }
 
     @After
@@ -69,7 +71,7 @@ class ByteBufferWriterTest {
         IntStream.range(0, 1000000).forEach(sb::append);
         byte[] content = sb.toString().getBytes(StandardCharsets.UTF_8);
         long begin = System.nanoTime();
-        byteBufferWriter.append(content);
+        byteBufferWriter.append(content, content.length);
         log.debug("append a chunk size[{}] cost {} ns", content.length, (System.nanoTime() - begin));
     }
 
@@ -78,7 +80,7 @@ class ByteBufferWriterTest {
         StringBuilder sb = new StringBuilder();
         IntStream.range(0, 1000000).forEach(sb::append);
         byte[] content = sb.toString().getBytes(StandardCharsets.UTF_8);
-        byteBufferWriter.append(content);
+        byteBufferWriter.append(content, content.length);
         long begin = System.nanoTime();
         byteBufferWriter.readBytesAt(0, (int) byteBufferWriter.size());
         log.debug("readBytesAt {} ns", (System.nanoTime() - begin));
@@ -89,7 +91,7 @@ class ByteBufferWriterTest {
         StringBuilder sb = new StringBuilder();
         IntStream.range(0, 1000000).forEach(sb::append);
         byte[] content = sb.toString().getBytes(StandardCharsets.UTF_8);
-        byteBufferWriter.append(content);
+        byteBufferWriter.append(content, content.length);
         long begin = System.nanoTime();
         byteBufferWriter.truncate(1);
         log.debug("truncate cost {} ns", (System.nanoTime() - begin));
@@ -100,7 +102,7 @@ class ByteBufferWriterTest {
         StringBuilder sb = new StringBuilder();
         IntStream.range(0, 1000000).forEach(sb::append);
         byte[] content = sb.toString().getBytes(StandardCharsets.UTF_8);
-        byteBufferWriter.append(content);
+        byteBufferWriter.append(content, content.length);
         long begin = System.nanoTime();
         byteBufferWriter.clear();
         log.debug("clear cost {} ns", (System.nanoTime() - begin));
@@ -111,7 +113,7 @@ class ByteBufferWriterTest {
         StringBuilder sb = new StringBuilder();
         IntStream.range(0, 1000000).forEach(sb::append);
         byte[] content = sb.toString().getBytes(StandardCharsets.UTF_8);
-        byteBufferWriter.append(content);
+        byteBufferWriter.append(content, content.length);
         assertFalse(byteBufferWriter.isEmpty());
         byteBufferWriter.clear();
         assertTrue(byteBufferWriter.isEmpty());
@@ -123,7 +125,7 @@ class ByteBufferWriterTest {
         StringBuilder sb = new StringBuilder();
         IntStream.range(0, 1000000).forEach(sb::append);
         byte[] content = sb.toString().getBytes(StandardCharsets.UTF_8);
-        byteBufferWriter.append(content);
+        byteBufferWriter.append(content, content.length);
         assertEquals(content.length, byteBufferWriter.size());
         long offset = ThreadLocalRandom.current().nextLong(content.length);
         byteBufferWriter.truncate(offset);

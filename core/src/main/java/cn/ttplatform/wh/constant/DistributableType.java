@@ -27,4 +27,5 @@ public class DistributableType {
     public static final int PRE_VOTE_RESULT = 15;
     public static final int INSTALL_SNAPSHOT = 16;
     public static final int INSTALL_SNAPSHOT_RESULT = 17;
+    public static final int SYNCING = 18;
 }

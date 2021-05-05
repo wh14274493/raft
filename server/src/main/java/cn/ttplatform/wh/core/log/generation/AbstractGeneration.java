@@ -4,7 +4,7 @@ import cn.ttplatform.wh.core.log.entry.FileLogEntry;
 import cn.ttplatform.wh.core.log.entry.FileLogEntryIndex;
 import cn.ttplatform.wh.core.log.snapshot.FileSnapshot;
 import cn.ttplatform.wh.exception.OperateFileException;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Pool;
 import java.io.File;
 import java.nio.ByteBuffer;
 
@@ -19,12 +19,12 @@ public abstract class AbstractGeneration implements Generation {
     protected FileLogEntry fileLogEntry;
     protected FileLogEntryIndex fileLogEntryIndex;
 
-    AbstractGeneration(File file, BufferPool<ByteBuffer> pool, boolean isOldGeneration) {
+    AbstractGeneration(File file, Pool<ByteBuffer> pool, Pool<byte[]> byteArrayPool, boolean isOldGeneration) {
         if (!file.exists() && !file.mkdir()) {
             throw new OperateFileException("create file[" + file.getPath() + "] error");
         }
         this.file = file;
-        this.fileSnapshot = new FileSnapshot(file, pool, isOldGeneration);
+        this.fileSnapshot = new FileSnapshot(file, pool, byteArrayPool, isOldGeneration);
     }
 
     public int getLastIncludeIndex() {

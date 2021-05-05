@@ -3,7 +3,7 @@ package cn.ttplatform.wh.cmd.factory;
 import cn.ttplatform.wh.cmd.GetClusterInfoResultCommand;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.support.AbstractDistributableFactory;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.support.Distributable;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
@@ -18,7 +18,7 @@ public class GetClusterInfoResultCommandFactory extends AbstractDistributableFac
 
     private final Schema<GetClusterInfoResultCommand> schema = RuntimeSchema.getSchema(GetClusterInfoResultCommand.class);
 
-    public GetClusterInfoResultCommandFactory(BufferPool<LinkedBuffer> pool) {
+    public GetClusterInfoResultCommandFactory(Pool<LinkedBuffer> pool) {
         super(pool);
     }
 
@@ -28,9 +28,9 @@ public class GetClusterInfoResultCommandFactory extends AbstractDistributableFac
     }
 
     @Override
-    public Distributable create(byte[] content) {
+    public Distributable create(byte[] content, int length) {
         GetClusterInfoResultCommand command = new GetClusterInfoResultCommand();
-        ProtostuffIOUtil.mergeFrom(content, command, schema);
+        ProtostuffIOUtil.mergeFrom(content, 0, length, command, schema);
         return command;
     }
 

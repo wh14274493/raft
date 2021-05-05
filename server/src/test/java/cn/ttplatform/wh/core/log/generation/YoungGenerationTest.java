@@ -10,7 +10,8 @@ import cn.ttplatform.wh.core.log.entry.LogEntryFactory;
 import cn.ttplatform.wh.core.log.entry.LogEntryIndex;
 import cn.ttplatform.wh.core.log.snapshot.FileSnapshot;
 import cn.ttplatform.wh.core.log.tool.DirectByteBufferPool;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.ByteArrayPool;
+import cn.ttplatform.wh.support.Pool;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -36,11 +37,12 @@ class YoungGenerationTest {
 
     @Before
     void setUp() {
-        BufferPool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
+        Pool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
+        Pool<byte[]> byteArrayPool = new ByteArrayPool(10, 10 * 1024 * 1024);
         String path = Objects.requireNonNull(YoungGenerationTest.class.getClassLoader().getResource("")).getPath();
         File file = new File(path);
         file.deleteOnExit();
-        youngGeneration = new YoungGeneration(file, bufferPool, 0);
+        youngGeneration = new YoungGeneration(file, bufferPool, byteArrayPool, 0);
     }
 
     @After

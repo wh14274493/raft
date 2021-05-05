@@ -2,6 +2,7 @@ package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.GlobalContext;
+import cn.ttplatform.wh.core.Node;
 import cn.ttplatform.wh.core.connector.message.RequestVoteMessage;
 import cn.ttplatform.wh.core.connector.message.RequestVoteResultMessage;
 import cn.ttplatform.wh.core.role.Follower;
@@ -27,14 +28,15 @@ public class RequestVoteMessageHandler extends AbstractDistributableHandler {
     }
 
     @Override
-    public void doHandle(Distributable distributable) {
+    public void doHandleInClusterMode(Distributable distributable) {
         RequestVoteMessage message = (RequestVoteMessage) distributable;
         context.sendMessage(process(message), message.getSourceId());
     }
 
     private RequestVoteResultMessage process(RequestVoteMessage message) {
-        Role role = context.getNode().getRole();
-        if (context.isFollower() && System.currentTimeMillis() - ((Follower) role).getLastHeartBeat() < context.getProperties()
+        Node node = context.getNode();
+        Role role = node.getRole();
+        if (node.isFollower() && System.currentTimeMillis() - ((Follower) role).getLastHeartBeat() < context.getProperties()
             .getMinElectionTimeout()) {
             log.debug("current leader is alive, reject this request vote message.");
             return null;
@@ -58,18 +60,18 @@ public class RequestVoteMessageHandler extends AbstractDistributableHandler {
             log.debug("the term[{}] > currentTerm[{}], and the vote result is {}.", term, currentTerm, voted);
             if (voted) {
                 log.debug("become follower and vote to {}", candidateId);
-                context.changeToFollower(term, null, candidateId, 0, 0, 0L);
+                node.changeToFollower(term, null, candidateId, 0, 0, 0L);
             }
             return requestVoteResultMessage;
         }
-        if (context.isFollower()) {
+        if (node.isFollower()) {
             boolean voted = !context.getLog().isNewerThan(lastLogIndex, lastLogTerm);
             log.debug("the term[{}] == currentTerm[{}], and the vote result is {}.", term, currentTerm, voted);
             String voteTo = ((Follower) role).getVoteTo();
             if (voted && (voteTo == null || "".equals(voteTo))) {
                 requestVoteResultMessage.setVoted(voted);
                 log.debug("at this point, having not voted for any other node, so become follower and vote to {}", candidateId);
-                context.changeToFollower(term, null, candidateId, 0, 0, 0L);
+                node.changeToFollower(term, null, candidateId, 0, 0, 0L);
             }
         }
         return requestVoteResultMessage;

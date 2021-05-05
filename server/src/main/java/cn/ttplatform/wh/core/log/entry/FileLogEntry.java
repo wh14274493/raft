@@ -5,7 +5,7 @@ import static cn.ttplatform.wh.core.log.tool.ByteConvertor.fillIntBytes;
 import cn.ttplatform.wh.core.log.generation.FileName;
 import cn.ttplatform.wh.core.log.tool.ByteBufferWriter;
 import cn.ttplatform.wh.core.log.tool.ReadableAndWriteableFile;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Pool;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -24,15 +24,46 @@ public class FileLogEntry {
     public static final int LOG_ENTRY_HEADER_SIZE = 4 + 4 + 4 + 4;
     private final LogEntryFactory logEntryFactory = LogEntryFactory.getInstance();
     private final ReadableAndWriteableFile file;
+    private final Pool<byte[]> byteArrayPool;
 
-    public FileLogEntry(File parent, BufferPool<ByteBuffer> pool) {
-        this.file = new ByteBufferWriter(new File(parent, FileName.LOG_ENTRY_FILE_NAME), pool);
+    public FileLogEntry(File parent, Pool<ByteBuffer> byteBufferPool, Pool<byte[]> byteArrayPool) {
+        this.file = new ByteBufferWriter(new File(parent, FileName.LOG_ENTRY_FILE_NAME), byteBufferPool, byteArrayPool);
+        this.byteArrayPool = byteArrayPool;
     }
 
     public long append(LogEntry logEntry) {
         long offset = file.size();
-        file.append(logEntryFactory.transferLogEntryToBytes(logEntry));
+        int outLength = FileLogEntry.LOG_ENTRY_HEADER_SIZE + logEntry.getCommand().length;
+        byte[] out = byteArrayPool.allocate(outLength);
+        try {
+            transferLogEntryToBytes(logEntry, out);
+            file.append(out, outLength);
+        } finally {
+            byteArrayPool.recycle(out);
+        }
         return offset;
+    }
+
+    /**
+     * Convert a {@link LogEntry} object to byte array
+     *
+     * @param logEntry source object
+     */
+    public void transferLogEntryToBytes(LogEntry logEntry, byte[] out) {
+        byte[] command = logEntry.getCommand();
+        // index[0-3]
+        fillIntBytes(logEntry.getIndex(), out, 3);
+        // term[4-7]
+        fillIntBytes(logEntry.getTerm(), out, 7);
+        // type[8,11]
+        fillIntBytes(logEntry.getType(), out, 11);
+        // commandLength[12,15]
+        fillIntBytes(command.length, out, 15);
+        // cmd[16,content.length]
+        int index = 16;
+        for (byte b : command) {
+            out[index++] = b;
+        }
     }
 
     public long[] append(List<LogEntry> logEntries) {
@@ -43,13 +74,18 @@ public class FileLogEntry {
             offsets[i] = offset;
             offset += (LOG_ENTRY_HEADER_SIZE + logEntries.get(i).getCommand().length);
         }
-        byte[] content = new byte[(int) (offset - base)];
-        fillContentWithLogEntries(content, logEntries);
-        file.append(content);
+        int contentLength = (int) (offset - base);
+        byte[] content = byteArrayPool.allocate(contentLength);
+        try {
+            fillContentWithLogEntries(logEntries, content);
+            file.append(content, contentLength);
+        } finally {
+            byteArrayPool.recycle(content);
+        }
         return offsets;
     }
 
-    public void fillContentWithLogEntries(byte[] content, List<LogEntry> logEntries) {
+    public void fillContentWithLogEntries(List<LogEntry> logEntries, byte[] content) {
         int index = 0;
         for (LogEntry logEntry : logEntries) {
             index += 3;
@@ -91,9 +127,6 @@ public class FileLogEntry {
     }
 
     public byte[] loadEntriesFromFile(long start, long end) {
-        if (end == -1L) {
-            end = file.size();
-        }
         return file.readBytesAt(start, (int) (end - start));
     }
 

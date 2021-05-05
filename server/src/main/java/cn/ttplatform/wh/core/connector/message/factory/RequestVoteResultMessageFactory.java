@@ -3,7 +3,7 @@ package cn.ttplatform.wh.core.connector.message.factory;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.connector.message.RequestVoteResultMessage;
 import cn.ttplatform.wh.support.AbstractDistributableFactory;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.support.Distributable;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
@@ -18,7 +18,7 @@ public class RequestVoteResultMessageFactory extends AbstractDistributableFactor
 
     private final Schema<RequestVoteResultMessage> schema = RuntimeSchema.getSchema(RequestVoteResultMessage.class);
 
-    public RequestVoteResultMessageFactory(BufferPool<LinkedBuffer> pool) {
+    public RequestVoteResultMessageFactory(Pool<LinkedBuffer> pool) {
         super(pool);
     }
 
@@ -28,9 +28,9 @@ public class RequestVoteResultMessageFactory extends AbstractDistributableFactor
     }
 
     @Override
-    public Distributable create(byte[] content) {
+    public Distributable create(byte[] content, int length) {
         RequestVoteResultMessage message = new RequestVoteResultMessage();
-        ProtostuffIOUtil.mergeFrom(content, message, schema);
+        ProtostuffIOUtil.mergeFrom(content, 0, length, message, schema);
         return message;
     }
 

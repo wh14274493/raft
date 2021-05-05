@@ -1,6 +1,7 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
+import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotResultMessage;
@@ -26,7 +27,7 @@ public class InstallSnapshotMessageHandler extends AbstractDistributableHandler 
     }
 
     @Override
-    public void doHandle(Distributable distributable) {
+    public void doHandleInClusterMode(Distributable distributable) {
         InstallSnapshotMessage message = (InstallSnapshotMessage) distributable;
         InstallSnapshotResultMessage resultMessage = process(message);
         context.sendMessage(resultMessage, message.getSourceId());
@@ -55,7 +56,7 @@ public class InstallSnapshotMessageHandler extends AbstractDistributableHandler 
     }
 
     private InstallSnapshotResultMessage installSnapshot(InstallSnapshotMessage message) {
-        context.changeToFollower(message.getTerm(), null, null, 0, 0, System.currentTimeMillis());
+        context.getNode().changeToFollower(message.getTerm(), null, null, 0, 0, System.currentTimeMillis());
         boolean installRes;
         try {
             installRes = context.getLog().installSnapshot(message);

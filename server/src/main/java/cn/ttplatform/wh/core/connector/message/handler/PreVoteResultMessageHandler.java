@@ -2,6 +2,7 @@ package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.GlobalContext;
+import cn.ttplatform.wh.core.Node;
 import cn.ttplatform.wh.core.connector.message.PreVoteResultMessage;
 import cn.ttplatform.wh.core.group.Cluster;
 import cn.ttplatform.wh.core.group.Phase;
@@ -28,10 +29,11 @@ public class PreVoteResultMessageHandler extends AbstractDistributableHandler {
     }
 
     @Override
-    public void doHandle(Distributable distributable) {
+    public void doHandleInClusterMode(Distributable distributable) {
         PreVoteResultMessage message = (PreVoteResultMessage) distributable;
+        Node node = context.getNode();
         boolean voted = message.isVoted();
-        if (!voted || !context.isFollower()) {
+        if (!voted || !node.isFollower()) {
             return;
         }
         Follower role = (Follower) context.getNode().getRole();
@@ -40,7 +42,7 @@ public class PreVoteResultMessageHandler extends AbstractDistributableHandler {
             context.startElection(currentTerm + 1);
         } else {
             log.debug("need more votes.");
-            context.changeToFollower(currentTerm,
+            node.changeToFollower(currentTerm,
                 null, role.getVoteTo(),
                 role.getOldConfigPreVoteCounts(),
                 role.getNewConfigPreVoteCounts(),

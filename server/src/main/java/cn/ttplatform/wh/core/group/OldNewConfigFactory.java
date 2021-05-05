@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.group;
 
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.support.Factory;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
@@ -13,17 +13,17 @@ import io.protostuff.runtime.RuntimeSchema;
  */
 class OldNewConfigFactory implements Factory<OldNewConfig> {
 
-    private final BufferPool<LinkedBuffer> pool;
+    private final Pool<LinkedBuffer> pool;
     private final Schema<OldNewConfig> schema = RuntimeSchema.getSchema(OldNewConfig.class);
 
-    public OldNewConfigFactory(BufferPool<LinkedBuffer> pool) {
+    public OldNewConfigFactory(Pool<LinkedBuffer> pool) {
         this.pool = pool;
     }
 
     @Override
-    public OldNewConfig create(byte[] content) {
+    public OldNewConfig create(byte[] content, int length) {
         OldNewConfig oldNewConfig = new OldNewConfig();
-        ProtostuffIOUtil.mergeFrom(content, oldNewConfig, schema);
+        ProtostuffIOUtil.mergeFrom(content, 0, length, oldNewConfig, schema);
         return oldNewConfig;
     }
 

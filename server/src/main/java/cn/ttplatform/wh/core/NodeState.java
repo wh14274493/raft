@@ -20,8 +20,8 @@ public class NodeState {
     private final ReadableAndWriteableFile file;
 
     public NodeState(GlobalContext context) {
-        this.file = new ByteBufferWriter(new File(context.getBasePath(), NODE_STATE_FILE_NAME),
-            context.getByteBufferPool());
+        this.file = new ByteBufferWriter(new File(context.getProperties().getBase(), NODE_STATE_FILE_NAME),
+            context.getByteBufferPool(), context.getByteArrayPool());
     }
 
     /**

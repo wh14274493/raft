@@ -12,7 +12,7 @@ public interface Factory<T> {
      * @param content a serialized byte array
      * @return a deserialized object
      */
-    T create(byte[] content);
+    T create(byte[] content, int contentLength);
 
     /**
      * use protostuff to serialize a message object

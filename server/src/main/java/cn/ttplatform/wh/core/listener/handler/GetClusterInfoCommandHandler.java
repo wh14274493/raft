@@ -2,6 +2,7 @@ package cn.ttplatform.wh.core.listener.handler;
 
 import cn.ttplatform.wh.cmd.Command;
 import cn.ttplatform.wh.cmd.GetClusterInfoResultCommand;
+import cn.ttplatform.wh.config.RunMode;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.group.Cluster;
@@ -20,16 +21,29 @@ public class GetClusterInfoCommandHandler extends AbstractDistributableHandler {
     }
 
     @Override
-    public void doHandle(Distributable distributable) {
-        Cluster cluster = context.getCluster();
+    public void doHandleInSingleMode(Distributable distributable) {
+        String requestId = ((Command) distributable).getId();
         GetClusterInfoResultCommand respCommand = GetClusterInfoResultCommand.builder()
+            .id(requestId)
+            .leader(context.getNode().getSelfId())
+            .mode(RunMode.SINGLE.toString())
+            .build();
+        ChannelPool.reply(requestId, respCommand);
+    }
+
+    @Override
+    public void doHandleInClusterMode(Distributable distributable) {
+        Cluster cluster = context.getCluster();
+        String requestId = ((Command) distributable).getId();
+        GetClusterInfoResultCommand respCommand = GetClusterInfoResultCommand.builder()
+            .id(requestId)
             .leader(cluster.getSelfId())
-            .mode(cluster.getMode().toString())
+            .mode(context.getNode().getMode().toString())
             .phase(cluster.getPhase().toString())
             .newConfig(cluster.getNewConfigMap().toString())
             .oldConfig(cluster.getEndpointMap().toString())
             .build();
-        ChannelPool.reply(((Command)distributable).getId(), respCommand);
+        ChannelPool.reply(requestId, respCommand);
     }
 
     @Override

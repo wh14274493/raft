@@ -3,7 +3,7 @@ package cn.ttplatform.wh.cmd.factory;
 import cn.ttplatform.wh.cmd.RedirectCommand;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.support.AbstractDistributableFactory;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.support.Distributable;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
@@ -18,7 +18,7 @@ public class RedirectCommandFactory extends AbstractDistributableFactory {
 
     private final Schema<RedirectCommand> schema = RuntimeSchema.getSchema(RedirectCommand.class);
 
-    public RedirectCommandFactory(BufferPool<LinkedBuffer> pool) {
+    public RedirectCommandFactory(Pool<LinkedBuffer> pool) {
         super(pool);
     }
 
@@ -33,9 +33,9 @@ public class RedirectCommandFactory extends AbstractDistributableFactory {
     }
 
     @Override
-    public Distributable create(byte[] content) {
+    public Distributable create(byte[] content, int length) {
         RedirectCommand command = new RedirectCommand();
-        ProtostuffIOUtil.mergeFrom(content, command, schema);
+        ProtostuffIOUtil.mergeFrom(content, 0, length, command, schema);
         return command;
     }
 }

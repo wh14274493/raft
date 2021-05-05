@@ -22,7 +22,7 @@ public class CoreChannelInitializer extends ChannelInitializer<SocketChannel> {
     @Override
     protected void initChannel(SocketChannel ch) {
         ChannelPipeline pipeline = ch.pipeline();
-        pipeline.addLast(new DistributableCodec(context.getFactoryManager()));
+        pipeline.addLast(new DistributableCodec(context.getFactoryManager(), context.getByteArrayPool()));
         int readIdleTimeout = context.getProperties().getReadIdleTimeout();
         int writeIdleTimeout = context.getProperties().getWriteIdleTimeout();
         int allIdleTimeout = context.getProperties().getAllIdleTimeout();

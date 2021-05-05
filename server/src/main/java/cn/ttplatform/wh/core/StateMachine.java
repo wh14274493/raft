@@ -9,7 +9,7 @@ import cn.ttplatform.wh.cmd.SetResultCommand;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.core.support.ChannelPool;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.support.DistributableFactory;
 import cn.ttplatform.wh.support.Factory;
 import io.netty.channel.ChannelFuture;
@@ -72,7 +72,8 @@ public class StateMachine {
         SetCommand setCmd = pendingSetCommandMap.remove(entry.getIndex());
         if (setCmd == null) {
             DistributableFactory factory = context.getFactoryManager().getFactory(DistributableType.SET_COMMAND);
-            setCmd = (SetCommand) factory.create(entry.getCommand());
+            byte[] command = entry.getCommand();
+            setCmd = (SetCommand) factory.create(command, command.length);
         }
         data.put(setCmd.getKey(), setCmd.getValue());
         String requestId = setCmd.getId();
@@ -94,6 +95,10 @@ public class StateMachine {
             .orElse(Collections.emptyList())
             .forEach(cmd -> ChannelPool
                 .reply(cmd.getId(), GetResultCommand.builder().id(cmd.getId()).value(data.get(cmd.getKey())).build()));
+    }
+
+    public void replyGetResult(GetCommand cmd) {
+        ChannelPool.reply(cmd.getId(), GetResultCommand.builder().id(cmd.getId()).value(data.get(cmd.getKey())).build());
     }
 
     public void addGetTasks(int index, GetCommand cmd) {
@@ -133,7 +138,7 @@ public class StateMachine {
     }
 
     public void applySnapshotData(byte[] snapshot, int lastIncludeIndex) {
-        data = dataFactory.create(snapshot);
+        data = dataFactory.create(snapshot, snapshot.length);
         lastApplied = lastIncludeIndex;
         log.info("apply snapshot that lastIncludeIndex is {}.", lastIncludeIndex);
     }
@@ -145,16 +150,16 @@ public class StateMachine {
     private static class DataFactory implements Factory<Data> {
 
         private static final Schema<Data> DATA_SCHEMA = RuntimeSchema.getSchema(Data.class);
-        private final BufferPool<LinkedBuffer> pool;
+        private final Pool<LinkedBuffer> pool;
 
-        public DataFactory(BufferPool<LinkedBuffer> pool) {
+        public DataFactory(Pool<LinkedBuffer> pool) {
             this.pool = pool;
         }
 
         @Override
-        public Data create(byte[] content) {
+        public Data create(byte[] content, int length) {
             Data data = new Data();
-            ProtostuffIOUtil.mergeFrom(content, data, DATA_SCHEMA);
+            ProtostuffIOUtil.mergeFrom(content, 0, length, data, DATA_SCHEMA);
             return data;
         }
 

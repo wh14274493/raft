@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 import lombok.Data;
@@ -21,6 +22,13 @@ public class ServerProperties {
      * an unique id
      */
     private String nodeId;
+
+    private RunMode mode;
+
+    /**
+     * The service will listen for connections from this host
+     */
+    private String host;
 
     /**
      * The service will listen for connections from this port
@@ -65,7 +73,7 @@ public class ServerProperties {
     /**
      * all the data will be stored in {@code basePath}
      */
-    private String basePath;
+    private File base;
 
     /**
      * Each {@code snapshotGenerateThreshold} logs added generates a snapshot of the logs
@@ -111,6 +119,13 @@ public class ServerProperties {
      */
     private int byteBufferSizeLimit;
 
+    private int byteArrayPoolSize;
+
+    /**
+     * only used when readWriteFileStrategy is direct access / indirect access
+     */
+    private int byteArraySizeLimit;
+
     public ServerProperties(String configPath) {
         Properties properties = new Properties();
         File file = new File(configPath, "server.properties");
@@ -134,6 +149,13 @@ public class ServerProperties {
 
     private void loadProperties(Properties properties) {
         nodeId = properties.getProperty("nodeId", UUID.randomUUID().toString());
+        String modeProperty = properties.getProperty("mode", "single");
+        if ("single".equals(modeProperty)) {
+            mode = RunMode.SINGLE;
+        } else {
+            mode = RunMode.CLUSTER;
+            clusterInfo = properties.getProperty("clusterInfo");
+        }
         port = Integer.parseInt(properties.getProperty("port", "8888"));
         bossThreads = Integer.parseInt(properties.getProperty("bossThreads", "1"));
         workerThreads = Integer.parseInt(properties.getProperty("workerThreads", "1"));
@@ -142,7 +164,8 @@ public class ServerProperties {
         logReplicationDelay = Long.parseLong(properties.getProperty("logReplicationDelay", "1000"));
         logReplicationInterval = Long.parseLong(properties.getProperty("logReplicationInterval", "1000"));
         retryTimeout = Long.parseLong(properties.getProperty("retryTimeout", "800"));
-        basePath = properties.getProperty("basePath", System.getProperty("user.home"));
+        String defaultBasePath = Objects.requireNonNull(this.getClass().getResource("")).getPath();
+        base = new File(properties.getProperty("basePath", defaultBasePath));
         snapshotGenerateThreshold = Integer
             .parseInt(properties.getProperty("snapshotGenerateThreshold", String.valueOf(1024 * 1024 * 10)));
         maxTransferLogs = Integer.parseInt(properties.getProperty("maxTransferLogs", "500"));
@@ -151,11 +174,13 @@ public class ServerProperties {
         readIdleTimeout = Integer.parseInt(properties.getProperty("readIdleTimeout", "10"));
         writeIdleTimeout = Integer.parseInt(properties.getProperty("writeIdleTimeout", "10"));
         allIdleTimeout = Integer.parseInt(properties.getProperty("allIdleTimeout", "10"));
-        clusterInfo = properties.getProperty("clusterInfo");
         readWriteFileStrategy = properties.getProperty("readWriteFileStrategy", "direct access");
         byteBufferPoolSize = Integer.parseInt(properties.getProperty("byteBufferPoolSize", "10"));
         byteBufferSizeLimit = Integer
             .parseInt(properties.getProperty("byteBufferSizeLimit", String.valueOf(1024 * 1024 * 10)));
+        byteArrayPoolSize = Integer.parseInt(properties.getProperty("byteArrayPoolSize", "10"));
+        byteArraySizeLimit = Integer
+            .parseInt(properties.getProperty("byteArraySizeLimit", String.valueOf(1024 * 1024 * 10)));
     }
 
 }

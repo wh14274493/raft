@@ -9,7 +9,7 @@ import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.core.log.entry.LogEntryFactory;
 import cn.ttplatform.wh.core.log.entry.LogEntryIndex;
 import cn.ttplatform.wh.exception.OperateFileException;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Pool;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -34,10 +34,10 @@ public class YoungGeneration extends AbstractGeneration {
     private String snapshotSource;
     private final LinkedList<LogEntry> pending = new LinkedList<>();
 
-    public YoungGeneration(File parent, BufferPool<ByteBuffer> pool, int lastIncludeIndex) {
-        super(new File(parent, FileName.GENERATING_FILE_NAME), pool, false);
-        this.fileLogEntry = new FileLogEntry(file, pool);
-        this.fileLogEntryIndex = new FileLogEntryIndex(file, pool, lastIncludeIndex);
+    public YoungGeneration(File parent, Pool<ByteBuffer> byteBufferPool, Pool<byte[]> byteArrayPool, int lastIncludeIndex) {
+        super(new File(parent, FileName.GENERATING_FILE_NAME), byteBufferPool, byteArrayPool, false);
+        this.fileLogEntry = new FileLogEntry(file, byteBufferPool, byteArrayPool);
+        this.fileLogEntryIndex = new FileLogEntryIndex(file, byteBufferPool, byteArrayPool, lastIncludeIndex);
     }
 
     /**
@@ -128,7 +128,7 @@ public class YoungGeneration extends AbstractGeneration {
             log.info("logEntries size is 0, skip to write operation.");
             return;
         }
-        log.info("prepare to write {} logs into file.", logEntries.size());
+        log.debug("prepare to write {} logs into file.", logEntries.size());
         if (logEntries.size() == 1) {
             appendLogEntry(logEntries.get(0));
         } else {
@@ -219,11 +219,12 @@ public class YoungGeneration extends AbstractGeneration {
         if (to <= maxLogIndex) {
             end = fileLogEntryIndex.getEntryOffset(to);
         } else {
-            end = -1L;
+            end = fileLogEntry.size();
         }
         byte[] entries = fileLogEntry.loadEntriesFromFile(start, end);
+        int size = (int) (end - start);
         int offset = 0;
-        while (offset < entries.length) {
+        while (offset < size) {
             int index = bytesToInt(entries, offset);
             offset += 4;
             int term = bytesToInt(entries, offset);

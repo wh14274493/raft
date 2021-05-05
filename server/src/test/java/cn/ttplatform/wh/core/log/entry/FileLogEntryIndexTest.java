@@ -5,7 +5,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import cn.ttplatform.wh.core.log.tool.DirectByteBufferPool;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.ByteArrayPool;
+import cn.ttplatform.wh.support.Pool;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -29,9 +30,10 @@ class FileLogEntryIndexTest {
 
     @Before
     void setUp() {
-        BufferPool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
+        Pool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
+        Pool<byte[]> byteArrAyPool = new ByteArrayPool(10, 10 * 1024 * 1024);
         String path = Objects.requireNonNull(FileLogEntryIndexTest.class.getClassLoader().getResource("")).getPath();
-        fileLogEntryIndex = new FileLogEntryIndex(new File(path), bufferPool, 0);
+        fileLogEntryIndex = new FileLogEntryIndex(new File(path), bufferPool, byteArrAyPool, 0);
     }
 
     @After

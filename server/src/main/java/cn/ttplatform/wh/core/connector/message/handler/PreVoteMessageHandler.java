@@ -2,6 +2,7 @@ package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.GlobalContext;
+import cn.ttplatform.wh.core.Node;
 import cn.ttplatform.wh.core.connector.message.PreVoteMessage;
 import cn.ttplatform.wh.core.connector.message.PreVoteResultMessage;
 import cn.ttplatform.wh.core.role.Follower;
@@ -27,9 +28,10 @@ public class PreVoteMessageHandler extends AbstractDistributableHandler {
     }
 
     @Override
-    public void doHandle(Distributable distributable) {
-        Role role = context.getNode().getRole();
-        if (context.isFollower() && System.currentTimeMillis() - ((Follower) role).getLastHeartBeat() < context.getProperties()
+    public void doHandleInClusterMode(Distributable distributable) {
+        Node node = context.getNode();
+        Role role = node.getRole();
+        if (node.isFollower() && System.currentTimeMillis() - ((Follower) role).getLastHeartBeat() < context.getProperties()
             .getMinElectionTimeout()) {
             log.debug("current leader is alive, reject this pre request vote message.");
             return;

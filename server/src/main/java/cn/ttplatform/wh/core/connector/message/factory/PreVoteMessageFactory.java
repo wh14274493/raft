@@ -3,7 +3,7 @@ package cn.ttplatform.wh.core.connector.message.factory;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.connector.message.PreVoteMessage;
 import cn.ttplatform.wh.support.AbstractDistributableFactory;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.support.Distributable;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
@@ -18,7 +18,7 @@ public class PreVoteMessageFactory extends AbstractDistributableFactory {
 
     private final Schema<PreVoteMessage> schema = RuntimeSchema.getSchema(PreVoteMessage.class);
 
-    public PreVoteMessageFactory(BufferPool<LinkedBuffer> pool) {
+    public PreVoteMessageFactory(Pool<LinkedBuffer> pool) {
         super(pool);
     }
 
@@ -28,9 +28,9 @@ public class PreVoteMessageFactory extends AbstractDistributableFactory {
     }
 
     @Override
-    public Distributable create(byte[] content) {
+    public Distributable create(byte[] content, int length) {
         PreVoteMessage message = new PreVoteMessage();
-        ProtostuffIOUtil.mergeFrom(content, message, schema);
+        ProtostuffIOUtil.mergeFrom(content, 0, length, message, schema);
         return message;
     }
 

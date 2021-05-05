@@ -1,7 +1,9 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
+import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.GlobalContext;
+import cn.ttplatform.wh.core.Node;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotResultMessage;
 import cn.ttplatform.wh.core.group.Endpoint;
@@ -26,16 +28,16 @@ public class InstallSnapshotResultMessageHandler extends AbstractDistributableHa
     }
 
     @Override
-    public void doHandle(Distributable distributable) {
+    public void doHandleInClusterMode(Distributable distributable) {
         InstallSnapshotResultMessage message = (InstallSnapshotResultMessage) distributable;
-
+        Node node = context.getNode();
         int term = message.getTerm();
-        int currentTerm = context.getNode().getTerm();
+        int currentTerm = node.getTerm();
         if (term > currentTerm) {
-            context.changeToFollower(term, null, null, 0, 0, 0L);
+            node.changeToFollower(term, null, null, 0, 0, 0L);
             return;
         }
-        if (!context.isLeader()) {
+        if (!node.isLeader()) {
             log.warn("role is not a leader, ignore this message.");
             return;
         }

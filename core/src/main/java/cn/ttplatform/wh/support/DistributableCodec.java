@@ -14,16 +14,18 @@ public class DistributableCodec extends ByteToMessageCodec<Distributable> {
     private static final int FIXED_MESSAGE_HEADER_LENGTH = Integer.BYTES + Long.BYTES;
 
     private final DistributableFactoryManager factoryManager;
+    private final Pool<byte[]> byteArrayPool;
 
-    public DistributableCodec(DistributableFactoryManager factoryManager) {
+    public DistributableCodec(DistributableFactoryManager factoryManager, Pool<byte[]> byteArrayPool) {
         this.factoryManager = factoryManager;
+        this.byteArrayPool = byteArrayPool;
     }
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Distributable msg, ByteBuf out) {
         byte[] encode = encode(msg);
         out.writeInt(msg.getType());
-        out.writeLong(encode.length);
+        out.writeInt(encode.length);
         out.writeBytes(encode);
     }
 
@@ -39,14 +41,14 @@ public class DistributableCodec extends ByteToMessageCodec<Distributable> {
         }
         in.markReaderIndex();
         int type = in.readInt();
-        long contentLength = in.readLong();
+        int contentLength = in.readInt();
         if (in.readableBytes() < contentLength) {
             in.resetReaderIndex();
             return;
         }
-        byte[] content = new byte[(int) contentLength];
-        in.readBytes(content);
+        byte[] content = byteArrayPool.allocate(contentLength);
+        in.readBytes(content, 0, contentLength);
         DistributableFactory factory = factoryManager.getFactory(type);
-        out.add(factory.create(content));
+        out.add(factory.create(content, contentLength));
     }
 }

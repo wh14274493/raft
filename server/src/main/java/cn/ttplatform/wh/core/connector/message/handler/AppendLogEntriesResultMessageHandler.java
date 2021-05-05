@@ -1,6 +1,7 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
+import cn.ttplatform.wh.core.Node;
 import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
 import cn.ttplatform.wh.support.Distributable;
 import cn.ttplatform.wh.support.Message;
@@ -40,16 +41,17 @@ public class AppendLogEntriesResultMessageHandler extends AbstractDistributableH
     }
 
     @Override
-    public void doHandle(Distributable distributable) {
+    public void doHandleInClusterMode(Distributable distributable) {
         AppendLogEntriesResultMessage message = (AppendLogEntriesResultMessage) distributable;
         preHandle(message);
         int term = message.getTerm();
-        int currentTerm = context.getNode().getTerm();
+        Node node = context.getNode();
+        int currentTerm = node.getTerm();
         if (term > currentTerm) {
-            context.changeToFollower(term, null, null, 0, 0, 0L);
+            node.changeToFollower(term, null, null, 0, 0, 0L);
             return;
         }
-        if (context.isLeader()) {
+        if (node.isLeader()) {
             Endpoint endpoint = context.getCluster().find(message.getSourceId());
             if (endpoint == null) {
                 log.warn("endpoint[{}] is not in cluster.", message.getSourceId());
@@ -63,7 +65,7 @@ public class AppendLogEntriesResultMessageHandler extends AbstractDistributableH
                     context.advanceLastApplied(newCommitIndex);
                 }
             } else {
-                endpoint.updateNextIndex(false);
+                endpoint.quickMatchNextIndex(false);
                 endpoint.setLastHeartBeat(0L);
             }
             if (doReplication) {

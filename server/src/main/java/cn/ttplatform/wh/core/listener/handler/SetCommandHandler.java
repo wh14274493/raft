@@ -3,6 +3,7 @@ package cn.ttplatform.wh.core.listener.handler;
 import cn.ttplatform.wh.cmd.SetCommand;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.GlobalContext;
+import cn.ttplatform.wh.core.log.Log;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
 import cn.ttplatform.wh.support.Distributable;
@@ -18,7 +19,17 @@ public class SetCommandHandler extends AbstractDistributableHandler {
     }
 
     @Override
-    public void doHandle(Distributable distributable) {
+    public void doHandleInSingleMode(Distributable distributable) {
+        SetCommand setCommand = (SetCommand) distributable;
+        int currentTerm = context.getNode().getTerm();
+        int index = context.pendingLog(LogEntry.SET, setCommand.getCmd());
+        if (context.getLog().advanceCommitIndex(index, currentTerm)) {
+            context.advanceLastApplied(index);
+        }
+    }
+
+    @Override
+    public void doHandleInClusterMode(Distributable distributable) {
         SetCommand cmd = (SetCommand) distributable;
         int index = context.pendingLog(LogEntry.SET, cmd.getCmd());
         cmd.setCmd(null);

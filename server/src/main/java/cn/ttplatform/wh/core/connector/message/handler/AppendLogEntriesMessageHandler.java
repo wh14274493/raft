@@ -1,6 +1,7 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
+import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesResultMessage;
@@ -29,7 +30,7 @@ public class AppendLogEntriesMessageHandler extends AbstractDistributableHandler
     }
 
     @Override
-    public void doHandle(Distributable distributable) {
+    public void doHandleInClusterMode(Distributable distributable) {
         AppendLogEntriesMessage message = (AppendLogEntriesMessage) distributable;
         context.sendMessage(process(message), message.getSourceId());
         Cluster cluster = context.getCluster();
@@ -66,11 +67,11 @@ public class AppendLogEntriesMessageHandler extends AbstractDistributableHandler
     }
 
     private boolean appendEntries(AppendLogEntriesMessage message) {
-        context.changeToFollower(message.getTerm(), message.getLeaderId(), null, 0, 0, System.currentTimeMillis());
+        context.getNode().changeToFollower(message.getTerm(), message.getLeaderId(), null, 0, 0, System.currentTimeMillis());
         Log log = context.getLog();
         int preLogIndex = message.getPreLogIndex();
         boolean checkIndexAndTermIfMatched = log.checkIndexAndTermIfMatched(preLogIndex, message.getPreLogTerm());
-        if (checkIndexAndTermIfMatched&&!message.isMatched()){
+        if (checkIndexAndTermIfMatched && !message.isMatched()) {
             return true;
         }
         if (checkIndexAndTermIfMatched) {

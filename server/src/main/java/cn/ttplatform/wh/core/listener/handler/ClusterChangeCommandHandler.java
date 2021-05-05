@@ -3,11 +3,11 @@ package cn.ttplatform.wh.core.listener.handler;
 import cn.ttplatform.wh.cmd.ClusterChangeCommand;
 import cn.ttplatform.wh.cmd.RequestFailedCommand;
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.core.group.EndpointMetaData;
 import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.StateMachine;
 import cn.ttplatform.wh.core.group.Cluster;
+import cn.ttplatform.wh.core.group.EndpointMetaData;
 import cn.ttplatform.wh.core.group.Phase;
 import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
 import cn.ttplatform.wh.core.support.ChannelPool;
@@ -30,7 +30,13 @@ public class ClusterChangeCommandHandler extends AbstractDistributableHandler {
     }
 
     @Override
-    public void doHandle(Distributable distributable) {
+    public void doHandleInSingleMode(Distributable distributable) {
+        context.enterClusterMode();
+        doHandleInClusterMode(distributable);
+    }
+
+    @Override
+    public void doHandleInClusterMode(Distributable distributable) {
         ClusterChangeCommand cmd = (ClusterChangeCommand) distributable;
         Cluster cluster = context.getCluster();
         StateMachine stateMachine = context.getStateMachine();

@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2021/2/19 19:37
  */
 @Slf4j
-public class FlexibleLinkedBufferPool implements BufferPool<LinkedBuffer> {
+public class FlexibleLinkedBufferPool implements Pool<LinkedBuffer> {
 
     private final BlockingQueue<SoftReference<LinkedBuffer>> pool = new LinkedBlockingQueue<>();
     private final ReferenceQueue<LinkedBuffer> referenceQueue = new ReferenceQueue<>();

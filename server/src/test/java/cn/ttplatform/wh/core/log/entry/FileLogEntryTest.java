@@ -3,7 +3,8 @@ package cn.ttplatform.wh.core.log.entry;
 import static org.junit.Assert.assertEquals;
 
 import cn.ttplatform.wh.core.log.tool.DirectByteBufferPool;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.ByteArrayPool;
+import cn.ttplatform.wh.support.Pool;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -27,11 +28,12 @@ class FileLogEntryTest {
 
     FileLogEntry fileLogEntry;
 
-        @Before
+    @Before
     void setUp() {
-        BufferPool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
+        Pool<byte[]> byteArrayPool = new ByteArrayPool(10, 10 * 1024 * 1024);
+        Pool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
         String path = Objects.requireNonNull(FileLogEntryIndexTest.class.getClassLoader().getResource("")).getPath();
-        fileLogEntry = new FileLogEntry(new File(path), bufferPool);
+        fileLogEntry = new FileLogEntry(new File(path), bufferPool, byteArrayPool);
     }
 
     @After

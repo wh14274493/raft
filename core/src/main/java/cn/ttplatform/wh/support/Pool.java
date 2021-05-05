@@ -4,7 +4,7 @@ package cn.ttplatform.wh.support;
  * @author Wang Hao
  * @date 2021/2/19 19:36
  */
-public interface BufferPool<T> {
+public interface Pool<T> {
 
     /**
      * apply to get a fixed size buffer from pool

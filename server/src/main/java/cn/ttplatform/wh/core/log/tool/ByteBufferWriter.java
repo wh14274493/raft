@@ -2,7 +2,7 @@ package cn.ttplatform.wh.core.log.tool;
 
 import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.exception.OperateFileException;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Pool;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -18,15 +18,17 @@ import lombok.extern.slf4j.Slf4j;
 public class ByteBufferWriter implements ReadableAndWriteableFile {
 
     private final FileChannel fileChannel;
-    private final BufferPool<ByteBuffer> bufferPool;
+    private final Pool<ByteBuffer> bufferPool;
+    private final Pool<byte[]> byteArrayPool;
     /**
      * Not safe in the case of multi-threaded operations
      */
     private long fileSize;
 
-    public ByteBufferWriter(File file, BufferPool<ByteBuffer> bufferPool) {
+    public ByteBufferWriter(File file, Pool<ByteBuffer> bufferPool, Pool<byte[]> byteArrayPool) {
         try {
             this.bufferPool = bufferPool;
+            this.byteArrayPool = byteArrayPool;
             this.fileChannel = FileChannel
                 .open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE,
                     StandardOpenOption.DSYNC);
@@ -73,9 +75,9 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
     }
 
     @Override
-    public void append(byte[] chunk) {
+    public void append(byte[] chunk, int length) {
         ByteBuffer byteBuffer = bufferPool.allocate(chunk.length);
-        byteBuffer.put(chunk);
+        byteBuffer.put(chunk, 0, length);
         write(byteBuffer, fileSize);
         fileSize += chunk.length;
     }
@@ -87,14 +89,14 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
         }
         ByteBuffer byteBuffer = bufferPool.allocate(size);
         int read = read(byteBuffer, position);
-        if (read < size) {
+        if (read != size) {
             log.warn("required {} bytes, but read {} bytes from file[index {}]", size, read, position);
             throw new OperateFileException(
                 "required " + size + " bytes, but read " + read + " bytes from file[index " + position + "]");
         }
-        byte[] res = new byte[size];
+        byte[] res = byteArrayPool.allocate(size);
         byteBuffer.flip();
-        byteBuffer.get(res);
+        byteBuffer.get(res, 0, read);
         bufferPool.recycle(byteBuffer);
         return res;
     }

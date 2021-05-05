@@ -1,5 +1,6 @@
 package cn.ttplatform.wh.core.log;
 
+import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
@@ -33,13 +34,11 @@ public class FileLog implements Log {
 
     public FileLog(GlobalContext context) {
         this.context = context;
-        oldGeneration = new OldGeneration(getLatestGeneration(context.getBasePath()), context.getByteBufferPool());
-        youngGeneration = new YoungGeneration(context.getBasePath(), context.getByteBufferPool(),
+        ServerProperties properties = context.getProperties();
+        oldGeneration = new OldGeneration(getLatestGeneration(properties.getBase()), context.getByteBufferPool(),
+            context.getByteArrayPool());
+        youngGeneration = new YoungGeneration(properties.getBase(), context.getByteBufferPool(), context.getByteArrayPool(),
             oldGeneration.getLastIncludeIndex());
-        initialize();
-    }
-
-    private void initialize() {
         if (youngGeneration.isEmpty()) {
             commitIndex = oldGeneration.getLastIncludeIndex();
         } else {
@@ -156,9 +155,9 @@ public class FileLog implements Log {
 
     @Override
     public Message createAppendLogEntriesMessage(String leaderId, int term, Endpoint endpoint, int size) {
-        log.debug("create AppendLogEntriesMessage.");
         int lastIncludeIndex = oldGeneration.getLastIncludeIndex();
         int lastIncludeTerm = oldGeneration.getLastIncludeTerm();
+        log.debug("create AppendLogEntriesMessage, lastIncludeIndex:{}, lastIncludeTerm:{}.", lastIncludeIndex, lastIncludeTerm);
         int endpointNextIndex = endpoint.getNextIndex();
         if (endpointNextIndex <= lastIncludeIndex) {
             return null;
@@ -195,7 +194,7 @@ public class FileLog implements Log {
     }
 
     @Override
-    public boolean advanceCommitIndex(int newCommitIndex, int term) {
+    public synchronized boolean advanceCommitIndex(int newCommitIndex, int term) {
         if (newCommitIndex <= commitIndex) {
             log.debug("newCommitIndex[{}]<=commitIndex[{}], can not advance commitIndex", newCommitIndex, commitIndex);
             return false;
@@ -272,9 +271,9 @@ public class FileLog implements Log {
         oldGeneration.close();
         youngGeneration.close();
         File file = youngGeneration.rename(lastIncludeIndex, lastIncludeTerm);
-        oldGeneration = new OldGeneration(file, context.getByteBufferPool());
+        oldGeneration = new OldGeneration(file, context.getByteBufferPool(), context.getByteArrayPool());
         log.info("The new generation successfully promoted to the old generation and re-created the new generation ");
-        youngGeneration = new YoungGeneration(file.getParentFile(), context.getByteBufferPool(),
+        youngGeneration = new YoungGeneration(file.getParentFile(), context.getByteBufferPool(), context.getByteArrayPool(),
             oldGeneration.getLastIncludeIndex());
         youngGeneration.appendLogEntries(logEntries);
     }

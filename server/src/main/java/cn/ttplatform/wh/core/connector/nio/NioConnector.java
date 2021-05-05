@@ -54,7 +54,7 @@ public class NioConnector implements Connector {
             ChannelPool.cacheChannel(remoteId, channel);
             channel.closeFuture().addListener(future -> {
                 if (future.isSuccess()) {
-                    log.debug("out channel[{}] close success", ChannelPool.removeChannel(remoteId));
+                    ChannelPool.removeChannel(remoteId);
                 }
             });
             return channel;
@@ -70,7 +70,7 @@ public class NioConnector implements Connector {
         if (channel == null) {
             return null;
         }
-        return write(channel, message, metaData.getNodeId());
+        return channel.writeAndFlush(message);
     }
 
     @Override
@@ -79,17 +79,7 @@ public class NioConnector implements Connector {
         if (channel == null) {
             return null;
         }
-        return write(channel, message, nodeId);
-    }
-
-    private ChannelFuture write(Channel channel, Message message, String dest) {
-        return channel.writeAndFlush(message).addListener(future -> {
-            if (future.isSuccess()) {
-                log.debug("send message {} to {} success.", message, dest);
-            } else {
-                log.debug("send message {} to {} failed.", message, dest);
-            }
-        });
+        return channel.writeAndFlush(message);
     }
 
 }

@@ -2,17 +2,21 @@ package cn.ttplatform.wh;
 
 import cn.ttplatform.wh.cmd.ClusterChangeCommand;
 import cn.ttplatform.wh.cmd.Command;
+import cn.ttplatform.wh.cmd.GetClusterInfoCommand;
 import cn.ttplatform.wh.cmd.GetCommand;
 import cn.ttplatform.wh.cmd.SetCommand;
 import cn.ttplatform.wh.cmd.factory.ClusterChangeCommandFactory;
 import cn.ttplatform.wh.cmd.factory.ClusterChangeResultCommandFactory;
+import cn.ttplatform.wh.cmd.factory.GetClusterInfoCommandFactory;
+import cn.ttplatform.wh.cmd.factory.GetClusterInfoResultCommandFactory;
 import cn.ttplatform.wh.cmd.factory.GetCommandFactory;
 import cn.ttplatform.wh.cmd.factory.GetResultCommandFactory;
 import cn.ttplatform.wh.cmd.factory.RedirectCommandFactory;
 import cn.ttplatform.wh.cmd.factory.RequestFailedCommandFactory;
 import cn.ttplatform.wh.cmd.factory.SetCommandFactory;
 import cn.ttplatform.wh.cmd.factory.SetResultCommandFactory;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.ByteArrayPool;
+import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.support.DistributableCodec;
 import cn.ttplatform.wh.support.DistributableFactoryManager;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
@@ -32,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,8 +51,11 @@ public class Client {
     private final Map<String, Command> pending = new ConcurrentHashMap<>();
 
     public Client() {
-        BufferPool<LinkedBuffer> bufferPool = new FixedSizeLinkedBufferPool(3);
+        Pool<byte[]> byteArrayPool = new ByteArrayPool(10, 1024 * 1024 * 10);
+        Pool<LinkedBuffer> bufferPool = new FixedSizeLinkedBufferPool(3);
         DistributableFactoryManager factoryManager = new DistributableFactoryManager();
+        factoryManager.register(new GetClusterInfoResultCommandFactory(bufferPool));
+        factoryManager.register(new GetClusterInfoCommandFactory(bufferPool));
         factoryManager.register(new RedirectCommandFactory(bufferPool));
         factoryManager.register(new RequestFailedCommandFactory(bufferPool));
         factoryManager.register(new ClusterChangeCommandFactory(bufferPool));
@@ -64,7 +72,7 @@ public class Client {
                 @Override
                 protected void initChannel(SocketChannel ch) throws Exception {
                     ChannelPipeline pipeline = ch.pipeline();
-                    pipeline.addLast(new DistributableCodec(factoryManager));
+                    pipeline.addLast(new DistributableCodec(factoryManager, byteArrayPool));
                     pipeline.addLast(new ChannelDuplexHandler() {
                         int index = 1;
 
@@ -79,6 +87,7 @@ public class Client {
                                 log.info(msg.toString());
                             }
                             index++;
+//                            log.info(msg.toString());
                         }
                     });
                 }
@@ -91,26 +100,35 @@ public class Client {
     }
 
     public Channel connect() throws InterruptedException {
-        return bootstrap.connect("127.0.0.1", 7777).sync().channel();
+        return bootstrap.connect("127.0.0.1", 6666).sync().channel();
     }
 
     public static void main(String[] args) throws InterruptedException {
         Client client = new Client();
-        client.send(clusterChangeCommand());
+//        client.send(clusterChangeCommand());
+//        client.send(getClusterInfoCommand());
         Channel channel = client.connect();
-        StringBuilder value = new StringBuilder();
-        while (value.length() < 256) {
-            value.append(UUID.randomUUID().toString());
-        }
-        String s = value.substring(0, 256);
+
         IntStream.range(0, 10000).forEach(index -> {
+            StringBuilder value = new StringBuilder();
+            while (value.length() < 256) {
+                value.append(UUID.randomUUID().toString());
+            }
+            String s = value.substring(0, 256);
             String id = UUID.randomUUID().toString();
-            SetCommand setCommand = SetCommand.builder().id(id).key(id + index).value(s + index).build();
+            SetCommand setCommand = SetCommand.builder().id(id).key("wanghao1212" + index).value(s + "|" + index).build();
             channel.writeAndFlush(setCommand);
             if (index == 0) {
                 log.info("begin:" + System.nanoTime());
             }
+            try {
+                TimeUnit.MILLISECONDS.sleep(1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         });
+//        IntStream.range(100000, 110000).forEach(index -> channel
+//            .writeAndFlush(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao" + index).build()));
     }
 
     private static ClusterChangeCommand clusterChangeCommand() {
@@ -133,6 +151,10 @@ public class Client {
         return GetCommand.builder().id(UUID.randomUUID().toString()).key(key).build();
     }
 
+    private static GetClusterInfoCommand getClusterInfoCommand() {
+        return GetClusterInfoCommand.builder().id(UUID.randomUUID().toString()).build();
+    }
+
     public static void test(Channel channel) {
         String s = "";
         while (s.length() < 256) {
@@ -144,10 +166,10 @@ public class Client {
         String keyPrefix = UUID.randomUUID().toString();
         IntStream.range(0, 10000).forEach(index -> channel.writeAndFlush(
             SetCommand.builder().id(UUID.randomUUID().toString())
-                .key(keyPrefix + index)
+                .key("wanghao" + index)
                 .value(finalS)
                 .build()));
-//            IntStream.range(0, 1000).forEach(index -> channel
-//                .writeAndFlush(GetCommand.builder().id(UUID.randomUUID().toString()).key("WANGHAO" + index).build()));
+        IntStream.range(0, 1000).forEach(index -> channel
+            .writeAndFlush(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao" + index).build()));
     }
 }

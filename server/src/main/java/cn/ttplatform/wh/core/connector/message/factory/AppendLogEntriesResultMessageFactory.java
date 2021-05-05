@@ -3,7 +3,7 @@ package cn.ttplatform.wh.core.connector.message.factory;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesResultMessage;
 import cn.ttplatform.wh.support.AbstractDistributableFactory;
-import cn.ttplatform.wh.support.BufferPool;
+import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.support.Distributable;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
@@ -19,7 +19,7 @@ public class AppendLogEntriesResultMessageFactory extends AbstractDistributableF
     private final Schema<AppendLogEntriesResultMessage> schema = RuntimeSchema
         .getSchema(AppendLogEntriesResultMessage.class);
 
-    public AppendLogEntriesResultMessageFactory(BufferPool<LinkedBuffer> pool) {
+    public AppendLogEntriesResultMessageFactory(Pool<LinkedBuffer> pool) {
         super(pool);
     }
 
@@ -29,9 +29,9 @@ public class AppendLogEntriesResultMessageFactory extends AbstractDistributableF
     }
 
     @Override
-    public Distributable create(byte[] content) {
+    public Distributable create(byte[] content, int length) {
         AppendLogEntriesResultMessage message = new AppendLogEntriesResultMessage();
-        ProtostuffIOUtil.mergeFrom(content, message, schema);
+        ProtostuffIOUtil.mergeFrom(content, 0, length, message, schema);
         return message;
     }
 

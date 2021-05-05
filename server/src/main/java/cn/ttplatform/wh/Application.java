@@ -1,8 +1,10 @@
 package cn.ttplatform.wh;
 
+import cn.ttplatform.wh.config.RunMode;
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.core.Node;
 import cn.ttplatform.wh.core.GlobalContext;
+import java.io.File;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -25,9 +27,7 @@ public class Application {
             return;
         }
         ServerProperties properties = initConfig(commandLine);
-        GlobalContext context = new GlobalContext(properties);
-        Node node = new Node(context);
-        context.register(node);
+        Node node = new Node(properties);
         node.start();
     }
 
@@ -37,42 +37,36 @@ public class Application {
             .longOpt("id")
             .hasArg()
             .argName("node-id")
-            .desc("node id, required. must be unique in group. ")
+            .desc("node id. must be unique in group. ")
             .build());
         options.addOption(Option.builder("h")
             .hasArg()
             .argName("host")
-            .desc("host of node, required.")
+            .desc("host of node.")
             .build());
         options.addOption(Option.builder("p")
             .longOpt("port-server")
             .hasArg()
             .argName("port")
             .type(Number.class)
-            .desc("port of server, required.")
-            .build());
-        options.addOption(Option.builder("P")
-            .longOpt("port-connector")
-            .hasArg()
-            .argName("port")
-            .type(Number.class)
-            .desc("port of connector, required")
-            .build());
-        options.addOption(Option.builder("d")
-            .hasArg()
-            .argName("data-dir")
-            .desc("data directory, optional. must be present")
+            .desc("port of server.")
             .build());
         options.addOption(Option.builder("c")
             .hasArg()
             .argName("properties-path")
             .desc("properties file path.")
             .build());
+        options.addOption(Option.builder("m")
+            .hasArg()
+            .argName("mode")
+            .desc("service operation mode. single or cluster.")
+            .build());
         options.addOption(Option.builder("C")
             .hasArgs()
             .argName("node-endpoint")
             .desc(
-                "cluster config, required. format: <node-endpoint> <node-endpoint>..., format of node-endpoint: <node-id>,<host>,<port-raft-node>, eg: A,localhost,8000 B,localhost,8010")
+                "cluster config, required. format: <node-endpoint> <node-endpoint>..., format of node-endpoint: "
+                    + "<node-id>,<host>,<port-raft-node>, eg: A,localhost,8000 B,localhost,8010")
             .build());
         if (args.length == 0) {
             HelpFormatter formatter = new HelpFormatter();
@@ -85,22 +79,31 @@ public class Application {
 
     public ServerProperties initConfig(CommandLine commandLine) {
         ServerProperties properties;
-        if (commandLine.hasOption("c")) {
+        if (commandLine.hasOption('c')) {
             properties = new ServerProperties(commandLine.getOptionValue('c'));
         } else {
             properties = new ServerProperties();
         }
-        if (commandLine.hasOption("C")) {
-            properties.setClusterInfo(commandLine.getOptionValue("C"));
+        if (commandLine.hasOption('m')) {
+            String mode = commandLine.getOptionValue('m');
+            if ("single".equals(mode)) {
+                properties.setMode(RunMode.SINGLE);
+                properties.setClusterInfo(null);
+            } else {
+                properties.setMode(RunMode.CLUSTER);
+                if (commandLine.hasOption('C')) {
+                    properties.setClusterInfo(commandLine.getOptionValue("C"));
+                }
+            }
         }
-        if (commandLine.hasOption("i")) {
+        if (commandLine.hasOption('i')) {
             properties.setNodeId(commandLine.getOptionValue('i'));
         }
-        if (commandLine.hasOption("p")) {
-            properties.setPort(Integer.parseInt(commandLine.getOptionValue('p')));
+        if (commandLine.hasOption('h')) {
+            properties.setHost(commandLine.getOptionValue('h'));
         }
-        if (commandLine.hasOption("d")) {
-            properties.setBasePath(commandLine.getOptionValue('d'));
+        if (commandLine.hasOption('p')) {
+            properties.setPort(Integer.parseInt(commandLine.getOptionValue('p')));
         }
         return properties;
     }
