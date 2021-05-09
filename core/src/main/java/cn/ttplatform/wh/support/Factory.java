@@ -1,5 +1,7 @@
 package cn.ttplatform.wh.support;
 
+import java.nio.ByteBuffer;
+
 /**
  * @author Wang Hao
  * @date 2021/2/18 11:26
@@ -13,6 +15,8 @@ public interface Factory<T> {
      * @return a deserialized object
      */
     T create(byte[] content, int contentLength);
+
+    T create(ByteBuffer byteBuffer, int contentLength);
 
     /**
      * use protostuff to serialize a message object

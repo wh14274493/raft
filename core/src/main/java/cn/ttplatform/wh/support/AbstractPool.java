@@ -1,7 +1,5 @@
 package cn.ttplatform.wh.support;
 
-import cn.ttplatform.wh.support.Pool;
-import java.nio.ByteBuffer;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -24,18 +22,13 @@ public abstract class AbstractPool<T> implements Pool<T> {
     @Override
     public T allocate(int size) {
         if (!pool.isEmpty()) {
-            synchronized (this) {
-                if (!pool.isEmpty()) {
-                    Entry<Integer, T> bufferEntry = pool.ceilingEntry(size);
-                    if (bufferEntry != null) {
-                        return pool.remove(bufferEntry.getKey());
-                    }
-                }
+            Entry<Integer, T> bufferEntry = pool.ceilingEntry(size);
+            if (bufferEntry != null) {
+                return pool.remove(bufferEntry.getKey());
             }
         }
         return doAllocate(size);
     }
 
     public abstract T doAllocate(int size);
-
 }

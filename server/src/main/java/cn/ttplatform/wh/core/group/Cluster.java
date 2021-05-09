@@ -56,7 +56,8 @@ public class Cluster {
     private Set<Endpoint> initClusterEndpoints(ServerProperties properties) {
         String clusterInfo = properties.getClusterInfo();
         if (clusterInfo == null || "".equals(clusterInfo)) {
-            throw new ClusterConfigException(ErrorMessage.CLUSTER_CONFIG_ERROR);
+            return Collections.emptySet();
+//            throw new ClusterConfigException(ErrorMessage.CLUSTER_CONFIG_ERROR);
         }
         return Arrays.stream(clusterInfo.split(" ")).map(Endpoint::new).collect(Collectors.toSet());
     }

@@ -1,28 +1,18 @@
 package cn.ttplatform.wh.core;
 
-import cn.ttplatform.wh.cmd.ClusterChangeCommand;
-import cn.ttplatform.wh.cmd.ClusterChangeResultCommand;
-import cn.ttplatform.wh.cmd.GetCommand;
-import cn.ttplatform.wh.cmd.GetResultCommand;
-import cn.ttplatform.wh.cmd.SetCommand;
-import cn.ttplatform.wh.cmd.SetResultCommand;
-import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.core.log.entry.LogEntry;
-import cn.ttplatform.wh.core.support.ChannelPool;
-import cn.ttplatform.wh.support.Pool;
-import cn.ttplatform.wh.support.DistributableFactory;
+import cn.ttplatform.wh.constant.ErrorMessage;
+import cn.ttplatform.wh.support.PooledByteBuffer;
+import cn.ttplatform.wh.exception.MessageParseException;
 import cn.ttplatform.wh.support.Factory;
-import io.netty.channel.ChannelFuture;
+import cn.ttplatform.wh.support.Pool;
+import io.protostuff.ByteBufferInput;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -33,114 +23,39 @@ import lombok.extern.slf4j.Slf4j;
 public class StateMachine {
 
     private Data data = new Data();
-    private final GlobalContext context;
     private final DataFactory dataFactory;
-    private volatile int lastApplied;
-    private ClusterChangeCommand clusterChangeCommand;
-    private final Map<Integer, List<GetCommand>> pendingGetCommandMap = new HashMap<>();
-    private final Map<Integer, SetCommand> pendingSetCommandMap = new HashMap<>();
+    private int lastApplied;
+
 
     public StateMachine(GlobalContext context) {
-        this.context = context;
         this.dataFactory = new DataFactory(context.getLinkedBufferPool());
     }
 
-    public void apply(LogEntry entry) {
-        if (entry.getIndex() <= lastApplied) {
-            return;
-        }
-        int type = entry.getType();
-        if (type == LogEntry.SET) {
-            replySetResult(entry);
-        } else if (type == LogEntry.NEW) {
-            replyClusterChangeResult();
-        } else {
-            log.debug("log[{}] can not apply.", entry);
-        }
-        lastApplied = entry.getIndex();
+    public String get(String key) {
+        return data.get(key);
     }
 
-    private void replyClusterChangeResult() {
-        if (clusterChangeCommand != null) {
-            String id = clusterChangeCommand.getId();
-            ChannelPool.reply(id, ClusterChangeResultCommand.builder().id(id).done(true).build());
-            clusterChangeCommand = null;
-        }
-    }
-
-    private void replySetResult(LogEntry entry) {
-        SetCommand setCmd = pendingSetCommandMap.remove(entry.getIndex());
-        if (setCmd == null) {
-            DistributableFactory factory = context.getFactoryManager().getFactory(DistributableType.SET_COMMAND);
-            byte[] command = entry.getCommand();
-            setCmd = (SetCommand) factory.create(command, command.length);
-        }
-        data.put(setCmd.getKey(), setCmd.getValue());
-        String requestId = setCmd.getId();
-        if (requestId != null) {
-            ChannelFuture channelFuture = ChannelPool
-                .reply(requestId, SetResultCommand.builder().id(requestId).result(true).build());
-            if (channelFuture != null) {
-                channelFuture.addListener(future -> {
-                    if (future.isSuccess()) {
-                        replyGetResult(entry.getIndex());
-                    }
-                });
-            }
-        }
-    }
-
-    private void replyGetResult(int index) {
-        Optional.ofNullable(pendingGetCommandMap.remove(index))
-            .orElse(Collections.emptyList())
-            .forEach(cmd -> ChannelPool
-                .reply(cmd.getId(), GetResultCommand.builder().id(cmd.getId()).value(data.get(cmd.getKey())).build()));
-    }
-
-    public void replyGetResult(GetCommand cmd) {
-        ChannelPool.reply(cmd.getId(), GetResultCommand.builder().id(cmd.getId()).value(data.get(cmd.getKey())).build());
-    }
-
-    public void addGetTasks(int index, GetCommand cmd) {
-        if (index > lastApplied) {
-            List<GetCommand> getCommands = pendingGetCommandMap.computeIfAbsent(index, k -> new ArrayList<>());
-            getCommands.add(cmd);
-        } else {
-            ChannelPool
-                .reply(cmd.getId(), GetResultCommand.builder().id(cmd.getId()).value(data.get(cmd.getKey())).build());
-        }
-    }
-
-    public boolean addClusterChangeCommand(ClusterChangeCommand command) {
-        if (clusterChangeCommand != null) {
-            log.info("clusterChangeCommand is not null");
-            return false;
-        }
-        clusterChangeCommand = command;
-        log.info("update clusterChangeCommand success.");
-        return true;
-    }
-
-    public void removeClusterChangeCommand() {
-        clusterChangeCommand = null;
-    }
-
-    public void addPendingCommand(int index, SetCommand cmd) {
-        pendingSetCommandMap.put(index, cmd);
+    public void set(String key, String value) {
+        data.put(key, value);
     }
 
     public int getLastApplied() {
         return lastApplied;
     }
 
+    public void setLastApplied(int lastApplied) {
+        this.lastApplied = lastApplied;
+    }
+
     public byte[] generateSnapshotData() {
         return dataFactory.getBytes(data);
     }
 
-    public void applySnapshotData(byte[] snapshot, int lastIncludeIndex) {
-        data = dataFactory.create(snapshot, snapshot.length);
+    public void applySnapshotData(PooledByteBuffer snapshot, int lastIncludeIndex) {
+        data = dataFactory.create(snapshot.getBuffer(), snapshot.limit());
         lastApplied = lastIncludeIndex;
         log.info("apply snapshot that lastIncludeIndex is {}.", lastIncludeIndex);
+        snapshot.recycle();
     }
 
     private static class Data extends HashMap<String, String> {
@@ -161,6 +76,24 @@ public class StateMachine {
             Data data = new Data();
             ProtostuffIOUtil.mergeFrom(content, 0, length, data, DATA_SCHEMA);
             return data;
+        }
+
+        @Override
+        public Data create(ByteBuffer byteBuffer, int contentLength) {
+            int limit = byteBuffer.limit();
+            try {
+                int position = byteBuffer.position();
+                byteBuffer.limit(position + contentLength);
+                Data data = new Data();
+                try {
+                    DATA_SCHEMA.mergeFrom(new ByteBufferInput(byteBuffer, true), data);
+                } catch (IOException e) {
+                    throw new MessageParseException(ErrorMessage.MESSAGE_PARSE_ERROR);
+                }
+                return data;
+            } finally {
+                byteBuffer.limit(limit);
+            }
         }
 
         @Override

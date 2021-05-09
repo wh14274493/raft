@@ -36,6 +36,8 @@ public interface LogEntry {
 
     byte[] getCommand();
 
+    int getCommandLength();
+
     LogEntryIndex getMetadata();
 
 }

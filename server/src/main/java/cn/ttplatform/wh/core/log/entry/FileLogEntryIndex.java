@@ -1,14 +1,11 @@
 package cn.ttplatform.wh.core.log.entry;
 
-import static cn.ttplatform.wh.core.log.tool.ByteConvertor.fillIntBytes;
-import static cn.ttplatform.wh.core.log.tool.ByteConvertor.fillLongBytes;
-
 import cn.ttplatform.wh.core.log.generation.FileName;
 import cn.ttplatform.wh.core.log.tool.ByteBufferWriter;
+import cn.ttplatform.wh.support.PooledByteBuffer;
 import cn.ttplatform.wh.core.log.tool.ReadableAndWriteableFile;
 import cn.ttplatform.wh.support.Pool;
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -28,31 +25,37 @@ public final class FileLogEntryIndex {
     private int minLogIndex;
     private int maxLogIndex;
     private final List<LogEntryIndex> logEntryIndices = new ArrayList<>();
+    private final Pool<PooledByteBuffer> byteBufferPool;
     private final Pool<byte[]> byteArrayPool;
     private final LogEntryFactory logEntryFactory = LogEntryFactory.getInstance();
 
-    public FileLogEntryIndex(File parent, Pool<ByteBuffer> byteBufferPool, Pool<byte[]> byteArrayPool, int lastIncludeIndex) {
-        file = new ByteBufferWriter(new File(parent, FileName.INDEX_FILE_NAME), byteBufferPool, byteArrayPool);
+    public FileLogEntryIndex(File parent, Pool<PooledByteBuffer> byteBufferPool, Pool<byte[]> byteArrayPool, int lastIncludeIndex) {
+        this.file = new ByteBufferWriter(new File(parent, FileName.INDEX_FILE_NAME), byteBufferPool, byteArrayPool);
+        this.byteBufferPool = byteBufferPool;
         this.byteArrayPool = byteArrayPool;
-        minLogIndex = lastIncludeIndex;
-        maxLogIndex = lastIncludeIndex;
-        initialize();
-    }
-
-    private void initialize() {
+        this.minLogIndex = lastIncludeIndex;
+        this.maxLogIndex = lastIncludeIndex;
         if (!isEmpty()) {
-            byte[] content = file.readBytesAt(0L, (int) file.size());
-            LogEntryIndex logEntryIndex = null;
-            for (int index = 0; index < content.length; index += ITEM_LENGTH) {
-                logEntryIndex = logEntryFactory.transferBytesToLogEntryIndex(content, index);
-                logEntryIndices.add(logEntryIndex);
-                if (index == 0) {
-                    minLogIndex = logEntryIndex.getIndex();
+            PooledByteBuffer content = null;
+            try {
+                content = file.readByteBufferAt(0L, (int) file.size());
+                content.flip();
+                LogEntryIndex logEntryIndex = null;
+                for (int index = 0; index < content.limit(); index += ITEM_LENGTH) {
+                    logEntryIndex = LogEntryIndex.builder().index(content.getInt()).term(content.getInt()).type(content.getInt())
+                        .offset(content.getLong()).build();
+                    logEntryIndices.add(logEntryIndex);
+                    if (index == 0) {
+                        minLogIndex = logEntryIndex.getIndex();
+                    }
                 }
+                if (logEntryIndex != null) {
+                    maxLogIndex = logEntryIndex.getIndex();
+                }
+            } finally {
+                byteBufferPool.recycle(content);
             }
-            if (logEntryIndex != null) {
-                maxLogIndex = logEntryIndex.getIndex();
-            }
+
         }
     }
 
@@ -86,30 +89,17 @@ public final class FileLogEntryIndex {
         log.debug("update maxLogIndex = {}.", maxLogIndex);
         LogEntryIndex logEntryIndex = LogEntryIndex.builder().index(index).term(logEntry.getTerm()).offset(offset)
             .type(logEntry.getType()).build();
-        byte[] res = byteArrayPool.allocate(FileLogEntryIndex.ITEM_LENGTH);
+        PooledByteBuffer byteBuffer = byteBufferPool.allocate(FileLogEntryIndex.ITEM_LENGTH);
         try {
-            transferLogEntryIndexToBytes(logEntryIndex, res);
-            file.append(res, FileLogEntryIndex.ITEM_LENGTH);
+            byteBuffer.putInt(logEntryIndex.getIndex());
+            byteBuffer.putInt(logEntryIndex.getTerm());
+            byteBuffer.putInt(logEntryIndex.getType());
+            byteBuffer.putLong(logEntryIndex.getOffset());
+            file.append(byteBuffer);
             logEntryIndices.add(logEntryIndex);
         } finally {
-            byteArrayPool.recycle(res);
+            byteBufferPool.recycle(byteBuffer);
         }
-    }
-
-    /**
-     * Convert a {@link LogEntryIndex} object to byte array
-     *
-     * @param logEntryIndex source object
-     */
-    private void transferLogEntryIndexToBytes(LogEntryIndex logEntryIndex, byte[] res) {
-        // index[0-3]
-        fillIntBytes(logEntryIndex.getIndex(), res, 3);
-        // term[4-7]
-        fillIntBytes(logEntryIndex.getTerm(), res, 7);
-        // term[8-11]
-        fillIntBytes(logEntryIndex.getType(), res, 11);
-        // term[12-19]
-        fillLongBytes(logEntryIndex.getOffset(), res, 19);
     }
 
     public void append(List<LogEntry> logEntries, long[] offsets) {
@@ -124,35 +114,25 @@ public final class FileLogEntryIndex {
         maxLogIndex = logEntries.get(logEntries.size() - 1).getIndex();
         log.debug("update maxLogIndex = {}.", maxLogIndex);
         int contentLength = logEntries.size() * ITEM_LENGTH;
-        byte[] content = byteArrayPool.allocate(contentLength);
+        PooledByteBuffer byteBuffer = byteBufferPool.allocate(contentLength);
         try {
-            fillContentWithLogEntryIndex(content, logEntries, offsets);
-            file.append(content, contentLength);
+            LogEntry logEntry;
+            for (int i = 0; i < logEntries.size(); i++) {
+                logEntry = logEntries.get(i);
+                byteBuffer.putInt(logEntry.getIndex());
+                byteBuffer.putInt(logEntry.getTerm());
+                byteBuffer.putInt(logEntry.getType());
+                byteBuffer.putLong(offsets[i]);
+                logEntryIndices.add(LogEntryIndex.builder()
+                    .index(logEntry.getIndex())
+                    .term(logEntry.getTerm())
+                    .type(logEntry.getType())
+                    .offset(offsets[i])
+                    .build());
+            }
+            file.append(byteBuffer);
         } finally {
-            byteArrayPool.recycle(content);
-        }
-    }
-
-    private void fillContentWithLogEntryIndex(byte[] content, List<LogEntry> logEntries, long[] offsets) {
-        int index = 0;
-        LogEntry logEntry;
-        for (int i = 0; i < logEntries.size(); i++) {
-            logEntry = logEntries.get(i);
-            index += 3;
-            fillIntBytes(logEntry.getIndex(), content, index);
-            index += 4;
-            fillIntBytes(logEntry.getTerm(), content, index);
-            index += 4;
-            fillIntBytes(logEntry.getType(), content, index);
-            index += 8;
-            fillLongBytes(offsets[i], content, index);
-            index++;
-            logEntryIndices.add(LogEntryIndex.builder()
-                .index(logEntry.getIndex())
-                .term(logEntry.getTerm())
-                .offset(offsets[i])
-                .type(logEntry.getType())
-                .build());
+            byteBufferPool.recycle(byteBuffer);
         }
     }
 

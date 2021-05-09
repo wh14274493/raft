@@ -1,15 +1,12 @@
 package cn.ttplatform.wh.core.log.snapshot;
 
-import static cn.ttplatform.wh.core.log.tool.ByteConvertor.fillIntBytes;
-import static cn.ttplatform.wh.core.log.tool.ByteConvertor.fillLongBytes;
-
 import cn.ttplatform.wh.core.log.generation.FileName;
 import cn.ttplatform.wh.core.log.entry.LogEntryFactory;
+import cn.ttplatform.wh.support.PooledByteBuffer;
 import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.core.log.tool.ByteBufferWriter;
 import cn.ttplatform.wh.core.log.tool.ReadableAndWriteableFile;
 import java.io.File;
-import java.nio.ByteBuffer;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -26,9 +23,11 @@ public class FileSnapshot {
     private final LogEntryFactory logEntryFactory = LogEntryFactory.getInstance();
     private SnapshotHeader snapshotHeader;
     private final Pool<byte[]> byteArrayPool;
+    private final Pool<PooledByteBuffer> byteBufferPool;
 
-    public FileSnapshot(File parent, Pool<ByteBuffer> byteBufferPool, Pool<byte[]> byteArrayPool, boolean isOldGeneration) {
+    public FileSnapshot(File parent, Pool<PooledByteBuffer> byteBufferPool, Pool<byte[]> byteArrayPool, boolean isOldGeneration) {
         this.file = new ByteBufferWriter(new File(parent, FileName.SNAPSHOT_FILE_NAME), byteBufferPool, byteArrayPool);
+        this.byteBufferPool = byteBufferPool;
         this.byteArrayPool = byteArrayPool;
         if (isOldGeneration) {
             initialize();
@@ -40,15 +39,17 @@ public class FileSnapshot {
 
     public void initialize() {
         if (!file.isEmpty()) {
-            byte[] header;
+            PooledByteBuffer header;
             try {
-                header = file.readBytesAt(0L, HEADER_LENGTH);
+                header = file.readByteBufferAt(0L, HEADER_LENGTH);
             } catch (Exception e) {
                 file.clear();
                 snapshotHeader.reset();
                 return;
             }
-            snapshotHeader = logEntryFactory.transferBytesToSnapshotHeader(header);
+            snapshotHeader = SnapshotHeader.builder().size(header.getLong()).lastIncludeIndex(header.getInt())
+                .lastIncludeTerm(header.getInt())
+                .build();
             if (snapshotHeader.getSize() != file.size()) {
                 file.clear();
                 snapshotHeader.reset();
@@ -63,36 +64,27 @@ public class FileSnapshot {
         int size = contentLength + HEADER_LENGTH;
         SnapshotHeader newSnapshotHeader = SnapshotHeader.builder().lastIncludeIndex(lastIncludeIndex)
             .lastIncludeTerm(lastIncludeTerm).size(size).contentLength(contentLength).build();
-        byte[] header = byteArrayPool.allocate(FileSnapshot.HEADER_LENGTH);
-        transferSnapshotHeaderToBytes(snapshotHeader, header);
+        PooledByteBuffer byteBuffer = byteBufferPool.allocate(size);
         try {
             file.clear();
-            file.append(header, FileSnapshot.HEADER_LENGTH);
-            file.append(content, contentLength);
+            byteBuffer.putLong(newSnapshotHeader.getSize());
+            byteBuffer.putInt(newSnapshotHeader.getLastIncludeIndex());
+            byteBuffer.putInt(newSnapshotHeader.getLastIncludeTerm());
+            byteBuffer.put(content);
+            file.append(byteBuffer);
             snapshotHeader = newSnapshotHeader;
         } finally {
-            byteArrayPool.recycle(header);
+            byteBufferPool.recycle(byteBuffer);
         }
 
-    }
-
-    /**
-     * Convert a {@link SnapshotHeader} object to byte array
-     *
-     * @param snapshotHeader source object
-     */
-    public void transferSnapshotHeaderToBytes(SnapshotHeader snapshotHeader, byte[] header) {
-        fillLongBytes(snapshotHeader.getSize(), header, 7);
-        fillIntBytes(snapshotHeader.getLastIncludeIndex(), header, 11);
-        fillIntBytes(snapshotHeader.getLastIncludeTerm(), header, 15);
     }
 
     public byte[] read(long offset, int size) {
         return file.readBytesAt(offset, size);
     }
 
-    public byte[] readAll() {
-        return file.readBytesAt(HEADER_LENGTH, (int) snapshotHeader.getContentLength());
+    public PooledByteBuffer readAll() {
+        return file.readByteBufferAt(HEADER_LENGTH, (int) snapshotHeader.getContentLength());
     }
 
     public void append(byte[] content) {

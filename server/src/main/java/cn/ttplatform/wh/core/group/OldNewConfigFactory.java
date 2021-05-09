@@ -6,6 +6,7 @@ import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
+import java.nio.ByteBuffer;
 
 /**
  * @author Wang Hao
@@ -25,6 +26,11 @@ class OldNewConfigFactory implements Factory<OldNewConfig> {
         OldNewConfig oldNewConfig = new OldNewConfig();
         ProtostuffIOUtil.mergeFrom(content, 0, length, oldNewConfig, schema);
         return oldNewConfig;
+    }
+
+    @Override
+    public OldNewConfig create(ByteBuffer byteBuffer, int contentLength) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

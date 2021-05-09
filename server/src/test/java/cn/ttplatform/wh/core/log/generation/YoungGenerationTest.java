@@ -12,6 +12,7 @@ import cn.ttplatform.wh.core.log.snapshot.FileSnapshot;
 import cn.ttplatform.wh.core.log.tool.DirectByteBufferPool;
 import cn.ttplatform.wh.support.ByteArrayPool;
 import cn.ttplatform.wh.support.Pool;
+import cn.ttplatform.wh.support.PooledByteBuffer;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -31,13 +32,13 @@ import org.junit.Test;
  * @date 2021/4/29 14:46
  */
 @Slf4j
-class YoungGenerationTest {
+public class YoungGenerationTest {
 
     YoungGeneration youngGeneration;
 
     @Before
-    void setUp() {
-        Pool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
+    public void setUp() {
+        Pool<PooledByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
         Pool<byte[]> byteArrayPool = new ByteArrayPool(10, 10 * 1024 * 1024);
         String path = Objects.requireNonNull(YoungGenerationTest.class.getClassLoader().getResource("")).getPath();
         File file = new File(path);
@@ -46,7 +47,7 @@ class YoungGenerationTest {
     }
 
     @After
-    void tearDown() throws NoSuchFieldException {
+    public void tearDown() {
         youngGeneration.fileLogEntry.removeAfter(0);
         youngGeneration.fileLogEntryIndex.removeAfter(0);
         youngGeneration.fileSnapshot.clear();
@@ -54,7 +55,7 @@ class YoungGenerationTest {
     }
 
     @Test
-    void generateSnapshot() {
+    public void generateSnapshot() {
         int count = ThreadLocalRandom.current().nextInt(10000000);
         StringBuilder sb = new StringBuilder();
         IntStream.range(0, count).forEach(sb::append);
@@ -65,76 +66,77 @@ class YoungGenerationTest {
     }
 
     @Test
-    void getLastLogMetaData() {
+    public void getLastLogMetaData() {
         LogEntryIndex lastLogMetaData = youngGeneration.getLastLogMetaData();
     }
 
     @Test
-    void getMaxLogIndex() {
+    public void getMaxLogIndex() {
     }
 
     @Test
-    void pendingEntry() {
+    public void pendingEntry() {
         byte[] content = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
         IntStream.range(1, 10000).forEach(index -> {
-            youngGeneration.pendingEntry(LogEntryFactory.createEntry(1, 1, index + 1, content));
+            youngGeneration.pendingEntry(LogEntryFactory.createEntry(1, 1, index + 1, content, content.length));
         });
     }
 
     @Test
-    void pendingEntries() {
+    public void pendingEntries() {
         byte[] content = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
         List<LogEntry> entries = new ArrayList<>();
-        IntStream.range(1, 10000).forEach(index -> entries.add(LogEntryFactory.createEntry(1, 1, index + 1, content)));
+        IntStream.range(1, 10000)
+            .forEach(index -> entries.add(LogEntryFactory.createEntry(1, 1, index + 1, content, content.length)));
         youngGeneration.pendingEntries(entries);
     }
 
     @Test
-    void appendLogEntry() {
+    public void appendLogEntry() {
         byte[] content = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
-        youngGeneration.appendLogEntry(LogEntryFactory.createEntry(1, 1, 1, content));
+        youngGeneration.appendLogEntry(LogEntryFactory.createEntry(1, 1, 1, content, content.length));
     }
 
     @Test
-    void appendLogEntries() {
+    public void appendLogEntries() {
         byte[] content = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
         List<LogEntry> entries = new ArrayList<>();
         IntStream.range(1, 10000).forEach(index -> {
-            entries.add(LogEntryFactory.createEntry(1, 1, index + 1, content));
+            entries.add(LogEntryFactory.createEntry(1, 1, index + 1, content, content.length));
         });
         youngGeneration.appendLogEntries(entries);
     }
 
     @Test
-    void commit() {
+    public void commit() {
         pendingEntries();
         youngGeneration.commit(1000);
         youngGeneration.commit(2000);
     }
 
     @Test
-    void getEntry() {
+    public void getEntry() {
         appendLogEntries();
         LogEntry entry = youngGeneration.getEntry(1000);
         assertEquals(1000, entry.getIndex());
     }
 
     @Test
-    void getEntryMetaData() {
+    public void getEntryMetaData() {
         appendLogEntries();
         LogEntryIndex entryMetaData = youngGeneration.getEntryMetaData(1000);
         assertEquals(1000, entryMetaData.getIndex());
     }
 
     @Test
-    void subList() {
+    public void subList() {
         appendLogEntries();
         List<LogEntry> logEntries = youngGeneration.subList(1, 1000);
         assertEquals(998, logEntries.size());
     }
 
     @Test
-    void removeAfter() {
+    public void removeAfter() {
         appendLogEntries();
         youngGeneration.removeAfter(1000);
         LogEntryIndex entryMetaData = youngGeneration.getEntryMetaData(1000);
@@ -144,7 +146,7 @@ class YoungGenerationTest {
     }
 
     @Test
-    void writeSnapshot() {
+    public void writeSnapshot() {
         int count = ThreadLocalRandom.current().nextInt(10000000);
         StringBuilder sb = new StringBuilder();
         IntStream.range(0, count).forEach(sb::append);
@@ -155,7 +157,7 @@ class YoungGenerationTest {
     }
 
     @Test
-    void clearSnapshot() {
+    public void clearSnapshot() {
         generateSnapshot();
         assertFalse(youngGeneration.fileSnapshot.isEmpty());
         youngGeneration.clearSnapshot();
@@ -163,7 +165,7 @@ class YoungGenerationTest {
     }
 
     @Test
-    void isEmpty() {
+    public void isEmpty() {
         assertTrue(youngGeneration.isEmpty());
         appendLogEntries();
         assertFalse(youngGeneration.isEmpty());

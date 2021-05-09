@@ -120,10 +120,6 @@ public class ServerProperties {
     private int byteBufferSizeLimit;
 
     private int byteArrayPoolSize;
-
-    /**
-     * only used when readWriteFileStrategy is direct access / indirect access
-     */
     private int byteArraySizeLimit;
 
     public ServerProperties(String configPath) {
@@ -176,11 +172,7 @@ public class ServerProperties {
         allIdleTimeout = Integer.parseInt(properties.getProperty("allIdleTimeout", "10"));
         readWriteFileStrategy = properties.getProperty("readWriteFileStrategy", "direct access");
         byteBufferPoolSize = Integer.parseInt(properties.getProperty("byteBufferPoolSize", "10"));
-        byteBufferSizeLimit = Integer
-            .parseInt(properties.getProperty("byteBufferSizeLimit", String.valueOf(1024 * 1024 * 10)));
-        byteArrayPoolSize = Integer.parseInt(properties.getProperty("byteArrayPoolSize", "10"));
-        byteArraySizeLimit = Integer
-            .parseInt(properties.getProperty("byteArraySizeLimit", String.valueOf(1024 * 1024 * 10)));
+        byteBufferSizeLimit = Integer.parseInt(properties.getProperty("byteBufferSizeLimit", String.valueOf(1024 * 1024 * 10)));
     }
 
 }

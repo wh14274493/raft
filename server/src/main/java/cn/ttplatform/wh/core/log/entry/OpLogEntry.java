@@ -18,6 +18,7 @@ import lombok.experimental.SuperBuilder;
 public class OpLogEntry extends AbstractLogEntry {
 
     private byte[] command;
+    private int commandLength;
 
     @Override
     public byte[] getCommand() {
@@ -25,7 +26,13 @@ public class OpLogEntry extends AbstractLogEntry {
     }
 
     @Override
+    public int getCommandLength() {
+        return commandLength;
+    }
+
+    @Override
     public String toString() {
         return "OpLogEntry{metadata=" + metadata + '}';
     }
+
 }

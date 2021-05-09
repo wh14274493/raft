@@ -72,22 +72,22 @@ public class Client {
                 @Override
                 protected void initChannel(SocketChannel ch) throws Exception {
                     ChannelPipeline pipeline = ch.pipeline();
-                    pipeline.addLast(new DistributableCodec(factoryManager, byteArrayPool));
+                    pipeline.addLast(new DistributableCodec(factoryManager));
                     pipeline.addLast(new ChannelDuplexHandler() {
                         int index = 1;
 
                         @Override
                         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                            if (index == 1) {
-                                log.debug(System.nanoTime() + "");
-                                log.info(msg.toString());
-                            }
-                            if (index == 10000) {
-                                log.debug(System.nanoTime() + "");
-                                log.info(msg.toString());
-                            }
-                            index++;
-//                            log.info(msg.toString());
+//                            if (index == 1) {
+//                                log.debug(System.nanoTime() + "");
+//                                log.info(msg.toString());
+//                            }
+//                            if (index == 10000) {
+//                                log.debug(System.nanoTime() + "");
+//                                log.info(msg.toString());
+//                            }
+//                            index++;
+                            log.info(msg.toString());
                         }
                     });
                 }
@@ -109,14 +109,14 @@ public class Client {
 //        client.send(getClusterInfoCommand());
         Channel channel = client.connect();
 
-        IntStream.range(0, 10000).forEach(index -> {
+        IntStream.range(10000, 20000).forEach(index -> {
             StringBuilder value = new StringBuilder();
             while (value.length() < 256) {
                 value.append(UUID.randomUUID().toString());
             }
             String s = value.substring(0, 256);
             String id = UUID.randomUUID().toString();
-            SetCommand setCommand = SetCommand.builder().id(id).key("wanghao1212" + index).value(s + "|" + index).build();
+            SetCommand setCommand = SetCommand.builder().id(id).key("wanghao" + index).value(s + "|" + index).build();
             channel.writeAndFlush(setCommand);
             if (index == 0) {
                 log.info("begin:" + System.nanoTime());
@@ -127,7 +127,7 @@ public class Client {
                 e.printStackTrace();
             }
         });
-//        IntStream.range(100000, 110000).forEach(index -> channel
+//        IntStream.range(0, 10000).forEach(index -> channel
 //            .writeAndFlush(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao" + index).build()));
     }
 
@@ -137,7 +137,7 @@ public class Client {
         newConfig.add("B,127.0.0.1,7777");
         newConfig.add("C,127.0.0.1,8888");
         newConfig.add("D,127.0.0.1,9999");
-//        newConfig.add("E,127.0.0.1,5555");
+        newConfig.add("E,127.0.0.1,5555");
         return ClusterChangeCommand.builder().newConfig(newConfig)
             .id(UUID.randomUUID().toString())
             .build();

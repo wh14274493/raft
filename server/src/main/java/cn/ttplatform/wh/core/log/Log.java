@@ -4,6 +4,7 @@ package cn.ttplatform.wh.core.log;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.core.group.Endpoint;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
+import cn.ttplatform.wh.support.PooledByteBuffer;
 import cn.ttplatform.wh.support.Message;
 import java.util.List;
 
@@ -138,7 +139,7 @@ public interface Log {
      *
      * @return snapshot
      */
-    byte[] getSnapshotData();
+    PooledByteBuffer getSnapshotData();
 
     /**
      * the last log index be included in snapshot

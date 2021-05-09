@@ -21,6 +21,11 @@ public class NoOpLogEntry extends AbstractLogEntry {
     }
 
     @Override
+    public int getCommandLength() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public String toString() {
         return "NoOpLogEntry{metadata=" + metadata + '}';
     }

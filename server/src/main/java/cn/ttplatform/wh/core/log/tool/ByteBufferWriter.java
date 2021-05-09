@@ -3,6 +3,7 @@ package cn.ttplatform.wh.core.log.tool;
 import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.exception.OperateFileException;
 import cn.ttplatform.wh.support.Pool;
+import cn.ttplatform.wh.support.PooledByteBuffer;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -18,17 +19,18 @@ import lombok.extern.slf4j.Slf4j;
 public class ByteBufferWriter implements ReadableAndWriteableFile {
 
     private final FileChannel fileChannel;
-    private final Pool<ByteBuffer> bufferPool;
+    private final Pool<PooledByteBuffer> bufferPool;
     private final Pool<byte[]> byteArrayPool;
     /**
      * Not safe in the case of multi-threaded operations
      */
     private long fileSize;
 
-    public ByteBufferWriter(File file, Pool<ByteBuffer> bufferPool, Pool<byte[]> byteArrayPool) {
+    public ByteBufferWriter(File file, Pool<PooledByteBuffer> bufferPool, Pool<byte[]> byteArrayPool) {
         try {
             this.bufferPool = bufferPool;
             this.byteArrayPool = byteArrayPool;
+            // Requires that every update to the file's content be written synchronously to the underlying storage device.
             this.fileChannel = FileChannel
                 .open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE,
                     StandardOpenOption.DSYNC);
@@ -41,7 +43,7 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
 
     @Override
     public void writeIntAt(long position, int data) {
-        ByteBuffer byteBuffer = bufferPool.allocate(Integer.BYTES);
+        PooledByteBuffer byteBuffer = bufferPool.allocate(Integer.BYTES);
         byteBuffer.putInt(data);
         write(byteBuffer, position);
         fileSize = getActualSize();
@@ -52,8 +54,9 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
         if (position < 0 || fileSize - position < Integer.BYTES) {
             throw new OperateFileException(ErrorMessage.READ_FAILED);
         }
-        ByteBuffer byteBuffer = bufferPool.allocate(Integer.BYTES);
-        int read = read(byteBuffer, position);
+        PooledByteBuffer byteBuffer = bufferPool.allocate(Integer.BYTES);
+        byteBuffer.limit(Integer.BYTES);
+        int read = read(byteBuffer.getBuffer(), position);
         if (read < Integer.BYTES) {
             throw new OperateFileException("read an integer data from file tail");
         }
@@ -68,7 +71,7 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
         if (position < 0) {
             throw new UnsupportedOperationException("position can not be less than 0");
         }
-        ByteBuffer byteBuffer = bufferPool.allocate(chunk.length);
+        PooledByteBuffer byteBuffer = bufferPool.allocate(chunk.length);
         byteBuffer.put(chunk);
         write(byteBuffer, position);
         fileSize = getActualSize();
@@ -76,29 +79,43 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
 
     @Override
     public void append(byte[] chunk, int length) {
-        ByteBuffer byteBuffer = bufferPool.allocate(chunk.length);
+        PooledByteBuffer byteBuffer = bufferPool.allocate(chunk.length);
         byteBuffer.put(chunk, 0, length);
         write(byteBuffer, fileSize);
-        fileSize += chunk.length;
+        fileSize += length;
+    }
+
+    @Override
+    public void append(PooledByteBuffer chunk) {
+        int length = chunk.limit();
+        write(chunk, fileSize);
+        fileSize += length;
     }
 
     @Override
     public byte[] readBytesAt(long position, int size) {
+        PooledByteBuffer byteBuffer = readByteBufferAt(position, size);
+        byte[] res = byteArrayPool.allocate(size);
+        byteBuffer.flip();
+        byteBuffer.get(res, 0, size);
+        bufferPool.recycle(byteBuffer);
+        return res;
+    }
+
+    @Override
+    public PooledByteBuffer readByteBufferAt(long position, int size) {
         if (position < 0 || fileSize - position < size) {
             throw new OperateFileException("not enough content to read");
         }
-        ByteBuffer byteBuffer = bufferPool.allocate(size);
-        int read = read(byteBuffer, position);
+        PooledByteBuffer byteBuffer = bufferPool.allocate(size);
+        byteBuffer.limit(size);
+        int read = read(byteBuffer.getBuffer(), position);
         if (read != size) {
             log.warn("required {} bytes, but read {} bytes from file[index {}]", size, read, position);
             throw new OperateFileException(
                 "required " + size + " bytes, but read " + read + " bytes from file[index " + position + "]");
         }
-        byte[] res = byteArrayPool.allocate(size);
-        byteBuffer.flip();
-        byteBuffer.get(res, 0, read);
-        bufferPool.recycle(byteBuffer);
-        return res;
+        return byteBuffer;
     }
 
     @Override
@@ -116,10 +133,10 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
     }
 
 
-    private void write(ByteBuffer byteBuffer, long position) {
+    private void write(PooledByteBuffer byteBuffer, long position) {
         byteBuffer.flip();
         try {
-            fileChannel.write(byteBuffer, position);
+            fileChannel.write(byteBuffer.getBuffer(), position);
         } catch (IOException e) {
             throw new OperateFileException("write an byte[] data to file[index(" + position + ")] error");
         } finally {

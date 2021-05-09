@@ -12,7 +12,7 @@ import cn.ttplatform.wh.support.Distributable;
  */
 public class SyncingMessageHandler extends AbstractDistributableHandler {
 
-    protected SyncingMessageHandler(GlobalContext context) {
+    public SyncingMessageHandler(GlobalContext context) {
         super(context);
     }
 

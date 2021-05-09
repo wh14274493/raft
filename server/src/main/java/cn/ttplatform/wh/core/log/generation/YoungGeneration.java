@@ -1,19 +1,15 @@
 package cn.ttplatform.wh.core.log.generation;
 
-import static cn.ttplatform.wh.core.log.tool.ByteConvertor.bytesToInt;
-
 import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.log.entry.FileLogEntry;
 import cn.ttplatform.wh.core.log.entry.FileLogEntryIndex;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
-import cn.ttplatform.wh.core.log.entry.LogEntryFactory;
 import cn.ttplatform.wh.core.log.entry.LogEntryIndex;
+import cn.ttplatform.wh.support.PooledByteBuffer;
 import cn.ttplatform.wh.exception.OperateFileException;
 import cn.ttplatform.wh.support.Pool;
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,7 +30,7 @@ public class YoungGeneration extends AbstractGeneration {
     private String snapshotSource;
     private final LinkedList<LogEntry> pending = new LinkedList<>();
 
-    public YoungGeneration(File parent, Pool<ByteBuffer> byteBufferPool, Pool<byte[]> byteArrayPool, int lastIncludeIndex) {
+    public YoungGeneration(File parent, Pool<PooledByteBuffer> byteBufferPool, Pool<byte[]> byteArrayPool, int lastIncludeIndex) {
         super(new File(parent, FileName.GENERATING_FILE_NAME), byteBufferPool, byteArrayPool, false);
         this.fileLogEntry = new FileLogEntry(file, byteBufferPool, byteArrayPool);
         this.fileLogEntryIndex = new FileLogEntryIndex(file, byteBufferPool, byteArrayPool, lastIncludeIndex);
@@ -221,22 +217,7 @@ public class YoungGeneration extends AbstractGeneration {
         } else {
             end = fileLogEntry.size();
         }
-        byte[] entries = fileLogEntry.loadEntriesFromFile(start, end);
-        int size = (int) (end - start);
-        int offset = 0;
-        while (offset < size) {
-            int index = bytesToInt(entries, offset);
-            offset += 4;
-            int term = bytesToInt(entries, offset);
-            offset += 4;
-            int type = bytesToInt(entries, offset);
-            offset += 4;
-            int cmdLength = bytesToInt(entries, offset);
-            offset += 4;
-            byte[] cmd = Arrays.copyOfRange(entries, offset, offset + cmdLength);
-            offset += cmdLength;
-            res.add(LogEntryFactory.createEntry(type, term, index, cmd));
-        }
+        fileLogEntry.loadEntriesIntoList(start, end, res);
         to = to - maxLogIndex - 1;
         IntStream.range(0, to).forEach(index -> res.add(pending.get(index)));
         return res;

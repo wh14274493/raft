@@ -1,5 +1,7 @@
 package cn.ttplatform.wh.core.log.tool;
 
+import cn.ttplatform.wh.support.PooledByteBuffer;
+
 /**
  * @author Wang Hao
  * @date 2021/4/19 15:10
@@ -14,7 +16,11 @@ public interface ReadableAndWriteableFile {
 
     void append(byte[] chunk,int length);
 
+    void append(PooledByteBuffer chunk);
+
     byte[] readBytesAt(long position, int size);
+
+    PooledByteBuffer readByteBufferAt(long position, int size);
 
     long size();
 

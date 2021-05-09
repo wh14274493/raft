@@ -5,7 +5,6 @@ import cn.ttplatform.wh.cmd.RequestFailedCommand;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.GlobalContext;
-import cn.ttplatform.wh.core.StateMachine;
 import cn.ttplatform.wh.core.group.Cluster;
 import cn.ttplatform.wh.core.group.EndpointMetaData;
 import cn.ttplatform.wh.core.group.Phase;
@@ -39,12 +38,10 @@ public class ClusterChangeCommandHandler extends AbstractDistributableHandler {
     public void doHandleInClusterMode(Distributable distributable) {
         ClusterChangeCommand cmd = (ClusterChangeCommand) distributable;
         Cluster cluster = context.getCluster();
-        StateMachine stateMachine = context.getStateMachine();
         log.info("receive an ClusterChangeCommand");
-        if (!stateMachine.addClusterChangeCommand(cmd) || cluster.getPhase() != Phase.STABLE) {
-            log.info("there is a ClusterChangeCommand being executed, or the phase[{}] is not STABLE.",
-                cluster.getPhase());
-            stateMachine.removeClusterChangeCommand();
+        if (!context.setCurrentClusterChangeTask(cmd) || cluster.getPhase() != Phase.STABLE) {
+            log.info("there is a ClusterChangeCommand being executed, or the phase[{}] is not STABLE.", cluster.getPhase());
+            context.removeClusterChangeTask();
             requestFailedCommand.setId(cmd.getId());
             requestFailedCommand.setFailedMessage(ErrorMessage.CLUSTER_CHANGE_IN_PROGRESS);
             ChannelPool.reply(cmd.getId(), requestFailedCommand);

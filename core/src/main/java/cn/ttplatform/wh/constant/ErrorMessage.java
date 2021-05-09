@@ -30,4 +30,5 @@ public class ErrorMessage {
     public static final String NOT_OLD_NEW_PHASE = "current phase[%S] is not OLD_NEW.";
     public static final String ILLEGAL_MODE_STATE = "illegal mode state.";
     public static final String MESSAGE_TYPE_ERROR = "Types of messages that cannot be processed.";
+    public static final String MESSAGE_PARSE_ERROR = "message parse error.";
 }

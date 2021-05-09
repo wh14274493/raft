@@ -9,6 +9,7 @@ import static org.junit.Assert.assertEquals;
 import cn.ttplatform.wh.core.log.tool.DirectByteBufferPool;
 import cn.ttplatform.wh.support.ByteArrayPool;
 import cn.ttplatform.wh.support.Pool;
+import cn.ttplatform.wh.support.PooledByteBuffer;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -25,15 +26,15 @@ import org.junit.Test;
  * @date 2021/4/29 12:46
  */
 @Slf4j
-class FileSnapshotTest {
+public class FileSnapshotTest {
 
     FileSnapshot fileSnapshot;
     byte[] content;
 
     @Before
-    void setUp() {
+    public void setUp() {
         Pool<byte[]> byteArrayPool = new ByteArrayPool(10, 10 * 1024 * 1024);
-        Pool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
+        Pool<PooledByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
         String path = Objects.requireNonNull(FileSnapshotTest.class.getClassLoader().getResource("")).getPath();
         fileSnapshot = new FileSnapshot(new File(path), bufferPool, byteArrayPool, true);
         int count = ThreadLocalRandom.current().nextInt(10000000);
@@ -42,49 +43,49 @@ class FileSnapshotTest {
         content = sb.toString().getBytes(StandardCharsets.UTF_8);
         long begin = System.nanoTime();
         fileSnapshot.write(0, 0, content);
-        log.debug("write {} byte cost {} ns", content.length + FileSnapshot.HEADER_LENGTH, (System.nanoTime() - begin));
+        log.info("write {} byte cost {} ns", content.length + FileSnapshot.HEADER_LENGTH, (System.nanoTime() - begin));
     }
 
     @After
-    void tearDown() {
+    public void tearDown() {
         fileSnapshot.clear();
-        assertEquals(true, fileSnapshot.isEmpty());
+        assertTrue(fileSnapshot.isEmpty());
         fileSnapshot.close();
     }
 
     @Test
-    void read() {
+    public void read() {
         long begin = System.nanoTime();
         int read = fileSnapshot.read(0, content.length + FileSnapshot.HEADER_LENGTH).length;
-        log.debug("read {} bytes cost {} ns", content.length + FileSnapshot.HEADER_LENGTH, (System.nanoTime() - begin));
+        log.info("read {} bytes cost {} ns", content.length + FileSnapshot.HEADER_LENGTH, (System.nanoTime() - begin));
         assertEquals(content.length + FileSnapshot.HEADER_LENGTH, read);
     }
 
     @Test
-    void readAll() {
+    public void readAll() {
         long begin = System.nanoTime();
-        int read = fileSnapshot.readAll().length;
-        log.debug("read {} bytes cost {} ns", content.length, (System.nanoTime() - begin));
+        int read = fileSnapshot.readAll().limit();
+        log.info("read {} bytes cost {} ns", content.length, (System.nanoTime() - begin));
         assertEquals(content.length, read);
     }
 
     @Test
-    void append() {
+    public void append() {
         long begin = System.nanoTime();
         fileSnapshot.append(content);
-        log.debug("append {} bytes cost {} ns", content.length, (System.nanoTime() - begin));
+        log.info("append {} bytes cost {} ns", content.length, (System.nanoTime() - begin));
         int read = fileSnapshot.read(FileSnapshot.HEADER_LENGTH, content.length * 2).length;
-        log.debug("read {} bytes cost {} ns", read, (System.nanoTime() - begin));
+        log.info("read {} bytes cost {} ns", read, (System.nanoTime() - begin));
         assertEquals(content.length * 2, read);
     }
 
     @Test
-    void isEmpty() {
+    public void isEmpty() {
         assertFalse(fileSnapshot.isEmpty());
     }
 
     @Test
-    void getSnapshotHeader() {
+    public void getSnapshotHeader() {
         SnapshotHeader snapshotHeader = fileSnapshot.getSnapshotHeader();
         assertEquals(0, snapshotHeader.getLastIncludeIndex());
         assertEquals(0, snapshotHeader.getLastIncludeTerm());

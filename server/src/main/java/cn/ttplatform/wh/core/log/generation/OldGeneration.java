@@ -1,8 +1,8 @@
 package cn.ttplatform.wh.core.log.generation;
 
+import cn.ttplatform.wh.support.PooledByteBuffer;
 import cn.ttplatform.wh.support.Pool;
 import java.io.File;
-import java.nio.ByteBuffer;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OldGeneration extends AbstractGeneration {
 
-    public OldGeneration(File file, Pool<ByteBuffer> pool, Pool<byte[]> byteArrayPool) {
+    public OldGeneration(File file, Pool<PooledByteBuffer> pool, Pool<byte[]> byteArrayPool) {
         super(file, pool, byteArrayPool, true);
     }
 
@@ -29,7 +29,7 @@ public class OldGeneration extends AbstractGeneration {
         return fileSnapshot.read(offset, (int) size);
     }
 
-    public byte[] readSnapshot() {
+    public PooledByteBuffer readSnapshot() {
         return fileSnapshot.readAll();
     }
 }

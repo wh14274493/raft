@@ -186,7 +186,7 @@ public class Node {
         this.role = leader;
         int index = context.pendingLog(LogEntry.NO_OP_TYPE, new byte[0]);
         context.getCluster().resetReplicationStates(context.getLog().getLastIncludeIndex() + 1, index);
-        if (log.isDebugEnabled()) {
+        if (log.isInfoEnabled()) {
             log.info("become leader.");
             log.info("reset all node replication state with nextIndex[{}]", index);
             log.info("pending first no op log in this term, then start log replicating");

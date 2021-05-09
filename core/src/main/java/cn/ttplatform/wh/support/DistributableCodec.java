@@ -1,5 +1,6 @@
 package cn.ttplatform.wh.support;
 
+import cn.ttplatform.wh.cmd.RequestFailedCommand;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
@@ -14,11 +15,10 @@ public class DistributableCodec extends ByteToMessageCodec<Distributable> {
     private static final int FIXED_MESSAGE_HEADER_LENGTH = Integer.BYTES + Long.BYTES;
 
     private final DistributableFactoryManager factoryManager;
-    private final Pool<byte[]> byteArrayPool;
+    private RequestFailedCommand requestFailedCommand;
 
-    public DistributableCodec(DistributableFactoryManager factoryManager, Pool<byte[]> byteArrayPool) {
+    public DistributableCodec(DistributableFactoryManager factoryManager) {
         this.factoryManager = factoryManager;
-        this.byteArrayPool = byteArrayPool;
     }
 
     @Override
@@ -39,16 +39,32 @@ public class DistributableCodec extends ByteToMessageCodec<Distributable> {
         if (in.readableBytes() < FIXED_MESSAGE_HEADER_LENGTH) {
             return;
         }
+        // 4(type) + 4(contentLength) + byte[contentLength]
         in.markReaderIndex();
         int type = in.readInt();
         int contentLength = in.readInt();
+        int newReaderIndex = in.readerIndex() + contentLength;
         if (in.readableBytes() < contentLength) {
             in.resetReaderIndex();
             return;
         }
-        byte[] content = byteArrayPool.allocate(contentLength);
-        in.readBytes(content, 0, contentLength);
-        DistributableFactory factory = factoryManager.getFactory(type);
-        out.add(factory.create(content, contentLength));
+        try {
+            DistributableFactory factory = factoryManager.getFactory(type);
+            Distributable distributable = factory.create(in.nioBuffer(), contentLength);
+            out.add(distributable);
+        } catch (Exception e) {
+            ctx.channel().write(failedCommand(e.getMessage()));
+        } finally {
+            in.readerIndex(newReaderIndex);
+        }
+    }
+
+    private RequestFailedCommand failedCommand(String failed) {
+        if (requestFailedCommand == null) {
+            this.requestFailedCommand = new RequestFailedCommand(failed);
+        } else {
+            requestFailedCommand.setFailedMessage(failed);
+        }
+        return requestFailedCommand;
     }
 }

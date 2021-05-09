@@ -18,14 +18,14 @@ public class GetCommandHandler extends AbstractDistributableHandler {
 
     @Override
     public void doHandleInSingleMode(Distributable distributable) {
-        context.getStateMachine().replyGetResult((GetCommand) distributable);
+        context.replyGetResult((GetCommand) distributable);
     }
 
     @Override
     public void doHandleInClusterMode(Distributable distributable) {
         int nextIndex = context.getLog().getNextIndex();
         int key = nextIndex - 1;
-        context.getStateMachine().addGetTasks(key, (GetCommand) distributable);
+        context.addGetTasks(key, (GetCommand) distributable);
     }
 
     @Override
