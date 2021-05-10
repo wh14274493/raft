@@ -24,7 +24,9 @@ public abstract class AbstractRole implements Role {
 
     @Override
     public void cancelTask() {
-        this.scheduledFuture.cancel(false);
+        if (scheduledFuture != null) {
+            scheduledFuture.cancel(false);
+        }
     }
 
     @Override

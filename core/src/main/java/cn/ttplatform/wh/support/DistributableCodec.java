@@ -5,14 +5,16 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Wang Hao
  * @date 2021/4/28 23:40
  */
+@Slf4j
 public class DistributableCodec extends ByteToMessageCodec<Distributable> {
 
-    private static final int FIXED_MESSAGE_HEADER_LENGTH = Integer.BYTES + Long.BYTES;
+    private static final int FIXED_MESSAGE_HEADER_LENGTH = Integer.BYTES + Integer.BYTES;
 
     private final DistributableFactoryManager factoryManager;
     private RequestFailedCommand requestFailedCommand;
@@ -23,6 +25,7 @@ public class DistributableCodec extends ByteToMessageCodec<Distributable> {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Distributable msg, ByteBuf out) {
+        log.debug("encode a message[{}]", msg);
         byte[] encode = encode(msg);
         out.writeInt(msg.getType());
         out.writeInt(encode.length);

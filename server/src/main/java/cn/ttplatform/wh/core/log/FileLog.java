@@ -141,6 +141,7 @@ public class FileLog implements Log {
         }
         LogEntry logEntry = getEntry(index);
         if (logEntry == null) {
+            log.debug("not found a log for index[{}].", index);
             return false;
         }
         return term == logEntry.getTerm();

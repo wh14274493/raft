@@ -3,6 +3,7 @@ package cn.ttplatform.wh.core.connector.message.handler;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.GlobalContext;
+import cn.ttplatform.wh.core.connector.message.SyncingMessage;
 import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
 import cn.ttplatform.wh.support.Distributable;
 
@@ -28,6 +29,8 @@ public class SyncingMessageHandler extends AbstractDistributableHandler {
 
     @Override
     public void doHandleInSingleMode(Distributable distributable) {
+        SyncingMessage syncingMessage = (SyncingMessage) distributable;
         context.enterClusterMode();
+        context.getNode().changeToFollower(syncingMessage.getTerm(), syncingMessage.getSourceId(), null, 0, 0, 0);
     }
 }

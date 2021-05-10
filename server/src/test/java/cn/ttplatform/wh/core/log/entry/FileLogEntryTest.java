@@ -68,6 +68,7 @@ public class FileLogEntryTest {
     @Test
     public void getEntry() {
         byte[] content = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
+
         fileLogEntry.append(LogEntryFactory.createEntry(1, 1, 1, content, content.length));
         long begin = System.nanoTime();
         LogEntry entry = fileLogEntry.getEntry(0, fileLogEntry.size());

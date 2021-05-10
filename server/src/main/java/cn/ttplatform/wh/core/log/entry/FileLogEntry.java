@@ -41,7 +41,7 @@ public class FileLogEntry {
             byteBuffer.putInt(logEntry.getType());
             byteBuffer.putInt(command.length);
             byteBuffer.put(command);
-            file.append(byteBuffer);
+            file.append(byteBuffer, outLength);
         } finally {
             byteBufferPool.recycle(byteBuffer);
         }
@@ -67,7 +67,7 @@ public class FileLogEntry {
                 byteBuffer.putInt(command.length);
                 byteBuffer.put(command);
             }
-            file.append(byteBuffer);
+            file.append(byteBuffer,contentLength);
         } finally {
             byteBufferPool.recycle(byteBuffer);
         }

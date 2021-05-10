@@ -29,7 +29,8 @@ public final class FileLogEntryIndex {
     private final Pool<byte[]> byteArrayPool;
     private final LogEntryFactory logEntryFactory = LogEntryFactory.getInstance();
 
-    public FileLogEntryIndex(File parent, Pool<PooledByteBuffer> byteBufferPool, Pool<byte[]> byteArrayPool, int lastIncludeIndex) {
+    public FileLogEntryIndex(File parent, Pool<PooledByteBuffer> byteBufferPool, Pool<byte[]> byteArrayPool,
+        int lastIncludeIndex) {
         this.file = new ByteBufferWriter(new File(parent, FileName.INDEX_FILE_NAME), byteBufferPool, byteArrayPool);
         this.byteBufferPool = byteBufferPool;
         this.byteArrayPool = byteArrayPool;
@@ -60,7 +61,7 @@ public final class FileLogEntryIndex {
     }
 
     public LogEntryIndex getLastEntryIndex() {
-        return logEntryIndices.get(maxLogIndex - minLogIndex);
+        return logEntryIndices.get(logEntryIndices.size() - 1);
     }
 
     public long getEntryOffset(int index) {
@@ -95,7 +96,7 @@ public final class FileLogEntryIndex {
             byteBuffer.putInt(logEntryIndex.getTerm());
             byteBuffer.putInt(logEntryIndex.getType());
             byteBuffer.putLong(logEntryIndex.getOffset());
-            file.append(byteBuffer);
+            file.append(byteBuffer, FileLogEntryIndex.ITEM_LENGTH);
             logEntryIndices.add(logEntryIndex);
         } finally {
             byteBufferPool.recycle(byteBuffer);
@@ -130,7 +131,7 @@ public final class FileLogEntryIndex {
                     .offset(offsets[i])
                     .build());
             }
-            file.append(byteBuffer);
+            file.append(byteBuffer, contentLength);
         } finally {
             byteBufferPool.recycle(byteBuffer);
         }

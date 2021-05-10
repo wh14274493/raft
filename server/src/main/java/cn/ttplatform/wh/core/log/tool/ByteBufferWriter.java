@@ -32,8 +32,12 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
             this.byteArrayPool = byteArrayPool;
             // Requires that every update to the file's content be written synchronously to the underlying storage device.
             this.fileChannel = FileChannel
-                .open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE,
-                    StandardOpenOption.DSYNC);
+                .open(file.toPath(),
+                    StandardOpenOption.READ,
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.CREATE,
+//                    StandardOpenOption.DSYNC,
+                    StandardOpenOption.DELETE_ON_CLOSE);
             log.info("open file[{}].", file);
             fileSize = fileChannel.size();
         } catch (IOException e) {
@@ -86,8 +90,8 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
     }
 
     @Override
-    public void append(PooledByteBuffer chunk) {
-        int length = chunk.limit();
+    public void append(PooledByteBuffer chunk, int length) {
+        chunk.limit(length);
         write(chunk, fileSize);
         fileSize += length;
     }

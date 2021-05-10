@@ -51,7 +51,7 @@ public class Endpoint implements Comparable<Endpoint> {
     }
 
     public void quickMatchNextIndex(boolean lastMatched) {
-        log.debug("match helper is {}", quickMatchHelper);
+        log.debug("{} match helper is {}", this.metaData, quickMatchHelper);
         if (!matched) {
             matched = quickMatchHelper.isMatched();
         }

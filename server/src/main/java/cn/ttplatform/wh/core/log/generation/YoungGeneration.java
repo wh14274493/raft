@@ -65,7 +65,7 @@ public class YoungGeneration extends AbstractGeneration {
 
     public LogEntryIndex getLastLogMetaData() {
         if (!pending.isEmpty()) {
-            LogEntry last = pending.getLast();
+            LogEntry last = pending.peekLast();
             return LogEntryIndex.builder().index(last.getIndex()).term(last.getTerm()).offset(-1L).type(last.getType())
                 .build();
         }
@@ -86,7 +86,7 @@ public class YoungGeneration extends AbstractGeneration {
      */
     public void pendingEntry(LogEntry logEntry) {
         if (!pending.isEmpty() && logEntry.getIndex() != pending.peekLast().getIndex() + 1) {
-            throw new IllegalStateException("The index number of the log is incorrect ");
+            throw new IllegalStateException("The index[" + logEntry.getIndex() + "] number of the log is incorrect ");
         }
         pending.add(logEntry);
     }
@@ -174,9 +174,7 @@ public class YoungGeneration extends AbstractGeneration {
             log.debug("index[{}] > maxEntryIndex[{}], find log from pending.", index, fileLogEntryIndex.getMaxLogIndex());
             return pending.get(index - fileLogEntryIndex.getMaxLogIndex() - 1);
         }
-        long startOffset = fileLogEntryIndex.getEntryOffset(index);
-        long endOffset = fileLogEntryIndex.getEntryOffset(index + 1);
-        return fileLogEntry.getEntry(startOffset, endOffset);
+        return fileLogEntry.getEntry(fileLogEntryIndex.getEntryOffset(index), fileLogEntryIndex.getEntryOffset(index + 1));
     }
 
     public LogEntryIndex getEntryMetaData(int index) {
@@ -202,7 +200,7 @@ public class YoungGeneration extends AbstractGeneration {
         from = Math.max(fileLogEntryIndex.getMinLogIndex(), from);
         to = Math.min(to, lastIndex + 1);
         log.debug("sublist from {} to {}", from, to);
-        List<LogEntry> res = new ArrayList<>();
+        List<LogEntry> res = new ArrayList<>(to - from);
         int maxLogIndex = fileLogEntryIndex.getMaxLogIndex();
         if (from > maxLogIndex) {
             from = from - maxLogIndex - 1;
@@ -233,14 +231,15 @@ public class YoungGeneration extends AbstractGeneration {
             return;
         }
         int maxLogIndex = fileLogEntryIndex.getMaxLogIndex();
-        if (index == maxLogIndex) {
+        if (index <= maxLogIndex) {
             pending.clear();
-        } else if (index < maxLogIndex) {
             long offset = fileLogEntryIndex.getEntryOffset(index + 1);
             fileLogEntryIndex.removeAfter(index);
             fileLogEntry.removeAfter(offset);
         } else {
-            pending.removeIf(logEntry -> logEntry.getIndex() > index);
+            while (!pending.isEmpty() && pending.peekLast().getIndex() > index) {
+                pending.pollLast();
+            }
         }
     }
 

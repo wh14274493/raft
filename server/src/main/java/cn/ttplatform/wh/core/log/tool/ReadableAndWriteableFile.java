@@ -14,9 +14,9 @@ public interface ReadableAndWriteableFile {
 
     void writeBytesAt(long position, byte[] chunk);
 
-    void append(byte[] chunk,int length);
+    void append(byte[] chunk, int length);
 
-    void append(PooledByteBuffer chunk);
+    void append(PooledByteBuffer chunk, int length);
 
     byte[] readBytesAt(long position, int size);
 

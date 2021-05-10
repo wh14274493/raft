@@ -71,7 +71,7 @@ public class FileSnapshot {
             byteBuffer.putInt(newSnapshotHeader.getLastIncludeIndex());
             byteBuffer.putInt(newSnapshotHeader.getLastIncludeTerm());
             byteBuffer.put(content);
-            file.append(byteBuffer);
+            file.append(byteBuffer, size);
             snapshotHeader = newSnapshotHeader;
         } finally {
             byteBufferPool.recycle(byteBuffer);

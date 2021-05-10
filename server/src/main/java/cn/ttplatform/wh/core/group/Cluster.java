@@ -6,7 +6,6 @@ import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.message.SyncingMessage;
 import cn.ttplatform.wh.core.log.Log;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
-import cn.ttplatform.wh.exception.ClusterConfigException;
 import cn.ttplatform.wh.support.Pool;
 import io.protostuff.LinkedBuffer;
 import java.util.ArrayList;
@@ -135,7 +134,8 @@ public class Cluster {
      */
     public int getNewCommitIndex() {
         if (phase == Phase.OLD_NEW) {
-            int oldConfigCommitIndex = getNewCommitIndexFrom(endpointMap);
+            int oldConfigCommitIndex =
+                endpointMap.size() <= 1 ? context.getLog().getNextIndex() - 1 : getNewCommitIndexFrom(endpointMap);
             int newConfigCommitIndex = getNewCommitIndexFrom(newConfigMap);
             log.debug("oldConfigCommitIndex is {}.", oldConfigCommitIndex);
             log.debug("newConfigCommitIndex is {}.", newConfigCommitIndex);
@@ -146,7 +146,8 @@ public class Cluster {
             log.debug("newConfigCommitIndex is {}.", newConfigCommitIndex);
             return newConfigCommitIndex;
         }
-        int oldConfigCommitIndex = getNewCommitIndexFrom(endpointMap);
+        int oldConfigCommitIndex =
+            endpointMap.size() <= 1 ? context.getLog().getNextIndex() - 1 : getNewCommitIndexFrom(endpointMap);
         log.debug("oldConfigCommitIndex is {}.", oldConfigCommitIndex);
         return oldConfigCommitIndex;
     }
@@ -159,9 +160,9 @@ public class Cluster {
             }
         });
         int size = endpoints.size();
-        if (size < MIN_CLUSTER_SIZE) {
-            throw new ClusterConfigException(ErrorMessage.CLUSTER_SIZE_ERROR);
-        }
+//        if (size < MIN_CLUSTER_SIZE) {
+//            throw new ClusterConfigException(ErrorMessage.CLUSTER_SIZE_ERROR);
+//        }
         // After sorting from small to large according to the matchIndex, take
         // the matchIndex of the left node of the middle node to be the new commitIndex
         Collections.sort(endpoints);
@@ -186,7 +187,8 @@ public class Cluster {
         log.info("logSynCompleteState is {}", logSynCompleteState);
         phase = Phase.SYNCING;
         log.info("enter SYNCING phase");
-        getAllEndpointExceptSelf().forEach(endpoint -> context.sendMessage(new SyncingMessage(), endpoint));
+        SyncingMessage syncingMessage = new SyncingMessage();
+        getAllEndpointExceptSelf().forEach(endpoint -> context.sendMessage(syncingMessage, endpoint));
     }
 
     /**

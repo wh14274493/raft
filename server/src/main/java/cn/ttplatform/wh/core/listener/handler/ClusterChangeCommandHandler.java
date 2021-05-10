@@ -31,6 +31,7 @@ public class ClusterChangeCommandHandler extends AbstractDistributableHandler {
     @Override
     public void doHandleInSingleMode(Distributable distributable) {
         context.enterClusterMode();
+        context.getNode().changeToLeader(context.getNode().getTerm());
         doHandleInClusterMode(distributable);
     }
 
