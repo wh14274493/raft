@@ -86,8 +86,8 @@ public class Client {
                                 log.info(System.nanoTime() + "");
                                 log.info(msg.toString());
                             }
+//                            log.info("{}: {} ", index, msg.toString());
                             index++;
-//                            log.info(msg.toString());
                         }
                     });
                 }
@@ -111,22 +111,36 @@ public class Client {
 //        client.send(getClusterInfoCommand());
 
         Channel channel = client.connect();
-        StringBuilder value = new StringBuilder();
-        while (value.length() < 256) {
-            value.append(UUID.randomUUID());
-        }
-        String s = value.substring(0, 256);
-        IntStream.range(0, 30000).forEach(index -> {
-            SetCommand setCommand = SetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao" + index)
-                .value(s + "|" + index).build();
-            channel.writeAndFlush(setCommand);
-            if (index == 0) {
-                log.info("begin:" + System.nanoTime());
-            }
-        });
 
-//        IntStream.range(0, 10000).forEach(index -> channel
-//            .writeAndFlush(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao" + index).build()));
+//        StringBuilder value = new StringBuilder();
+//        while (value.length() < 256) {
+//            value.append(UUID.randomUUID());
+//        }
+//        String v = value.substring(0, 256);
+//        String id = UUID.randomUUID().toString();
+//        IntStream.range(0, 30000).forEach(index -> {
+//            SetCommand setCommand = SetCommand.builder().id(id + index).key("wanghao" + index)
+//                .value(v).build();
+//            channel.write(setCommand);
+//        });
+//        channel.flush();
+
+//        while (true) {
+//            StringBuilder value = new StringBuilder();
+//            while (value.length() < 256) {
+//                value.append(UUID.randomUUID());
+//            }
+//            String v = value.substring(0, 256);
+//            String id = UUID.randomUUID().toString();
+//            SetCommand setCommand = SetCommand.builder().id(id).key("wanghao" + id)
+//                .value(v).build();
+//            channel.writeAndFlush(setCommand);
+//            TimeUnit.MILLISECONDS.sleep(10);
+//        }
+
+        IntStream.range(0, 100000).forEach(index -> channel
+            .write(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao" + index).build()));
+        channel.flush();
     }
 
     private static ClusterChangeCommand clusterChangeCommand() {

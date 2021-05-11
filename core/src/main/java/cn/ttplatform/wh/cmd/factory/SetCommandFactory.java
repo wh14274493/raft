@@ -1,5 +1,6 @@
 package cn.ttplatform.wh.cmd.factory;
 
+import cn.ttplatform.wh.cmd.RequestFailedCommand;
 import cn.ttplatform.wh.cmd.SetCommand;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.constant.ErrorMessage;
@@ -7,12 +8,14 @@ import cn.ttplatform.wh.exception.MessageParseException;
 import cn.ttplatform.wh.support.AbstractDistributableFactory;
 import cn.ttplatform.wh.support.Distributable;
 import cn.ttplatform.wh.support.Pool;
+import io.netty.buffer.ByteBuf;
 import io.protostuff.ByteBufferInput;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -60,5 +63,11 @@ public class SetCommandFactory extends AbstractDistributableFactory {
     @Override
     public byte[] getBytes(Distributable message, LinkedBuffer buffer) {
         return ProtostuffIOUtil.toByteArray((SetCommand) message, schema, buffer);
+    }
+
+    @Override
+    public void getBytes(Distributable distributable, LinkedBuffer buffer, ByteBuf byteBuffer, OutputStream outputStream)
+        throws IOException {
+        ProtostuffIOUtil.writeTo(outputStream, (SetCommand) distributable, schema, buffer);
     }
 }

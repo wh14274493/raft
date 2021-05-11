@@ -1,11 +1,16 @@
 package cn.ttplatform.wh.core.group;
 
+import cn.ttplatform.wh.cmd.ClusterChangeResultCommand;
+import cn.ttplatform.wh.support.Distributable;
 import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.support.Factory;
+import io.netty.buffer.ByteBuf;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
@@ -36,5 +41,10 @@ public class NewConfigFactory implements Factory<NewConfig> {
     @Override
     public byte[] getBytes(NewConfig newConfig) {
         return ProtostuffIOUtil.toByteArray(newConfig, schema, pool.allocate());
+    }
+
+    @Override
+    public void getBytes(NewConfig obj, ByteBuf byteBuffer) {
+        throw new UnsupportedOperationException();
     }
 }

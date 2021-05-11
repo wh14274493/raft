@@ -1,18 +1,21 @@
 package cn.ttplatform.wh.core;
 
 import cn.ttplatform.wh.constant.ErrorMessage;
-import cn.ttplatform.wh.support.PooledByteBuffer;
 import cn.ttplatform.wh.exception.MessageParseException;
 import cn.ttplatform.wh.support.Factory;
 import cn.ttplatform.wh.support.Pool;
+import cn.ttplatform.wh.support.PooledByteBuffer;
+import io.netty.buffer.ByteBuf;
 import io.protostuff.ByteBufferInput;
 import io.protostuff.LinkedBuffer;
+import io.protostuff.MessageMapSchema;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -22,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class StateMachine {
 
-    private Data data = new Data();
+    private Map<String,String> data = new HashMap<>();
     private final DataFactory dataFactory;
     private int lastApplied;
 
@@ -31,12 +34,20 @@ public class StateMachine {
         this.dataFactory = new DataFactory(context.getLinkedBufferPool());
     }
 
+    public StateMachine(Pool<LinkedBuffer> pool) {
+        this.dataFactory = new DataFactory(pool);
+    }
+
     public String get(String key) {
         return data.get(key);
     }
 
     public void set(String key, String value) {
         data.put(key, value);
+    }
+
+    public int getPairs() {
+        return data.size();
     }
 
     public int getLastApplied() {
@@ -58,35 +69,33 @@ public class StateMachine {
         snapshot.recycle();
     }
 
-    private static class Data extends HashMap<String, String> {
+    private static class DataFactory implements Factory<Map<String,String>> {
 
-    }
-
-    private static class DataFactory implements Factory<Data> {
-
-        private static final Schema<Data> DATA_SCHEMA = RuntimeSchema.getSchema(Data.class);
+        private final MessageMapSchema<String,String> mapSchema;
         private final Pool<LinkedBuffer> pool;
 
         public DataFactory(Pool<LinkedBuffer> pool) {
+            Schema<String> stringSchema = RuntimeSchema.getSchema(String.class);
+            mapSchema = new MessageMapSchema<>(stringSchema,stringSchema);
             this.pool = pool;
         }
 
         @Override
-        public Data create(byte[] content, int length) {
-            Data data = new Data();
-            ProtostuffIOUtil.mergeFrom(content, 0, length, data, DATA_SCHEMA);
+        public Map<String,String> create(byte[] content, int length) {
+            Map<String,String> data = new HashMap<>();
+            ProtostuffIOUtil.mergeFrom(content, 0, length, data, mapSchema);
             return data;
         }
 
         @Override
-        public Data create(ByteBuffer byteBuffer, int contentLength) {
+        public Map<String,String> create(ByteBuffer byteBuffer, int contentLength) {
             int limit = byteBuffer.limit();
             try {
                 int position = byteBuffer.position();
                 byteBuffer.limit(position + contentLength);
-                Data data = new Data();
+                Map<String,String> data = new HashMap<>();
                 try {
-                    DATA_SCHEMA.mergeFrom(new ByteBufferInput(byteBuffer, true), data);
+                    mapSchema.mergeFrom(new ByteBufferInput(byteBuffer, true), data);
                 } catch (IOException e) {
                     throw new MessageParseException(ErrorMessage.MESSAGE_PARSE_ERROR);
                 }
@@ -97,15 +106,20 @@ public class StateMachine {
         }
 
         @Override
-        public byte[] getBytes(Data data) {
+        public byte[] getBytes(Map<String,String> data) {
             LinkedBuffer buffer = pool.allocate();
             try {
-                return ProtostuffIOUtil.toByteArray(data, DATA_SCHEMA, buffer);
+                return ProtostuffIOUtil.toByteArray(data, mapSchema, buffer);
             } catch (Exception e) {
                 throw new IllegalStateException(e);
             } finally {
                 pool.recycle(buffer);
             }
+        }
+
+        @Override
+        public void getBytes(Map<String,String> obj, ByteBuf byteBuffer) {
+            throw new UnsupportedOperationException();
         }
     }
 

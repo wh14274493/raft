@@ -269,7 +269,8 @@ public class FileLog implements Log {
     }
 
     private void replace(int lastIncludeIndex, int lastIncludeTerm) {
-        List<LogEntry> logEntries = subList(lastIncludeIndex + 1, nextIndex);
+        List<LogEntry> persistentLogEntries = subList(lastIncludeIndex + 1, youngGeneration.getMaxLogIndex() + 1);
+        List<LogEntry> pendingLogEntries = subList(youngGeneration.getMaxLogIndex() + 1, nextIndex);
         oldGeneration.close();
         youngGeneration.close();
         File file = youngGeneration.rename(lastIncludeIndex, lastIncludeTerm);
@@ -277,7 +278,8 @@ public class FileLog implements Log {
         log.info("The new generation successfully promoted to the old generation and re-created the new generation ");
         youngGeneration = new YoungGeneration(file.getParentFile(), context.getByteBufferPool(), context.getByteArrayPool(),
             oldGeneration.getLastIncludeIndex());
-        youngGeneration.appendLogEntries(logEntries);
+        youngGeneration.appendLogEntries(persistentLogEntries);
+        youngGeneration.pendingEntries(pendingLogEntries);
     }
 
     @Override

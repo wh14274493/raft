@@ -1,7 +1,5 @@
 package cn.ttplatform.wh.cmd.factory;
 
-import static org.junit.Assert.*;
-
 import cn.ttplatform.wh.cmd.SetCommand;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
@@ -11,7 +9,6 @@ import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

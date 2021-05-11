@@ -1,5 +1,6 @@
 package cn.ttplatform.wh.cmd.factory;
 
+import cn.ttplatform.wh.cmd.GetResultCommand;
 import cn.ttplatform.wh.cmd.RedirectCommand;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.constant.ErrorMessage;
@@ -7,12 +8,14 @@ import cn.ttplatform.wh.exception.MessageParseException;
 import cn.ttplatform.wh.support.AbstractDistributableFactory;
 import cn.ttplatform.wh.support.Distributable;
 import cn.ttplatform.wh.support.Pool;
+import io.netty.buffer.ByteBuf;
 import io.protostuff.ByteBufferInput;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
@@ -33,11 +36,6 @@ public class RedirectCommandFactory extends AbstractDistributableFactory {
     }
 
     @Override
-    public byte[] getBytes(Distributable distributable, LinkedBuffer buffer) {
-        return ProtostuffIOUtil.toByteArray((RedirectCommand) distributable, schema, buffer);
-    }
-
-    @Override
     public Distributable create(ByteBuffer byteBuffer) {
         RedirectCommand cmd = new RedirectCommand();
         try {
@@ -53,5 +51,16 @@ public class RedirectCommandFactory extends AbstractDistributableFactory {
         RedirectCommand command = new RedirectCommand();
         ProtostuffIOUtil.mergeFrom(content, 0, length, command, schema);
         return command;
+    }
+
+    @Override
+    public byte[] getBytes(Distributable distributable, LinkedBuffer buffer) {
+        return ProtostuffIOUtil.toByteArray((RedirectCommand) distributable, schema, buffer);
+    }
+
+    @Override
+    public void getBytes(Distributable distributable, LinkedBuffer buffer, ByteBuf byteBuffer, OutputStream outputStream)
+        throws IOException {
+        ProtostuffIOUtil.writeTo(outputStream, (RedirectCommand) distributable, schema, buffer);
     }
 }

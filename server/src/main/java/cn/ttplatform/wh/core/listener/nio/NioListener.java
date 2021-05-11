@@ -1,9 +1,11 @@
 package cn.ttplatform.wh.core.listener.nio;
 
 import cn.ttplatform.wh.core.GlobalContext;
+import cn.ttplatform.wh.core.support.ChannelPool;
 import cn.ttplatform.wh.core.support.CoreChannelInitializer;
 import cn.ttplatform.wh.core.listener.Listener;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +33,7 @@ public class NioListener implements Listener {
     public void listen() {
         ServerBootstrap serverBootstrap = new ServerBootstrap().group(boss, worker)
             .channel(NioServerSocketChannel.class)
+            .childOption(ChannelOption.TCP_NODELAY, true)
             .childHandler(new CoreChannelInitializer(globalContext));
         try {
             serverBootstrap.bind(port).addListener(future -> {

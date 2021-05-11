@@ -1,6 +1,7 @@
 package cn.ttplatform.wh.cmd;
 
 import cn.ttplatform.wh.constant.DistributableType;
+import io.protostuff.Exclude;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,6 +22,7 @@ public class SetCommand extends AbstractCommand {
 
     private String key;
     private String value;
+    @Exclude
     private byte[] cmd;
 
     @Override

@@ -7,12 +7,16 @@ import cn.ttplatform.wh.exception.MessageParseException;
 import cn.ttplatform.wh.support.AbstractDistributableFactory;
 import cn.ttplatform.wh.support.Distributable;
 import cn.ttplatform.wh.support.Pool;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
 import io.protostuff.ByteBufferInput;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
+import io.protostuff.ProtostuffOutput;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
@@ -55,4 +59,9 @@ public class AppendLogEntriesMessageFactory extends AbstractDistributableFactory
         return ProtostuffIOUtil.toByteArray((AppendLogEntriesMessage) distributable, schema, buffer);
     }
 
+    @Override
+    public void getBytes(Distributable distributable, LinkedBuffer buffer, ByteBuf byteBuffer, OutputStream outputStream)
+        throws IOException {
+        ProtostuffIOUtil.writeTo(outputStream, (AppendLogEntriesMessage) distributable, schema, buffer);
+    }
 }

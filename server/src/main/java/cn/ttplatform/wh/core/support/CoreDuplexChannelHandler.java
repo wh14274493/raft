@@ -43,13 +43,13 @@ public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
                 return;
             }
             ChannelPool.cacheChannel(commandId, channel);
-            recordIds(commandId, channel);
+//            recordIds(commandId, channel);
             distributor.distribute(command);
         } else if (msg instanceof Message) {
             String sourceId = ((Message) msg).getSourceId();
             log.debug("receive a msg {} from {}.", msg, sourceId);
             ChannelPool.cacheChannel(sourceId, channel);
-            recordIds(sourceId, channel);
+//            recordIds(sourceId, channel);
             distributor.distribute((Message) msg);
         } else {
             log.error("unknown message type, msg is {}", msg);

@@ -2,6 +2,7 @@ package cn.ttplatform.wh.core.group;
 
 import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.support.Factory;
+import io.netty.buffer.ByteBuf;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
@@ -36,5 +37,10 @@ class OldNewConfigFactory implements Factory<OldNewConfig> {
     @Override
     public byte[] getBytes(OldNewConfig oldNewConfig) {
         return ProtostuffIOUtil.toByteArray(oldNewConfig, schema, pool.allocate());
+    }
+
+    @Override
+    public void getBytes(OldNewConfig obj, ByteBuf byteBuffer) {
+        throw new UnsupportedOperationException();
     }
 }

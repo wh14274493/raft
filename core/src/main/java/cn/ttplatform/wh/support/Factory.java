@@ -1,5 +1,6 @@
 package cn.ttplatform.wh.support;
 
+import io.netty.buffer.ByteBuf;
 import java.nio.ByteBuffer;
 
 /**
@@ -25,4 +26,6 @@ public interface Factory<T> {
      * @return a serialized byte array
      */
     byte[] getBytes(T obj);
+
+    void getBytes(T obj, ByteBuf byteBuffer);
 }

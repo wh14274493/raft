@@ -3,16 +3,19 @@ package cn.ttplatform.wh.core.connector.message.factory;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.connector.message.RequestVoteResultMessage;
+import cn.ttplatform.wh.core.connector.message.SyncingMessage;
 import cn.ttplatform.wh.exception.MessageParseException;
 import cn.ttplatform.wh.support.AbstractDistributableFactory;
 import cn.ttplatform.wh.support.Distributable;
 import cn.ttplatform.wh.support.Pool;
+import io.netty.buffer.ByteBuf;
 import io.protostuff.ByteBufferInput;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
@@ -53,5 +56,11 @@ public class RequestVoteResultMessageFactory extends AbstractDistributableFactor
     @Override
     public byte[] getBytes(Distributable distributable, LinkedBuffer buffer) {
         return ProtostuffIOUtil.toByteArray((RequestVoteResultMessage) distributable, schema, buffer);
+    }
+
+    @Override
+    public void getBytes(Distributable distributable, LinkedBuffer buffer, ByteBuf byteBuffer, OutputStream outputStream)
+        throws IOException {
+        ProtostuffIOUtil.writeTo(outputStream, (RequestVoteResultMessage) distributable, schema, buffer);
     }
 }

@@ -1,6 +1,10 @@
 package cn.ttplatform.wh.support;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
 import io.protostuff.LinkedBuffer;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
@@ -28,6 +32,29 @@ public abstract class AbstractDistributableFactory implements DistributableFacto
     }
 
     public abstract byte[] getBytes(Distributable distributable, LinkedBuffer buffer);
+
+    @Override
+    public void getBytes(Distributable distributable, ByteBuf byteBuffer) {
+        byteBuffer.writeInt(getFactoryType());
+        int writerIndex = byteBuffer.writerIndex();
+        byteBuffer.writeInt(getFactoryType());
+        ByteBufOutputStream byteBufOutputStream = new ByteBufOutputStream(byteBuffer);
+        LinkedBuffer buffer = pool.allocate();
+        try {
+            getBytes(distributable, buffer, byteBuffer, byteBufOutputStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            pool.recycle(buffer);
+        }
+        int newWriterIndex = byteBuffer.writerIndex();
+        byteBuffer.writerIndex(writerIndex);
+        byteBuffer.writeInt(newWriterIndex - 8);
+        byteBuffer.writerIndex(newWriterIndex);
+    }
+
+    public abstract void getBytes(Distributable distributable, LinkedBuffer buffer, ByteBuf byteBuffer,
+        OutputStream outputStream) throws IOException;
 
 
     @Override
