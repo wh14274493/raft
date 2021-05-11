@@ -1,11 +1,14 @@
 package cn.ttplatform.wh.core;
 
+import cn.ttplatform.wh.core.log.tool.DirectByteBufferPool;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Pool;
+import cn.ttplatform.wh.support.PooledByteBuffer;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.MessageMapSchema;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.runtime.RuntimeSchema;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -90,5 +93,21 @@ public class StateMachineTest {
 
     @Test
     public void applySnapshotData() {
+        int count = ThreadLocalRandom.current().nextInt(1000000);
+        IntStream.range(0, count).forEach(index -> {
+            stateMachine.set("key" + index, "value");
+        });
+        log.info("set {} pairs.", count);
+        long begin = System.nanoTime();
+        byte[] bytes = stateMachine.generateSnapshotData();
+        log.info("generate {} bytes snapshot cost {} ns.", bytes.length, System.nanoTime() - begin);
+        PooledByteBuffer pooledByteBuffer = new PooledByteBuffer(ByteBuffer.allocateDirect(bytes.length),
+            new DirectByteBufferPool(10, 1024 * 1024 * 1024));
+        pooledByteBuffer.put(bytes);
+        pooledByteBuffer.flip();
+        begin = System.nanoTime();
+        stateMachine.applySnapshotData(pooledByteBuffer, 0);
+        log.info("apply {} bytes snapshot cost {} ns.", bytes.length, System.nanoTime() - begin);
+        Assert.assertEquals(count, stateMachine.getPairs());
     }
 }

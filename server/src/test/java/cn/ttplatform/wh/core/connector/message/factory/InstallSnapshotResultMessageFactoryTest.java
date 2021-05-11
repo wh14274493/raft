@@ -1,14 +1,13 @@
 package cn.ttplatform.wh.core.connector.message.factory;
 
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
+import cn.ttplatform.wh.core.connector.message.InstallSnapshotResultMessage;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Pool;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.protostuff.LinkedBuffer;
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
@@ -17,31 +16,29 @@ import org.junit.Test;
 
 /**
  * @author Wang Hao
- * @date 2021/5/11 10:59
+ * @date 2021/5/11 22:56
  */
 @Slf4j
-public class AppendLogEntriesMessageFactoryTest {
+public class InstallSnapshotResultMessageFactoryTest {
 
-    AppendLogEntriesMessageFactory factory;
+    InstallSnapshotResultMessageFactory factory;
 
     @Before
     public void setUp() throws Exception {
         Pool<LinkedBuffer> pool = new FixedSizeLinkedBufferPool(10);
-        factory = new AppendLogEntriesMessageFactory(pool);
+        factory = new InstallSnapshotResultMessageFactory(pool);
     }
 
     @Test
     public void getFactoryType() {
-        Assert.assertEquals(DistributableType.APPEND_LOG_ENTRIES, factory.getFactoryType());
+        Assert.assertEquals(DistributableType.INSTALL_SNAPSHOT_RESULT, factory.getFactoryType());
     }
 
     @Test
     public void create() {
-        AppendLogEntriesMessage appendLogEntriesMessage = AppendLogEntriesMessage.builder().matched(true).preLogTerm(1)
-            .preLogIndex(1)
-            .leaderCommitIndex(1).sourceId("A")
-            .leaderId("A").term(1).logEntries(Collections.emptyList()).build();
-        byte[] bytes = factory.getBytes(appendLogEntriesMessage);
+        InstallSnapshotResultMessage message = InstallSnapshotResultMessage.builder()
+            .offset(0).term(0).sourceId("A").success(true).done(true).build();
+        byte[] bytes = factory.getBytes(message);
         long begin = System.nanoTime();
         IntStream.range(0, 10000).forEach(index -> factory.create(bytes, bytes.length));
         log.info("deserialize 10000 times cost {} ns.", System.nanoTime() - begin);
@@ -49,11 +46,9 @@ public class AppendLogEntriesMessageFactoryTest {
 
     @Test
     public void testCreate() {
-        AppendLogEntriesMessage appendLogEntriesMessage = AppendLogEntriesMessage.builder().matched(true).preLogTerm(1)
-            .preLogIndex(1)
-            .leaderCommitIndex(1).sourceId("A")
-            .leaderId("A").term(1).logEntries(Collections.emptyList()).build();
-        byte[] bytes = factory.getBytes(appendLogEntriesMessage);
+        InstallSnapshotResultMessage message = InstallSnapshotResultMessage.builder()
+            .offset(0).term(0).sourceId("A").success(true).done(true).build();
+        byte[] bytes = factory.getBytes(message);
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bytes.length);
         byteBuffer.put(bytes);
         byteBuffer.flip();
@@ -67,29 +62,24 @@ public class AppendLogEntriesMessageFactoryTest {
 
     @Test
     public void getBytes() {
-        AppendLogEntriesMessage appendLogEntriesMessage = AppendLogEntriesMessage.builder().matched(true).preLogTerm(1)
-            .preLogIndex(1)
-            .leaderCommitIndex(1).sourceId("A")
-            .leaderId("A").term(1).logEntries(Collections.emptyList()).build();
+        InstallSnapshotResultMessage message = InstallSnapshotResultMessage.builder()
+            .offset(0).term(0).sourceId("A").success(true).done(true).build();
         long begin = System.nanoTime();
-        IntStream.range(0, 10000).forEach(index -> factory.getBytes(appendLogEntriesMessage));
+        IntStream.range(0, 10000).forEach(index -> factory.getBytes(message));
         log.info("serialize 10000 times cost {} ns.", System.nanoTime() - begin);
     }
 
     @Test
     public void testGetBytes() {
-        AppendLogEntriesMessage appendLogEntriesMessage = AppendLogEntriesMessage.builder().matched(true).preLogTerm(1)
-            .preLogIndex(1)
-            .leaderCommitIndex(1).sourceId("A")
-            .leaderId("A").term(1).logEntries(Collections.emptyList()).build();
+        InstallSnapshotResultMessage message = InstallSnapshotResultMessage.builder()
+            .offset(0).term(0).sourceId("A").success(true).done(true).build();
         UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
         ByteBuf byteBuf = allocator.directBuffer();
         long begin = System.nanoTime();
         IntStream.range(0, 10000).forEach(index -> {
-            factory.getBytes(appendLogEntriesMessage,  byteBuf);
+            factory.getBytes(message, byteBuf);
             byteBuf.clear();
         });
         log.info("serialize 10000 times cost {} ns.", System.nanoTime() - begin);
-
     }
 }

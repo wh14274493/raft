@@ -2,7 +2,6 @@ package cn.ttplatform.wh.core.connector.message.factory;
 
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.constant.ErrorMessage;
-import cn.ttplatform.wh.core.connector.message.PreVoteMessage;
 import cn.ttplatform.wh.core.connector.message.PreVoteResultMessage;
 import cn.ttplatform.wh.exception.MessageParseException;
 import cn.ttplatform.wh.support.AbstractDistributableFactory;

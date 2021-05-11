@@ -4,6 +4,8 @@ import cn.ttplatform.wh.cmd.SetCommand;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Pool;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.protostuff.LinkedBuffer;
 import java.nio.ByteBuffer;
 import java.util.UUID;
@@ -80,6 +82,25 @@ public class SetCommandFactoryTest {
         SetCommand setCommand = SetCommand.builder().id(id).key("wanghao").value(s).build();
         long begin = System.nanoTime();
         IntStream.range(0, 10000).forEach(index -> factory.getBytes(setCommand));
+        log.info("serialize 10000 times cost {} ns.", System.nanoTime() - begin);
+    }
+
+    @Test
+    public void testGetBytes() {
+        StringBuilder value = new StringBuilder();
+        while (value.length() < 256) {
+            value.append(UUID.randomUUID());
+        }
+        String s = value.substring(0, 256);
+        String id = UUID.randomUUID().toString();
+        SetCommand message = SetCommand.builder().id(id).key("wanghao").value(s).build();
+        UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
+        ByteBuf byteBuf = allocator.directBuffer();
+        long begin = System.nanoTime();
+        IntStream.range(0, 10000).forEach(index -> {
+            factory.getBytes(message, byteBuf);
+            byteBuf.clear();
+        });
         log.info("serialize 10000 times cost {} ns.", System.nanoTime() - begin);
     }
 }

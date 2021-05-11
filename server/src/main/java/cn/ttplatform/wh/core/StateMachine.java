@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class StateMachine {
 
-    private Map<String,String> data = new HashMap<>();
+    private Map<String, String> data = new HashMap<>();
     private final DataFactory dataFactory;
     private int lastApplied;
 
@@ -69,31 +69,32 @@ public class StateMachine {
         snapshot.recycle();
     }
 
-    private static class DataFactory implements Factory<Map<String,String>> {
+    private static class DataFactory implements Factory<Map<String, String>> {
 
-        private final MessageMapSchema<String,String> mapSchema;
+        private final MessageMapSchema<String, String> mapSchema;
         private final Pool<LinkedBuffer> pool;
 
         public DataFactory(Pool<LinkedBuffer> pool) {
             Schema<String> stringSchema = RuntimeSchema.getSchema(String.class);
-            mapSchema = new MessageMapSchema<>(stringSchema,stringSchema);
+            mapSchema = new MessageMapSchema<>(stringSchema, stringSchema);
             this.pool = pool;
         }
 
         @Override
-        public Map<String,String> create(byte[] content, int length) {
-            Map<String,String> data = new HashMap<>();
+        public Map<String, String> create(byte[] content, int length) {
+            Map<String, String> data = new HashMap<>();
             ProtostuffIOUtil.mergeFrom(content, 0, length, data, mapSchema);
             return data;
         }
 
         @Override
-        public Map<String,String> create(ByteBuffer byteBuffer, int contentLength) {
+        public Map<String, String> create(ByteBuffer byteBuffer, int contentLength) {
+            byteBuffer.flip();
             int limit = byteBuffer.limit();
             try {
                 int position = byteBuffer.position();
                 byteBuffer.limit(position + contentLength);
-                Map<String,String> data = new HashMap<>();
+                Map<String, String> data = new HashMap<>();
                 try {
                     mapSchema.mergeFrom(new ByteBufferInput(byteBuffer, true), data);
                 } catch (IOException e) {
@@ -106,7 +107,7 @@ public class StateMachine {
         }
 
         @Override
-        public byte[] getBytes(Map<String,String> data) {
+        public byte[] getBytes(Map<String, String> data) {
             LinkedBuffer buffer = pool.allocate();
             try {
                 return ProtostuffIOUtil.toByteArray(data, mapSchema, buffer);
@@ -118,7 +119,7 @@ public class StateMachine {
         }
 
         @Override
-        public void getBytes(Map<String,String> obj, ByteBuf byteBuffer) {
+        public void getBytes(Map<String, String> obj, ByteBuf byteBuffer) {
             throw new UnsupportedOperationException();
         }
     }

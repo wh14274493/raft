@@ -1,6 +1,5 @@
 package cn.ttplatform.wh.cmd.factory;
 
-import cn.ttplatform.wh.cmd.GetCommand;
 import cn.ttplatform.wh.cmd.GetResultCommand;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.constant.ErrorMessage;

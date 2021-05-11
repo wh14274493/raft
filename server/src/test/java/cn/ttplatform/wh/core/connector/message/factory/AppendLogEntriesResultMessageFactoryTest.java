@@ -1,15 +1,13 @@
 package cn.ttplatform.wh.core.connector.message.factory;
 
-import static org.junit.Assert.*;
-
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesResultMessage;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Pool;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.protostuff.LinkedBuffer;
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
@@ -68,6 +66,20 @@ public class AppendLogEntriesResultMessageFactoryTest {
             .success(true).term(1).build();
         long begin = System.nanoTime();
         IntStream.range(0, 10000).forEach(index -> factory.getBytes(message));
+        log.info("serialize 10000 times cost {} ns.", System.nanoTime() - begin);
+    }
+
+    @Test
+    public void testGetBytes() {
+        AppendLogEntriesResultMessage message = AppendLogEntriesResultMessage.builder().lastLogIndex(1).sourceId("A")
+            .success(true).term(1).build();
+        UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
+        ByteBuf byteBuf = allocator.directBuffer();
+        long begin = System.nanoTime();
+        IntStream.range(0, 10000).forEach(index -> {
+            factory.getBytes(message,  byteBuf);
+            byteBuf.clear();
+        });
         log.info("serialize 10000 times cost {} ns.", System.nanoTime() - begin);
     }
 }

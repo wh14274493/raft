@@ -1,6 +1,5 @@
 package cn.ttplatform.wh.cmd.factory;
 
-import cn.ttplatform.wh.cmd.RedirectCommand;
 import cn.ttplatform.wh.cmd.RequestFailedCommand;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.constant.ErrorMessage;

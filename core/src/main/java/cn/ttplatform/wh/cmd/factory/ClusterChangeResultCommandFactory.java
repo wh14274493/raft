@@ -1,6 +1,5 @@
 package cn.ttplatform.wh.cmd.factory;
 
-import cn.ttplatform.wh.cmd.ClusterChangeCommand;
 import cn.ttplatform.wh.cmd.ClusterChangeResultCommand;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.constant.ErrorMessage;

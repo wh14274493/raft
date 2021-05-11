@@ -3,7 +3,6 @@ package cn.ttplatform.wh.core.connector.message.factory;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.connector.message.RequestVoteResultMessage;
-import cn.ttplatform.wh.core.connector.message.SyncingMessage;
 import cn.ttplatform.wh.exception.MessageParseException;
 import cn.ttplatform.wh.support.AbstractDistributableFactory;
 import cn.ttplatform.wh.support.Distributable;
