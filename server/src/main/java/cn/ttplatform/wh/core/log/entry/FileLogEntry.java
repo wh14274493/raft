@@ -67,7 +67,7 @@ public class FileLogEntry {
                 byteBuffer.putInt(command.length);
                 byteBuffer.put(command);
             }
-            file.append(byteBuffer,contentLength);
+            file.append(byteBuffer, contentLength);
         } finally {
             byteBufferPool.recycle(byteBuffer);
         }
@@ -83,7 +83,8 @@ public class FileLogEntry {
      */
     public LogEntry getEntry(long start, long end) {
         long size = file.size();
-        if (start < 0 || start > size) {
+        if (start < 0 || start >= size || start == end) {
+            log.debug("get entry from {} to {}.", start, end);
             return null;
         }
         int readLength;

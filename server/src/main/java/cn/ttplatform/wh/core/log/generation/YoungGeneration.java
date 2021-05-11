@@ -237,7 +237,10 @@ public class YoungGeneration extends AbstractGeneration {
             fileLogEntryIndex.removeAfter(index);
             fileLogEntry.removeAfter(offset);
         } else {
-            while (!pending.isEmpty() && pending.peekLast().getIndex() > index) {
+            while (!pending.isEmpty()) {
+                if (pending.peekLast().getIndex() < index) {
+                    break;
+                }
                 pending.pollLast();
             }
         }

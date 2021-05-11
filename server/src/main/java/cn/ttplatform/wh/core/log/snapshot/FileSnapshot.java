@@ -47,9 +47,11 @@ public class FileSnapshot {
                 snapshotHeader.reset();
                 return;
             }
+            header.flip();
             snapshotHeader = SnapshotHeader.builder().size(header.getLong()).lastIncludeIndex(header.getInt())
                 .lastIncludeTerm(header.getInt())
                 .build();
+            header.recycle();
             if (snapshotHeader.getSize() != file.size()) {
                 file.clear();
                 snapshotHeader.reset();

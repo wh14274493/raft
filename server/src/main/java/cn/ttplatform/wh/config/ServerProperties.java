@@ -164,7 +164,7 @@ public class ServerProperties {
         base = new File(properties.getProperty("basePath", defaultBasePath));
         snapshotGenerateThreshold = Integer
             .parseInt(properties.getProperty("snapshotGenerateThreshold", String.valueOf(1024 * 1024 * 10)));
-        maxTransferLogs = Integer.parseInt(properties.getProperty("maxTransferLogs", "500"));
+        maxTransferLogs = Integer.parseInt(properties.getProperty("maxTransferLogs", "10000"));
         maxTransferSize = Integer.parseInt(properties.getProperty("maxTransferSize", "10240"));
         linkedBuffPollSize = Integer.parseInt(properties.getProperty("linkedBuffPollSize", "16"));
         readIdleTimeout = Integer.parseInt(properties.getProperty("readIdleTimeout", "10"));

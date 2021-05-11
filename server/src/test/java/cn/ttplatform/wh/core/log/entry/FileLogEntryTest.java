@@ -7,7 +7,6 @@ import cn.ttplatform.wh.support.ByteArrayPool;
 import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.support.PooledByteBuffer;
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +16,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -68,7 +66,6 @@ public class FileLogEntryTest {
     @Test
     public void getEntry() {
         byte[] content = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
-
         fileLogEntry.append(LogEntryFactory.createEntry(1, 1, 1, content, content.length));
         long begin = System.nanoTime();
         LogEntry entry = fileLogEntry.getEntry(0, fileLogEntry.size());

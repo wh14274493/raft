@@ -36,8 +36,7 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
                     StandardOpenOption.READ,
                     StandardOpenOption.WRITE,
                     StandardOpenOption.CREATE,
-//                    StandardOpenOption.DSYNC,
-                    StandardOpenOption.DELETE_ON_CLOSE);
+                    StandardOpenOption.DSYNC);
             log.info("open file[{}].", file);
             fileSize = fileChannel.size();
         } catch (IOException e) {

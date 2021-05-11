@@ -291,7 +291,7 @@ public class GlobalContext {
         }
         Optional.ofNullable(log.subList(lastApplied + 1, newCommitIndex + 1))
             .orElse(Collections.emptyList()).forEach(logEntry -> {
-            if (node.isLeader()) {
+            if (node.isLeader() && node.getMode() == RunMode.CLUSTER) {
                 if (logEntry.getType() == LogEntry.OLD_NEW) {
                     // At this point, the leader has persisted the Coldnew log to the disk
                     // file, and then needs to send a Cnew log and then enter the NEW phase

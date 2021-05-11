@@ -6,6 +6,7 @@ import cn.ttplatform.wh.support.PooledByteBuffer;
 import cn.ttplatform.wh.core.log.tool.ReadableAndWriteableFile;
 import cn.ttplatform.wh.support.Pool;
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -41,22 +42,21 @@ public final class FileLogEntryIndex {
             try {
                 content = file.readByteBufferAt(0L, (int) file.size());
                 content.flip();
-                LogEntryIndex logEntryIndex = null;
-                for (int index = 0; index < content.limit(); index += ITEM_LENGTH) {
-                    logEntryIndex = LogEntryIndex.builder().index(content.getInt()).term(content.getInt()).type(content.getInt())
-                        .offset(content.getLong()).build();
-                    logEntryIndices.add(logEntryIndex);
-                    if (index == 0) {
-                        minLogIndex = logEntryIndex.getIndex();
-                    }
+                ByteBuffer buffer = content.getBuffer();
+                while (buffer.hasRemaining()) {
+                    logEntryIndices.add(LogEntryIndex.builder()
+                        .index(content.getInt())
+                        .term(content.getInt())
+                        .type(content.getInt())
+                        .offset(content.getLong()).build());
                 }
-                if (logEntryIndex != null) {
-                    maxLogIndex = logEntryIndex.getIndex();
+                if (!logEntryIndices.isEmpty()) {
+                    minLogIndex = logEntryIndices.get(0).getIndex();
+                    maxLogIndex = logEntryIndices.get(logEntryIndices.size() - 1).getIndex();
                 }
             } finally {
                 byteBufferPool.recycle(content);
             }
-
         }
     }
 
@@ -90,13 +90,13 @@ public final class FileLogEntryIndex {
         log.debug("update maxLogIndex = {}.", maxLogIndex);
         LogEntryIndex logEntryIndex = LogEntryIndex.builder().index(index).term(logEntry.getTerm()).offset(offset)
             .type(logEntry.getType()).build();
-        PooledByteBuffer byteBuffer = byteBufferPool.allocate(FileLogEntryIndex.ITEM_LENGTH);
+        PooledByteBuffer byteBuffer = byteBufferPool.allocate(ITEM_LENGTH);
         try {
             byteBuffer.putInt(logEntryIndex.getIndex());
             byteBuffer.putInt(logEntryIndex.getTerm());
             byteBuffer.putInt(logEntryIndex.getType());
             byteBuffer.putLong(logEntryIndex.getOffset());
-            file.append(byteBuffer, FileLogEntryIndex.ITEM_LENGTH);
+            file.append(byteBuffer, ITEM_LENGTH);
             logEntryIndices.add(logEntryIndex);
         } finally {
             byteBufferPool.recycle(byteBuffer);
@@ -147,10 +147,7 @@ public final class FileLogEntryIndex {
             long position = (long) (index - minLogIndex + 1) * ITEM_LENGTH;
             file.truncate(position);
             maxLogIndex = index;
-            int first = index - minLogIndex;
-            if (maxLogIndex - minLogIndex >= first + 1) {
-                logEntryIndices.subList(first + 1, maxLogIndex - minLogIndex + 1).clear();
-            }
+            logEntryIndices.subList(index - minLogIndex + 1, logEntryIndices.size()).clear();
         }
     }
 

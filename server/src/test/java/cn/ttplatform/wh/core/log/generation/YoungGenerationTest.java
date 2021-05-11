@@ -101,7 +101,7 @@ public class YoungGenerationTest {
     public void appendLogEntries() {
         byte[] content = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
         List<LogEntry> entries = new ArrayList<>();
-        IntStream.range(1, 10000).forEach(index -> {
+        IntStream.range(0, 10000).forEach(index -> {
             entries.add(LogEntryFactory.createEntry(1, 1, index + 1, content, content.length));
         });
         youngGeneration.appendLogEntries(entries);
@@ -117,8 +117,10 @@ public class YoungGenerationTest {
     @Test
     public void getEntry() {
         appendLogEntries();
-        LogEntry entry = youngGeneration.getEntry(1000);
-        assertEquals(1000, entry.getIndex());
+        IntStream.range(0, 10000).forEach(index -> {
+            LogEntry entry = youngGeneration.getEntry(index + 1);
+            assertEquals(index + 1, entry.getIndex());
+        });
     }
 
     @Test

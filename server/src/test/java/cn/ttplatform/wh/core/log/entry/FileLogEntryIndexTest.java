@@ -16,6 +16,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -81,4 +82,10 @@ public class FileLogEntryIndexTest {
         log.debug("append {} entry indices cost {} ns", capacity, (System.nanoTime() - begin));
     }
 
+    @Test
+    public void removeAfter() {
+        testAppend();
+        fileLogEntryIndex.removeAfter(1);
+        Assert.assertEquals(fileLogEntryIndex.getMinLogIndex(),fileLogEntryIndex.getMaxLogIndex());
+    }
 }

@@ -16,10 +16,10 @@ import cn.ttplatform.wh.cmd.factory.RequestFailedCommandFactory;
 import cn.ttplatform.wh.cmd.factory.SetCommandFactory;
 import cn.ttplatform.wh.cmd.factory.SetResultCommandFactory;
 import cn.ttplatform.wh.support.ByteArrayPool;
-import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.support.DistributableCodec;
 import cn.ttplatform.wh.support.DistributableFactoryManager;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
+import cn.ttplatform.wh.support.Pool;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
@@ -78,16 +78,16 @@ public class Client {
 
                         @Override
                         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-//                            if (index == 1) {
-//                                log.debug(System.nanoTime() + "");
-//                                log.info(msg.toString());
-//                            }
-//                            if (index == 10000) {
-//                                log.debug(System.nanoTime() + "");
-//                                log.info(msg.toString());
-//                            }
-//                            index++;
-                            log.info(msg.toString());
+                            if (index == 1) {
+                                log.info(System.nanoTime() + "");
+                                log.info(msg.toString());
+                            }
+                            if (index % 10000 == 0) {
+                                log.info(System.nanoTime() + "");
+                                log.info(msg.toString());
+                            }
+                            index++;
+//                            log.info(msg.toString());
                         }
                     });
                 }
@@ -105,28 +105,26 @@ public class Client {
 
     public static void main(String[] args) throws InterruptedException {
         Client client = new Client();
-//        client.send(clusterChangeCommand());
-//        client.send(getClusterInfoCommand());
-        Channel channel = client.connect();
 
-        IntStream.range(10000, 20000).forEach(index -> {
-            StringBuilder value = new StringBuilder();
-            while (value.length() < 256) {
-                value.append(UUID.randomUUID().toString());
-            }
-            String s = value.substring(0, 256);
-            String id = UUID.randomUUID().toString();
-            SetCommand setCommand = SetCommand.builder().id(id).key("wanghao" + index).value(s + "|" + index).build();
+//        client.send(clusterChangeCommand());
+
+//        client.send(getClusterInfoCommand());
+
+        Channel channel = client.connect();
+        StringBuilder value = new StringBuilder();
+        while (value.length() < 256) {
+            value.append(UUID.randomUUID());
+        }
+        String s = value.substring(0, 256);
+        IntStream.range(0, 30000).forEach(index -> {
+            SetCommand setCommand = SetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao" + index)
+                .value(s + "|" + index).build();
             channel.writeAndFlush(setCommand);
             if (index == 0) {
                 log.info("begin:" + System.nanoTime());
             }
-            try {
-                TimeUnit.MILLISECONDS.sleep(1);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
         });
+
 //        IntStream.range(0, 10000).forEach(index -> channel
 //            .writeAndFlush(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao" + index).build()));
     }
@@ -136,8 +134,8 @@ public class Client {
         newConfig.add("A,127.0.0.1,6666");
         newConfig.add("B,127.0.0.1,7777");
         newConfig.add("C,127.0.0.1,8888");
-        newConfig.add("D,127.0.0.1,9999");
-        newConfig.add("E,127.0.0.1,5555");
+//        newConfig.add("D,127.0.0.1,9999");
+//        newConfig.add("E,127.0.0.1,5555");
         return ClusterChangeCommand.builder().newConfig(newConfig)
             .id(UUID.randomUUID().toString())
             .build();

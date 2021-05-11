@@ -56,6 +56,7 @@ public class DistributableCodec extends ByteToMessageCodec<Distributable> {
             Distributable distributable = factory.create(in.nioBuffer(), contentLength);
             out.add(distributable);
         } catch (Exception e) {
+            log.error(e.getMessage());
             ctx.channel().write(failedCommand(e.getMessage()));
         } finally {
             in.readerIndex(newReaderIndex);
