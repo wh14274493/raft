@@ -68,7 +68,6 @@ import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.support.PooledByteBuffer;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.protostuff.LinkedBuffer;
 import java.util.ArrayList;
@@ -78,6 +77,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -89,13 +90,13 @@ import org.slf4j.LoggerFactory;
  */
 @Setter
 @Getter
+@Builder
+@AllArgsConstructor
 public class GlobalContext {
 
     private final Logger logger = LoggerFactory.getLogger(GlobalContext.class);
     private final Map<Integer, List<GetCommand>> pendingGetCommandMap = new HashMap<>();
     private final Map<Integer, SetCommand> pendingSetCommandMap = new HashMap<>();
-    private ClusterChangeCommand clusterChangeCommand;
-    private Node node;
     private final ServerProperties properties;
     private final Pool<LinkedBuffer> linkedBufferPool;
     private final Pool<PooledByteBuffer> byteBufferPool;
@@ -103,13 +104,15 @@ public class GlobalContext {
     private final CommonDistributor distributor;
     private final DistributableFactoryManager factoryManager;
     private final TaskExecutor executor;
-    private final EventLoopGroup boss;
-    private final EventLoopGroup worker;
+    private final NioEventLoopGroup boss;
+    private final NioEventLoopGroup worker;
     private final StateMachine stateMachine;
     private final Log log;
+    private Node node;
     private Scheduler scheduler;
     private Cluster cluster;
     private Connector connector;
+    private ClusterChangeCommand clusterChangeCommand;
 
     public GlobalContext(Node node) {
         this.node = node;
@@ -244,7 +247,7 @@ public class GlobalContext {
             // returned in time, causing the master to resend the last message because it does not receive a reply. If
             // the slave does not handle it, an unknown error will occur.
             if (!endpoint.isReplicating() || System.currentTimeMillis() - endpoint.getLastHeartBeat() >= properties
-                .getRetryTimeout()) {
+                .getMinElectionTimeout()) {
                 doLogReplication(endpoint, currentTerm);
             }
         });

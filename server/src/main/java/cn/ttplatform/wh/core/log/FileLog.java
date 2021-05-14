@@ -110,7 +110,7 @@ public class FileLog implements Log {
         youngGeneration.removeAfter(index);
         Cluster cluster = context.getCluster();
         if (entries != null && !entries.isEmpty()) {
-            entries.forEach(logEntry -> {
+            for (LogEntry logEntry : entries) {
                 if (logEntry.getType() == LogEntry.OLD_NEW) {
                     log.info("receive a OLD_NEW log[{}] from leader", logEntry);
                     cluster.applyOldNewConfig(logEntry.getCommand());
@@ -121,7 +121,7 @@ public class FileLog implements Log {
                     cluster.enterNewPhase();
                 }
                 youngGeneration.pendingEntry(logEntry);
-            });
+            }
             nextIndex = entries.get(entries.size() - 1).getIndex() + 1;
             log.debug("update nextIndex[{}]", nextIndex);
         }
@@ -186,8 +186,9 @@ public class FileLog implements Log {
     }
 
     @Override
-    public InstallSnapshotMessage createInstallSnapshotMessage(int term, long offset, int size) {
+    public Message createInstallSnapshotMessage(int term, long offset, int size) {
         return InstallSnapshotMessage.builder().term(term)
+            .offset(offset)
             .lastIncludeIndex(oldGeneration.getLastIncludeIndex())
             .lastIncludeTerm(oldGeneration.getLastIncludeTerm())
             .chunk(oldGeneration.readSnapshot(offset, size))
@@ -196,7 +197,7 @@ public class FileLog implements Log {
     }
 
     @Override
-    public synchronized boolean advanceCommitIndex(int newCommitIndex, int term) {
+    public boolean advanceCommitIndex(int newCommitIndex, int term) {
         if (newCommitIndex <= commitIndex) {
             log.debug("newCommitIndex[{}]<=commitIndex[{}], can not advance commitIndex", newCommitIndex, commitIndex);
             return false;
@@ -209,7 +210,7 @@ public class FileLog implements Log {
         commitIndex = newCommitIndex;
         log.debug("update commitIndex to {}", commitIndex);
         youngGeneration.commit(commitIndex);
-        log.info("commit {} success.", commitIndex);
+        log.debug("commit {} success.", commitIndex);
         return true;
     }
 

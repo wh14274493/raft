@@ -36,7 +36,7 @@ public abstract class AbstractGeneration implements Generation {
     }
 
     public long getSnapshotSize() {
-        return fileSnapshot.getSnapshotHeader().getSize();
+        return fileSnapshot.size();
     }
 
     public long getLogEntryFileSize() {

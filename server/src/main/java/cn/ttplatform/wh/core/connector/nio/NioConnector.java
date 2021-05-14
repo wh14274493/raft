@@ -70,7 +70,7 @@ public class NioConnector implements Connector {
         if (channel == null) {
             return null;
         }
-        return channel.writeAndFlush(message);
+        return channel.write(message);
     }
 
     @Override
@@ -79,7 +79,7 @@ public class NioConnector implements Connector {
         if (channel == null) {
             return null;
         }
-        return channel.writeAndFlush(message);
+        return channel.write(message);
     }
 
 }

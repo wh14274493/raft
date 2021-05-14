@@ -1,16 +1,19 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.GlobalContext;
+import cn.ttplatform.wh.core.Node;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesResultMessage;
 import cn.ttplatform.wh.core.group.Cluster;
 import cn.ttplatform.wh.core.group.Phase;
 import cn.ttplatform.wh.core.log.Log;
+import cn.ttplatform.wh.core.role.Follower;
 import cn.ttplatform.wh.core.role.Role;
 import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
+import cn.ttplatform.wh.exception.IncorrectLogIndexNumberException;
 import cn.ttplatform.wh.support.Distributable;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -32,10 +35,14 @@ public class AppendLogEntriesMessageHandler extends AbstractDistributableHandler
     @Override
     public void doHandleInClusterMode(Distributable distributable) {
         AppendLogEntriesMessage message = (AppendLogEntriesMessage) distributable;
-        context.sendMessage(process(message), message.getSourceId());
-        Cluster cluster = context.getCluster();
-        if (cluster.getPhase() == Phase.NEW) {
-            cluster.enterStablePhase();
+        try {
+            context.sendMessage(process(message), message.getSourceId());
+            Cluster cluster = context.getCluster();
+            if (cluster.getPhase() == Phase.NEW) {
+                cluster.enterStablePhase();
+            }
+        } catch (IncorrectLogIndexNumberException e) {
+            log.warn(e.getMessage());
         }
     }
 
@@ -67,9 +74,16 @@ public class AppendLogEntriesMessageHandler extends AbstractDistributableHandler
     }
 
     private boolean appendEntries(AppendLogEntriesMessage message) {
-        context.getNode().changeToFollower(message.getTerm(), message.getLeaderId(), null, 0, 0, System.currentTimeMillis());
+        Node node = context.getNode();
+        String currentLeaderId = node.isFollower() ? ((Follower) node.getRole()).getLeaderId() : "";
+        String newLeaderId = message.getLeaderId();
+        node.changeToFollower(message.getTerm(), newLeaderId, null, 0, 0, System.currentTimeMillis());
         Log log = context.getLog();
         int preLogIndex = message.getPreLogIndex();
+        if (Objects.equals(currentLeaderId, newLeaderId) && message.isMatched() && preLogIndex < log.getNextIndex() - 1) {
+            throw new IncorrectLogIndexNumberException("preLogIndex < log.getNextIndex(), maybe a expired message.");
+        }
+
         boolean checkIndexAndTermIfMatched = log.checkIndexAndTermIfMatched(preLogIndex, message.getPreLogTerm());
         if (checkIndexAndTermIfMatched && !message.isMatched()) {
             return true;

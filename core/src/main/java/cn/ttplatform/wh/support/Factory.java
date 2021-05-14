@@ -12,11 +12,19 @@ public interface Factory<T> {
     /**
      * use the byte array to create an Object
      *
-     * @param content a serialized byte array
+     * @param content       source byte array
+     * @param contentLength valid bytes
      * @return a deserialized object
      */
     T create(byte[] content, int contentLength);
 
+    /**
+     * use the byteBuffer to create an Object
+     *
+     * @param byteBuffer    source buffer
+     * @param contentLength valid bytes
+     * @return a deserialized object
+     */
     T create(ByteBuffer byteBuffer, int contentLength);
 
     /**
@@ -27,5 +35,11 @@ public interface Factory<T> {
      */
     byte[] getBytes(T obj);
 
+    /**
+     * use protostuff to serialize a message object into ByteBuf
+     *
+     * @param obj        target obj
+     * @param byteBuffer dest buffer
+     */
     void getBytes(T obj, ByteBuf byteBuffer);
 }

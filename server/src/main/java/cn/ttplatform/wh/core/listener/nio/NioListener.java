@@ -1,12 +1,11 @@
 package cn.ttplatform.wh.core.listener.nio;
 
 import cn.ttplatform.wh.core.GlobalContext;
-import cn.ttplatform.wh.core.support.ChannelPool;
-import cn.ttplatform.wh.core.support.CoreChannelInitializer;
 import cn.ttplatform.wh.core.listener.Listener;
+import cn.ttplatform.wh.core.support.CoreChannelInitializer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,8 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 public class NioListener implements Listener {
 
     private final GlobalContext globalContext;
-    private final EventLoopGroup boss;
-    private final EventLoopGroup worker;
+    private final NioEventLoopGroup boss;
+    private final NioEventLoopGroup worker;
     private final int port;
 
     public NioListener(GlobalContext globalContext) {
@@ -31,6 +30,8 @@ public class NioListener implements Listener {
 
     @Override
     public void listen() {
+        boss.setIoRatio(70);
+        worker.setIoRatio(70);
         ServerBootstrap serverBootstrap = new ServerBootstrap().group(boss, worker)
             .channel(NioServerSocketChannel.class)
             .childOption(ChannelOption.TCP_NODELAY, true)

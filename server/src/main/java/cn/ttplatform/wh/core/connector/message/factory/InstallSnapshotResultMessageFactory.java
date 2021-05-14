@@ -7,7 +7,6 @@ import cn.ttplatform.wh.exception.MessageParseException;
 import cn.ttplatform.wh.support.AbstractDistributableFactory;
 import cn.ttplatform.wh.support.Distributable;
 import cn.ttplatform.wh.support.Pool;
-import io.netty.buffer.ByteBuf;
 import io.protostuff.ByteBufferInput;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
@@ -59,7 +58,7 @@ public class InstallSnapshotResultMessageFactory extends AbstractDistributableFa
     }
 
     @Override
-    public void getBytes(Distributable distributable, LinkedBuffer buffer, ByteBuf byteBuffer, OutputStream outputStream)
+    public void getBytes(Distributable distributable, LinkedBuffer buffer, OutputStream outputStream)
         throws IOException {
         ProtostuffIOUtil.writeTo(outputStream, (InstallSnapshotResultMessage) distributable, schema, buffer);
     }

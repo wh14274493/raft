@@ -1,7 +1,5 @@
 package cn.ttplatform.wh.support;
 
-import io.netty.buffer.ByteBuf;
-
 /**
  * @author Wang Hao
  * @date 2021/4/29 0:37

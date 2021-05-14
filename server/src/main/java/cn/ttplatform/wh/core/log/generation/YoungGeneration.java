@@ -5,6 +5,7 @@ import cn.ttplatform.wh.core.log.entry.FileLogEntry;
 import cn.ttplatform.wh.core.log.entry.FileLogEntryIndex;
 import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.core.log.entry.LogEntryIndex;
+import cn.ttplatform.wh.exception.IncorrectLogIndexNumberException;
 import cn.ttplatform.wh.support.PooledByteBuffer;
 import cn.ttplatform.wh.exception.OperateFileException;
 import cn.ttplatform.wh.support.Pool;
@@ -86,7 +87,8 @@ public class YoungGeneration extends AbstractGeneration {
      */
     public void pendingEntry(LogEntry logEntry) {
         if (!pending.isEmpty() && logEntry.getIndex() != pending.peekLast().getIndex() + 1) {
-            throw new IllegalStateException("The index[" + logEntry.getIndex() + "] number of the log is incorrect ");
+            // maybe received an expired message
+            throw new IncorrectLogIndexNumberException("The index[" + logEntry.getIndex() + "] number of the log is incorrect ");
         }
         pending.add(logEntry);
     }

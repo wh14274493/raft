@@ -1,14 +1,13 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.Node;
-import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotResultMessage;
 import cn.ttplatform.wh.core.group.Endpoint;
 import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
 import cn.ttplatform.wh.support.Distributable;
+import cn.ttplatform.wh.support.Message;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -49,7 +48,7 @@ public class InstallSnapshotResultMessageHandler extends AbstractDistributableHa
             log.warn("endpoint[{}] is not in cluster.", message.getSourceId());
             return;
         }
-        InstallSnapshotMessage installSnapshotMessage;
+        Message installSnapshotMessage;
         if (message.isSuccess()) {
             if (message.isDone()) {
                 endpoint.updateReplicationState(context.getLog().getLastIncludeIndex());

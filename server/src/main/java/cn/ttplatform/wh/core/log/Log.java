@@ -99,7 +99,7 @@ public interface Log {
      * @param size   The size of the transfer log
      * @return an InstallSnapshotMessage
      */
-    InstallSnapshotMessage createInstallSnapshotMessage(int term, long offset, int size);
+    Message createInstallSnapshotMessage(int term, long offset, int size);
 
     /**
      * All logs with index less than commitIndex need to be committed.

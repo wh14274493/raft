@@ -8,13 +8,17 @@ import cn.ttplatform.wh.core.role.Follower;
 import cn.ttplatform.wh.support.Message;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -22,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date :  2020/8/16 0:19
  **/
 @Slf4j
+@Sharable
 public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
 
     private final GlobalContext context;
@@ -30,6 +35,12 @@ public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
     public CoreDuplexChannelHandler(GlobalContext context) {
         this.context = context;
         this.distributor = context.getDistributor();
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) {
+        Channel channel = ctx.channel();
+        channel.eventLoop().scheduleAtFixedRate(channel::flush, 200, 200, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -92,6 +103,23 @@ public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
             AttributeKey<Set<String>> idsAttributeKey = AttributeKey.valueOf("ids");
             Attribute<Set<String>> attribute = channel.attr(idsAttributeKey);
             Optional.ofNullable(attribute.get()).orElse(Collections.emptySet()).forEach(ChannelPool::removeChannel);
+        }
+    }
+
+    @Override
+    public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+        super.close(ctx, promise);
+        log.debug("close the channel[{}].", ctx.channel());
+    }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        if (evt instanceof IdleStateEvent) {
+            log.debug("fire IdleStateEvent[{}].", evt);
+            ctx.channel().close();
+        } else {
+            log.debug("fire Event[{}].", evt);
+            super.userEventTriggered(ctx, evt);
         }
     }
 }

@@ -30,5 +30,11 @@ public abstract class AbstractPool<T> implements Pool<T> {
         return doAllocate(size);
     }
 
+    /**
+     * Reallocate a new chunk of memory
+     *
+     * @param size chunk size
+     * @return a new buffer
+     */
     public abstract T doAllocate(int size);
 }

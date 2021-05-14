@@ -87,7 +87,7 @@ public final class FileLogEntryIndex {
             }
         }
         maxLogIndex = index;
-        log.info("update maxLogIndex = {}.", maxLogIndex);
+        log.debug("update maxLogIndex = {}.", maxLogIndex);
         LogEntryIndex logEntryIndex = LogEntryIndex.builder().index(index).term(logEntry.getTerm()).offset(offset)
             .type(logEntry.getType()).build();
         PooledByteBuffer byteBuffer = byteBufferPool.allocate(ITEM_LENGTH);
@@ -113,7 +113,7 @@ public final class FileLogEntryIndex {
             }
         }
         maxLogIndex = logEntries.get(logEntries.size() - 1).getIndex();
-        log.info("update maxLogIndex = {}.", maxLogIndex);
+        log.debug("update maxLogIndex = {}.", maxLogIndex);
         int contentLength = logEntries.size() * ITEM_LENGTH;
         PooledByteBuffer byteBuffer = byteBufferPool.allocate(contentLength);
         try {

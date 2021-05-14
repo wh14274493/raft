@@ -22,8 +22,6 @@ import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Pool;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -31,7 +29,9 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.protostuff.LinkedBuffer;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -73,23 +73,7 @@ public class Client {
                 protected void initChannel(SocketChannel ch) throws Exception {
                     ChannelPipeline pipeline = ch.pipeline();
                     pipeline.addLast(new DistributableCodec(factoryManager));
-                    pipeline.addLast(new ChannelDuplexHandler() {
-                        int index = 1;
-
-                        @Override
-                        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                            if (index == 1) {
-                                log.info(System.nanoTime() + "");
-                                log.info(msg.toString());
-                            }
-                            if (index % 10000 == 0) {
-                                log.info(System.nanoTime() + "");
-                                log.info(msg.toString());
-                            }
-//                            log.info("{}: {} ", index, msg.toString());
-                            index++;
-                        }
-                    });
+                    pipeline.addLast(new ClientDuplexChannelHandler());
                 }
             });
     }
@@ -105,12 +89,19 @@ public class Client {
 
     public static void main(String[] args) throws InterruptedException {
         Client client = new Client();
+        create1000Connections(client);
 
 //        client.send(clusterChangeCommand());
 
 //        client.send(getClusterInfoCommand());
 
-        Channel channel = client.connect();
+//        int count = 0;
+//        List<Channel> channels = new ArrayList<>();
+//        while (true) {
+//            channels.add(client.connect());
+//            count++;
+//            log.info(String.valueOf(count));
+//        }
 
 //        StringBuilder value = new StringBuilder();
 //        while (value.length() < 256) {
@@ -118,12 +109,12 @@ public class Client {
 //        }
 //        String v = value.substring(0, 256);
 //        String id = UUID.randomUUID().toString();
-//        IntStream.range(0, 30000).forEach(index -> {
-//            SetCommand setCommand = SetCommand.builder().id(id + index).key("wanghao" + index)
+//        log.info("start at {}", System.nanoTime());
+//        IntStream.range(0, 50000).forEach(index -> {
+//            SetCommand setCommand = SetCommand.builder().id(id + index).key(index + "wanghao")
 //                .value(v).build();
 //            channel.write(setCommand);
 //        });
-//        channel.flush();
 
 //        while (true) {
 //            StringBuilder value = new StringBuilder();
@@ -138,9 +129,10 @@ public class Client {
 //            TimeUnit.MILLISECONDS.sleep(10);
 //        }
 
-        IntStream.range(0, 100000).forEach(index -> channel
-            .write(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao" + index).build()));
-        channel.flush();
+//        log.info("start at {}", System.nanoTime());
+//        IntStream.range(0, 1).forEach(index -> channel
+//            .write(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao" + index).build()));
+//        channel.flush();
     }
 
     private static ClusterChangeCommand clusterChangeCommand() {
@@ -183,5 +175,20 @@ public class Client {
                 .build()));
         IntStream.range(0, 1000).forEach(index -> channel
             .writeAndFlush(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao" + index).build()));
+    }
+
+    public static void create1000Connections(Client client) throws InterruptedException {
+        List<Channel> channels = new ArrayList<>(1000);
+        IntStream.range(0, 10000).forEach(index -> {
+            try {
+                channels.add(client.connect());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+        log.info("start at {}", System.nanoTime());
+        channels
+            .forEach(channel -> channel.writeAndFlush(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao1").build()));
+        TimeUnit.MILLISECONDS.sleep(10);
     }
 }
