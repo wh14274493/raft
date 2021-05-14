@@ -3,7 +3,7 @@ package cn.ttplatform.wh.core;
 import cn.ttplatform.wh.core.log.tool.DirectByteBufferPool;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Pool;
-import cn.ttplatform.wh.support.PooledByteBuffer;
+import cn.ttplatform.wh.core.log.tool.PooledByteBuffer;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.MessageMapSchema;
 import io.protostuff.ProtostuffIOUtil;

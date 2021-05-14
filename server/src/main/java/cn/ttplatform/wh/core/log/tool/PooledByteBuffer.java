@@ -1,5 +1,6 @@
-package cn.ttplatform.wh.support;
+package cn.ttplatform.wh.core.log.tool;
 
+import cn.ttplatform.wh.support.Pool;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 

@@ -66,7 +66,7 @@ import cn.ttplatform.wh.support.DistributableFactoryManager;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.support.Pool;
-import cn.ttplatform.wh.support.PooledByteBuffer;
+import cn.ttplatform.wh.core.log.tool.PooledByteBuffer;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.protostuff.LinkedBuffer;

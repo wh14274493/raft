@@ -10,7 +10,7 @@ import cn.ttplatform.wh.core.log.entry.LogEntry;
 import cn.ttplatform.wh.core.log.generation.FileName;
 import cn.ttplatform.wh.core.log.generation.OldGeneration;
 import cn.ttplatform.wh.core.log.generation.YoungGeneration;
-import cn.ttplatform.wh.support.PooledByteBuffer;
+import cn.ttplatform.wh.core.log.tool.PooledByteBuffer;
 import cn.ttplatform.wh.support.Message;
 import java.io.File;
 import java.util.Arrays;

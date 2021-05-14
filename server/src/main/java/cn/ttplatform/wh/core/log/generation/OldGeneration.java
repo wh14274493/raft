@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.core.log.generation;
 
-import cn.ttplatform.wh.support.PooledByteBuffer;
+import cn.ttplatform.wh.core.log.tool.PooledByteBuffer;
 import cn.ttplatform.wh.support.Pool;
 import java.io.File;
 import lombok.extern.slf4j.Slf4j;

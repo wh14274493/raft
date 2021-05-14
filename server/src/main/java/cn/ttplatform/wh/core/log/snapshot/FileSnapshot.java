@@ -2,7 +2,7 @@ package cn.ttplatform.wh.core.log.snapshot;
 
 import cn.ttplatform.wh.core.log.generation.FileName;
 import cn.ttplatform.wh.core.log.entry.LogEntryFactory;
-import cn.ttplatform.wh.support.PooledByteBuffer;
+import cn.ttplatform.wh.core.log.tool.PooledByteBuffer;
 import cn.ttplatform.wh.support.Pool;
 import cn.ttplatform.wh.core.log.tool.ByteBufferWriter;
 import cn.ttplatform.wh.core.log.tool.ReadableAndWriteableFile;

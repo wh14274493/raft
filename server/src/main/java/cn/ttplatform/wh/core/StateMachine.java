@@ -4,7 +4,7 @@ import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.exception.MessageParseException;
 import cn.ttplatform.wh.support.Factory;
 import cn.ttplatform.wh.support.Pool;
-import cn.ttplatform.wh.support.PooledByteBuffer;
+import cn.ttplatform.wh.core.log.tool.PooledByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.protostuff.ByteBufferInput;
 import io.protostuff.LinkedBuffer;

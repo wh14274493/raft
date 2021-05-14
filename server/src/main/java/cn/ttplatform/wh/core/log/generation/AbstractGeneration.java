@@ -3,7 +3,7 @@ package cn.ttplatform.wh.core.log.generation;
 import cn.ttplatform.wh.core.log.entry.FileLogEntry;
 import cn.ttplatform.wh.core.log.entry.FileLogEntryIndex;
 import cn.ttplatform.wh.core.log.snapshot.FileSnapshot;
-import cn.ttplatform.wh.support.PooledByteBuffer;
+import cn.ttplatform.wh.core.log.tool.PooledByteBuffer;
 import cn.ttplatform.wh.exception.OperateFileException;
 import cn.ttplatform.wh.support.Pool;
 import java.io.File;

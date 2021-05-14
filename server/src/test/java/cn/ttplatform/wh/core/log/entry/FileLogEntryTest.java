@@ -5,7 +5,7 @@ import static org.junit.Assert.assertEquals;
 import cn.ttplatform.wh.core.log.tool.DirectByteBufferPool;
 import cn.ttplatform.wh.support.ByteArrayPool;
 import cn.ttplatform.wh.support.Pool;
-import cn.ttplatform.wh.support.PooledByteBuffer;
+import cn.ttplatform.wh.core.log.tool.PooledByteBuffer;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
