@@ -23,9 +23,11 @@ import lombok.extern.slf4j.Slf4j;
 public class ClusterChangeCommandHandler extends AbstractDistributableHandler {
 
     private final RequestFailedCommand requestFailedCommand = new RequestFailedCommand();
+    private final ChannelPool channelPool;
 
     public ClusterChangeCommandHandler(GlobalContext context) {
         super(context);
+        this.channelPool = context.getChannelPool();
     }
 
     @Override
@@ -45,7 +47,7 @@ public class ClusterChangeCommandHandler extends AbstractDistributableHandler {
             context.removeClusterChangeTask();
             requestFailedCommand.setId(cmd.getId());
             requestFailedCommand.setFailedMessage(ErrorMessage.CLUSTER_CHANGE_IN_PROGRESS);
-            ChannelPool.reply(cmd.getId(), requestFailedCommand);
+            channelPool.reply(cmd.getId(), requestFailedCommand);
         } else {
             Set<String> newConfigStr = cmd.getNewConfig();
             Set<EndpointMetaData> newConfig = new HashSet<>(newConfigStr.size());

@@ -23,7 +23,7 @@ public class GetCommandHandler extends AbstractDistributableHandler {
 
     @Override
     public void doHandleInClusterMode(Distributable distributable) {
-        int nextIndex = context.getLog().getNextIndex();
+        int nextIndex = context.getLogContext().getNextIndex();
         int key = nextIndex - 1;
         context.addGetTasks(key, (GetCommand) distributable);
     }

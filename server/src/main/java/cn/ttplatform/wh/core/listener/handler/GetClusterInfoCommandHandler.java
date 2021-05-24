@@ -16,8 +16,11 @@ import cn.ttplatform.wh.support.Distributable;
  */
 public class GetClusterInfoCommandHandler extends AbstractDistributableHandler {
 
+    private final ChannelPool channelPool;
+
     public GetClusterInfoCommandHandler(GlobalContext context) {
         super(context);
+        this.channelPool = context.getChannelPool();
     }
 
     @Override
@@ -28,7 +31,7 @@ public class GetClusterInfoCommandHandler extends AbstractDistributableHandler {
             .leader(context.getNode().getSelfId())
             .mode(RunMode.SINGLE.toString())
             .build();
-        ChannelPool.reply(requestId, respCommand);
+        channelPool.reply(requestId, respCommand);
     }
 
     @Override
@@ -43,7 +46,7 @@ public class GetClusterInfoCommandHandler extends AbstractDistributableHandler {
             .newConfig(cluster.getNewConfigMap().toString())
             .oldConfig(cluster.getEndpointMap().toString())
             .build();
-        ChannelPool.reply(requestId, respCommand);
+        channelPool.reply(requestId, respCommand);
     }
 
     @Override

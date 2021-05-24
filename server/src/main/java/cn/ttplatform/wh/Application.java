@@ -3,8 +3,6 @@ package cn.ttplatform.wh;
 import cn.ttplatform.wh.config.RunMode;
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.core.Node;
-import cn.ttplatform.wh.core.GlobalContext;
-import java.io.File;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;

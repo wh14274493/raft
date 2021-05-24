@@ -7,7 +7,7 @@ import cn.ttplatform.wh.core.connector.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.core.connector.message.AppendLogEntriesResultMessage;
 import cn.ttplatform.wh.core.group.Cluster;
 import cn.ttplatform.wh.core.group.Phase;
-import cn.ttplatform.wh.core.log.Log;
+import cn.ttplatform.wh.core.data.LogContext;
 import cn.ttplatform.wh.core.role.Follower;
 import cn.ttplatform.wh.core.role.Role;
 import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
@@ -78,20 +78,20 @@ public class AppendLogEntriesMessageHandler extends AbstractDistributableHandler
         String currentLeaderId = node.isFollower() ? ((Follower) node.getRole()).getLeaderId() : "";
         String newLeaderId = message.getLeaderId();
         node.changeToFollower(message.getTerm(), newLeaderId, null, 0, 0, System.currentTimeMillis());
-        Log log = context.getLog();
+        LogContext logContext = context.getLogContext();
         int preLogIndex = message.getPreLogIndex();
-        if (Objects.equals(currentLeaderId, newLeaderId) && message.isMatched() && preLogIndex < log.getNextIndex() - 1) {
+        if (Objects.equals(currentLeaderId, newLeaderId) && message.isMatched() && preLogIndex < logContext.getNextIndex() - 1) {
             throw new IncorrectLogIndexNumberException("preLogIndex < log.getNextIndex(), maybe a expired message.");
         }
 
-        boolean checkIndexAndTermIfMatched = log.checkIndexAndTermIfMatched(preLogIndex, message.getPreLogTerm());
+        boolean checkIndexAndTermIfMatched = logContext.checkIndexAndTermIfMatched(preLogIndex, message.getPreLogTerm());
         if (checkIndexAndTermIfMatched && !message.isMatched()) {
             return true;
         }
         if (checkIndexAndTermIfMatched) {
             AppendLogEntriesMessageHandler.log.debug("checkIndexAndTerm Matched");
-            log.pendingEntries(preLogIndex, message.getLogEntries());
-            if (log.advanceCommitIndex(message.getLeaderCommitIndex(), message.getTerm())) {
+            logContext.pendingLogs(preLogIndex, message.getLogEntries());
+            if (logContext.advanceCommitIndex(message.getLeaderCommitIndex(), message.getTerm())) {
                 context.advanceLastApplied(message.getLeaderCommitIndex());
             }
             return true;

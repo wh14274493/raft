@@ -25,7 +25,7 @@ public class DistributableCodec extends ByteToMessageCodec<Distributable> {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Distributable msg, ByteBuf out) {
-        log.debug("encode a message[{}]", msg);
+//        log.trace("encode a message[{}]", msg);
         DistributableFactory factory = factoryManager.getFactory(msg.getType());
         factory.getBytes(msg, out);
     }

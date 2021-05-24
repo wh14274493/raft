@@ -1,8 +1,8 @@
 package cn.ttplatform.wh.core;
 
 import cn.ttplatform.wh.core.role.Follower;
-import cn.ttplatform.wh.core.log.tool.ByteBufferWriter;
-import cn.ttplatform.wh.core.log.tool.ReadableAndWriteableFile;
+import cn.ttplatform.wh.core.data.tool.ByteBufferWriter;
+import cn.ttplatform.wh.core.data.tool.ReadableAndWriteableFile;
 import java.io.File;
 import java.nio.charset.Charset;
 
@@ -21,7 +21,7 @@ public class NodeState {
 
     public NodeState(GlobalContext context) {
         this.file = new ByteBufferWriter(new File(context.getProperties().getBase(), NODE_STATE_FILE_NAME),
-            context.getByteBufferPool(), context.getByteArrayPool());
+            context.getByteBufferPool());
     }
 
     /**

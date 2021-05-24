@@ -4,8 +4,8 @@ import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.message.SyncingMessage;
-import cn.ttplatform.wh.core.log.Log;
-import cn.ttplatform.wh.core.log.entry.LogEntry;
+import cn.ttplatform.wh.core.data.LogContext;
+import cn.ttplatform.wh.core.data.log.Log;
 import cn.ttplatform.wh.support.Pool;
 import io.protostuff.LinkedBuffer;
 import java.util.ArrayList;
@@ -135,7 +135,7 @@ public class Cluster {
     public int getNewCommitIndex() {
         if (phase == Phase.OLD_NEW) {
             int oldConfigCommitIndex =
-                endpointMap.size() <= 1 ? context.getLog().getNextIndex() - 1 : getNewCommitIndexFrom(endpointMap);
+                endpointMap.size() <= 1 ? context.getLogContext().getNextIndex() - 1 : getNewCommitIndexFrom(endpointMap);
             int newConfigCommitIndex = getNewCommitIndexFrom(newConfigMap);
             log.debug("oldConfigCommitIndex is {}.", oldConfigCommitIndex);
             log.debug("newConfigCommitIndex is {}.", newConfigCommitIndex);
@@ -147,7 +147,7 @@ public class Cluster {
             return newConfigCommitIndex;
         }
         int oldConfigCommitIndex =
-            endpointMap.size() <= 1 ? context.getLog().getNextIndex() - 1 : getNewCommitIndexFrom(endpointMap);
+            endpointMap.size() <= 1 ? context.getLogContext().getNextIndex() - 1 : getNewCommitIndexFrom(endpointMap);
         log.debug("oldConfigCommitIndex is {}.", oldConfigCommitIndex);
         return oldConfigCommitIndex;
     }
@@ -231,7 +231,7 @@ public class Cluster {
             return;
         }
         if (context.getNode().isLeader()) {
-            context.pendingLog(LogEntry.OLD_NEW, getOldNewConfigBytes());
+            context.pendingLog(Log.OLD_NEW, getOldNewConfigBytes());
             log.info("pending OLD_NEW log");
         }
         phase = Phase.OLD_NEW;
@@ -253,7 +253,7 @@ public class Cluster {
         phase = Phase.NEW;
         if (context.getNode().isLeader()) {
             log.info("pending NEW log");
-            context.pendingLog(LogEntry.NEW, getNewConfigBytes());
+            context.pendingLog(Log.NEW, getNewConfigBytes());
         }
         log.info("enter NEW phase.");
     }
@@ -282,12 +282,12 @@ public class Cluster {
     public boolean updateNewConfigMap(Set<EndpointMetaData> metaData) {
         AtomicInteger count = new AtomicInteger();
         newConfigMap.clear();
-        Log log = context.getLog();
+        LogContext logContext = context.getLogContext();
         metaData.forEach(endpointMetaData -> {
             Endpoint endpoint = endpointMap.get(endpointMetaData.getNodeId());
             if (endpoint == null) {
                 endpoint = new Endpoint(endpointMetaData);
-                endpoint.resetReplicationState(log.getLastIncludeIndex(), log.getNextIndex());
+                endpoint.resetReplicationState(logContext.getLastIncludeIndex(), logContext.getNextIndex());
                 count.getAndIncrement();
             } else {
                 endpoint.setMetaData(endpointMetaData);

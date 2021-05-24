@@ -28,9 +28,11 @@ public class NioConnector implements Connector {
 
     private final Bootstrap bootstrap;
     private final GlobalContext context;
+    private final ChannelPool channelPool;
 
     public NioConnector(GlobalContext context) {
         this.context = context;
+        this.channelPool = context.getChannelPool();
         this.bootstrap = newBootstrap(context.getWorker());
     }
 
@@ -45,16 +47,16 @@ public class NioConnector implements Connector {
     public Channel connect(EndpointMetaData metaData) {
         InetSocketAddress socketAddress = metaData.getAddress();
         String remoteId = metaData.getNodeId();
-        Channel channel = ChannelPool.getChannel(remoteId);
+        Channel channel = channelPool.getChannel(remoteId);
         if (channel != null && channel.isOpen()) {
             return channel;
         }
         try {
             channel = bootstrap.connect(socketAddress).sync().channel();
-            ChannelPool.cacheChannel(remoteId, channel);
+            channelPool.cacheChannel(remoteId, channel);
             channel.closeFuture().addListener(future -> {
                 if (future.isSuccess()) {
-                    ChannelPool.removeChannel(remoteId);
+                    channelPool.removeChannel(remoteId);
                 }
             });
             return channel;
@@ -70,16 +72,16 @@ public class NioConnector implements Connector {
         if (channel == null) {
             return null;
         }
-        return channel.write(message);
+        return channel.writeAndFlush(message);
     }
 
     @Override
     public ChannelFuture send(Message message, String nodeId) {
-        Channel channel = ChannelPool.getChannel(nodeId);
+        Channel channel = channelPool.getChannel(nodeId);
         if (channel == null) {
             return null;
         }
-        return channel.write(message);
+        return channel.writeAndFlush(message);
     }
 
 }

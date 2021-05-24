@@ -30,8 +30,8 @@ public class NioListener implements Listener {
 
     @Override
     public void listen() {
-        boss.setIoRatio(70);
-        worker.setIoRatio(70);
+//        boss.setIoRatio(70);
+//        worker.setIoRatio(70);
         ServerBootstrap serverBootstrap = new ServerBootstrap().group(boss, worker)
             .channel(NioServerSocketChannel.class)
             .childOption(ChannelOption.TCP_NODELAY, true)

@@ -7,7 +7,7 @@ import cn.ttplatform.wh.core.executor.SingleThreadScheduler;
 import cn.ttplatform.wh.core.group.Cluster;
 import cn.ttplatform.wh.core.listener.Listener;
 import cn.ttplatform.wh.core.listener.nio.NioListener;
-import cn.ttplatform.wh.core.log.entry.LogEntry;
+import cn.ttplatform.wh.core.data.log.Log;
 import cn.ttplatform.wh.core.role.Candidate;
 import cn.ttplatform.wh.core.role.Follower;
 import cn.ttplatform.wh.core.role.Leader;
@@ -62,8 +62,8 @@ public class Node {
     private void startInSingleMode() {
         int term = nodeState.getCurrentTerm() + 1;
         this.role = Leader.builder().term(term).build();
-        int index = context.pendingLog(LogEntry.NO_OP_TYPE, new byte[0]);
-        if (context.getLog().advanceCommitIndex(index, term)) {
+        int index = context.pendingLog(Log.NO_OP_TYPE, new byte[0]);
+        if (context.getLogContext().advanceCommitIndex(index, term)) {
             context.advanceLastApplied(index);
         }
         this.listener.listen();
@@ -184,8 +184,8 @@ public class Node {
         leader.setTerm(term);
         leader.setScheduledFuture(context.logReplicationTask());
         this.role = leader;
-        int index = context.pendingLog(LogEntry.NO_OP_TYPE, new byte[0]);
-        context.getCluster().resetReplicationStates(context.getLog().getLastIncludeIndex() + 1, index);
+        int index = context.pendingLog(Log.NO_OP_TYPE, new byte[0]);
+        context.getCluster().resetReplicationStates(context.getLogContext().getLastIncludeIndex() + 1, index);
         if (log.isInfoEnabled()) {
             log.info("become leader.");
             log.info("reset all node replication state with nextIndex[{}]", index);

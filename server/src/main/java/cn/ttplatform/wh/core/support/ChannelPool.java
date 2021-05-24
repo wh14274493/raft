@@ -3,6 +3,8 @@ package cn.ttplatform.wh.core.support;
 import cn.ttplatform.wh.cmd.Command;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
@@ -14,12 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ChannelPool {
 
-    private ChannelPool() {
-    }
+    private final Map<String, Channel> channelMap = new ConcurrentHashMap<>();
 
-    private static final Map<String, Channel> CACHE = new ConcurrentHashMap<>();
-
-    public static void cacheChannel(String key, Channel channel) {
+    public void cacheChannel(String key, Channel channel) {
 //        CACHE.computeIfAbsent(key, s -> {
 //            log.debug("key:{} is not exist in cache.", key);
 //            channel.closeFuture().addListener(future -> {
@@ -29,21 +28,21 @@ public class ChannelPool {
 //            });
 //            return channel;
 //        });
-        CACHE.put(key, channel);
+        channelMap.put(key, channel);
     }
 
-    public static Channel removeChannel(String key) {
-        return CACHE.remove(key);
+    public Channel removeChannel(String key) {
+        return channelMap.remove(key);
     }
 
-    public static Channel getChannel(String key) {
-        return CACHE.get(key);
+    public Channel getChannel(String key) {
+        return channelMap.get(key);
     }
 
-    public static ChannelFuture reply(String id, Command command) {
+    public ChannelFuture reply(String id, Command command) {
         Channel channel = removeChannel(id);
         if (channel != null) {
-            return channel.write(command);
+            return channel.writeAndFlush(command);
         }
         log.trace("channel for {} is null", id);
         return null;

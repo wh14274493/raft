@@ -31,16 +31,18 @@ public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
 
     private final GlobalContext context;
     private final CommonDistributor distributor;
+    private final ChannelPool channelPool;
 
     public CoreDuplexChannelHandler(GlobalContext context) {
         this.context = context;
         this.distributor = context.getDistributor();
+        this.channelPool = context.getChannelPool();
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
-        Channel channel = ctx.channel();
-        channel.eventLoop().scheduleAtFixedRate(channel::flush, 200, 200, TimeUnit.MILLISECONDS);
+//        Channel channel = ctx.channel();
+//        channel.eventLoop().scheduleAtFixedRate(channel::flush, 100, 100, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -49,17 +51,17 @@ public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
         if (msg instanceof Command) {
             Command command = (Command) msg;
             String commandId = command.getId();
-            log.debug("receive a command {} from {}.", command, commandId);
+//            log.debug("receive a command {} from {}.", command, commandId);
             if (!canHandler(command, ctx)) {
                 return;
             }
-            ChannelPool.cacheChannel(commandId, channel);
+            channelPool.cacheChannel(commandId, channel);
 //            recordIds(commandId, channel);
             distributor.distribute(command);
         } else if (msg instanceof Message) {
             String sourceId = ((Message) msg).getSourceId();
             log.debug("receive a msg {} from {}.", msg, sourceId);
-            ChannelPool.cacheChannel(sourceId, channel);
+            channelPool.cacheChannel(sourceId, channel);
 //            recordIds(sourceId, channel);
             distributor.distribute((Message) msg);
         } else {
@@ -102,7 +104,7 @@ public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
         if (!channel.isOpen()) {
             AttributeKey<Set<String>> idsAttributeKey = AttributeKey.valueOf("ids");
             Attribute<Set<String>> attribute = channel.attr(idsAttributeKey);
-            Optional.ofNullable(attribute.get()).orElse(Collections.emptySet()).forEach(ChannelPool::removeChannel);
+            Optional.ofNullable(attribute.get()).orElse(Collections.emptySet()).forEach(channelPool::removeChannel);
         }
     }
 
@@ -115,10 +117,10 @@ public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {
-            log.debug("fire IdleStateEvent[{}].", evt);
+            log.info("fire IdleStateEvent[{}].", evt);
             ctx.channel().close();
         } else {
-            log.debug("fire Event[{}].", evt);
+            log.info("fire Event[{}].", evt);
             super.userEventTriggered(ctx, evt);
         }
     }

@@ -4,7 +4,7 @@ import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.exception.MessageParseException;
 import cn.ttplatform.wh.support.Factory;
 import cn.ttplatform.wh.support.Pool;
-import cn.ttplatform.wh.core.log.tool.PooledByteBuffer;
+import cn.ttplatform.wh.core.data.tool.PooledByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.protostuff.ByteBufferInput;
 import io.protostuff.LinkedBuffer;
@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -25,10 +26,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class StateMachine {
 
-    private Map<String, String> data = new HashMap<>();
+    private Map<String, String> data = new ConcurrentHashMap<>();
+    private final Map<String, String> tempBuffer = new HashMap<>();
     private final DataFactory dataFactory;
-    private int lastApplied;
-
+    private volatile boolean generating;
+    private volatile int applied;
 
     public StateMachine(GlobalContext context) {
         this.dataFactory = new DataFactory(context.getLinkedBufferPool());
@@ -39,23 +41,56 @@ public class StateMachine {
     }
 
     public String get(String key) {
+        if (generating && tempBuffer.containsKey(key)) {
+            return tempBuffer.get(key);
+        }
         return data.get(key);
     }
 
     public void set(String key, String value) {
-        data.put(key, value);
+        synchronized (tempBuffer) {
+            if (generating) {
+                tempBuffer.put(key, value);
+                return;
+            }
+            if (value == null) {
+                data.remove(key);
+            } else {
+                data.put(key, value);
+            }
+        }
     }
 
     public int getPairs() {
         return data.size();
     }
 
-    public int getLastApplied() {
-        return lastApplied;
+    public int getApplied() {
+        return applied;
     }
 
-    public void setLastApplied(int lastApplied) {
-        this.lastApplied = lastApplied;
+    public void setApplied(int applied) {
+        this.applied = applied;
+    }
+
+    public boolean startGenerating() {
+        boolean old = generating;
+        this.generating = true;
+        return !old;
+    }
+
+    public void stopGenerating() {
+        this.generating = false;
+        synchronized (tempBuffer) {
+            tempBuffer.forEach((k, v) -> {
+                if (v == null) {
+                    data.remove(k);
+                } else {
+                    data.put(k, v);
+                }
+            });
+            tempBuffer.clear();
+        }
     }
 
     public byte[] generateSnapshotData() {
@@ -64,7 +99,7 @@ public class StateMachine {
 
     public void applySnapshotData(PooledByteBuffer snapshot, int lastIncludeIndex) {
         data = dataFactory.create(snapshot.getBuffer(), snapshot.limit());
-        lastApplied = lastIncludeIndex;
+        applied = lastIncludeIndex;
         log.info("apply snapshot that lastIncludeIndex is {}.", lastIncludeIndex);
         snapshot.recycle();
     }

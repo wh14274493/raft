@@ -1,7 +1,7 @@
 package cn.ttplatform.wh.core.connector.message;
 
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.core.log.entry.LogEntry;
+import cn.ttplatform.wh.core.data.log.Log;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,7 +26,7 @@ public class AppendLogEntriesMessage extends AbstractMessage {
     private int preLogIndex;
     private int preLogTerm;
     private int leaderCommitIndex;
-    private List<LogEntry> logEntries;
+    private List<Log> logEntries;
 
     public int getLastIndex() {
         return logEntries == null || logEntries.isEmpty() ? getPreLogIndex()

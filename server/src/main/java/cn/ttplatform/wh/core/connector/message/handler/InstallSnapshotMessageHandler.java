@@ -1,13 +1,13 @@
 package cn.ttplatform.wh.core.connector.message.handler;
 
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.core.GlobalContext;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.core.connector.message.InstallSnapshotResultMessage;
 import cn.ttplatform.wh.core.role.Role;
 import cn.ttplatform.wh.core.support.AbstractDistributableHandler;
 import cn.ttplatform.wh.support.Distributable;
+import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -59,8 +59,8 @@ public class InstallSnapshotMessageHandler extends AbstractDistributableHandler 
         context.getNode().changeToFollower(message.getTerm(), null, null, 0, 0, System.currentTimeMillis());
         boolean installRes;
         try {
-            installRes = context.getLog().installSnapshot(message);
-        } catch (UnsupportedOperationException e) {
+            installRes = context.getLogContext().installSnapshot(message);
+        } catch (UnsupportedOperationException | IOException e) {
             // means that maybe message is expired or leader had changed but the offset is incorrect.
             return null;
         }

@@ -1,9 +1,9 @@
 package cn.ttplatform.wh.core;
 
-import cn.ttplatform.wh.core.log.tool.DirectByteBufferPool;
+import cn.ttplatform.wh.core.data.tool.DirectByteBufferPool;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Pool;
-import cn.ttplatform.wh.core.log.tool.PooledByteBuffer;
+import cn.ttplatform.wh.core.data.tool.PooledByteBuffer;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.MessageMapSchema;
 import io.protostuff.ProtostuffIOUtil;
@@ -55,8 +55,8 @@ public class StateMachineTest {
     @Test
     public void getLastApplied() {
         int count = ThreadLocalRandom.current().nextInt(1000000);
-        stateMachine.setLastApplied(count);
-        Assert.assertEquals(count, stateMachine.getLastApplied());
+        stateMachine.setApplied(count);
+        Assert.assertEquals(count, stateMachine.getApplied());
     }
 
     @Test
