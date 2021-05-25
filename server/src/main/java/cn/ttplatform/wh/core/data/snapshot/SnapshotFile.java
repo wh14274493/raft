@@ -20,13 +20,11 @@ public class SnapshotFile {
     public static final int HEADER_LENGTH = 16;
     private final ReadableAndWriteableFile file;
     private SnapshotHeader snapshotHeader;
-    private final Pool<byte[]> byteArrayPool;
     private final Pool<PooledByteBuffer> byteBufferPool;
 
-    public SnapshotFile(File file, Pool<PooledByteBuffer> byteBufferPool, Pool<byte[]> byteArrayPool) {
+    public SnapshotFile(File file, Pool<PooledByteBuffer> byteBufferPool) {
         this.file = new ByteBufferWriter(file, byteBufferPool);
         this.byteBufferPool = byteBufferPool;
-        this.byteArrayPool = byteArrayPool;
         initialize();
     }
 

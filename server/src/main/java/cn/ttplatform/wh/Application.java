@@ -68,7 +68,7 @@ public class Application {
             .build());
         if (args.length == 0) {
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("raft-db [OPTION]...", options);
+            formatter.printHelp("[OPTION]...", options);
             return null;
         }
         CommandLineParser parser = new DefaultParser();

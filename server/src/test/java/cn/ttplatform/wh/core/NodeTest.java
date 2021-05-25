@@ -13,11 +13,9 @@ import org.junit.Test;
 public class NodeTest {
 
     Node node;
+
     @Before
     public void setUp() throws Exception {
-        ServerProperties properties = new ServerProperties();
-        node = new Node(properties);
-        GlobalContext context = node.getContext();
     }
 
     @Test

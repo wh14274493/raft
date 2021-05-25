@@ -56,7 +56,7 @@ public class FileLogContext implements LogContext {
         Pool<byte[]> byteArrayPool = context.getByteArrayPool();
         Pool<PooledByteBuffer> byteBufferPool = context.getByteBufferPool();
         this.snapshot = new Snapshot(getLatestFile(base, SNAPSHOT_NAME_PATTERN, FileName.EMPTY_SNAPSHOT_FILE_NAME),
-            byteBufferPool, byteArrayPool);
+            byteBufferPool);
         this.logFile = new LogFile(getLatestFile(base, LOG_NAME_PATTERN, FileName.EMPTY_LOG_FILE_NAME), byteBufferPool);
         this.logIndexFile = new LogIndexFile(getLatestFile(base, INDEX_NAME_PATTERN, FileName.EMPTY_INDEX_FILE_NAME),
             byteBufferPool, snapshot.getLastIncludeIndex());
@@ -333,10 +333,9 @@ public class FileLogContext implements LogContext {
             ServerProperties properties = context.getProperties();
             File base = properties.getBase();
             Pool<PooledByteBuffer> byteBufferPool = context.getByteBufferPool();
-            Pool<byte[]> byteArrayPool = context.getByteArrayPool();
             snapshotBuilder.complete();
             this.snapshot.delete();
-            this.snapshot = new Snapshot(snapshotBuilder.getFile(), byteBufferPool, byteArrayPool);
+            this.snapshot = new Snapshot(snapshotBuilder.getFile(), byteBufferPool);
             File logGeneratingFile = new File(base,
                 String.format(FileName.LOG_GENERATING_FILE_NAME, lastIncludeTerm, lastIncludeIndex));
             File logIndexGeneratingFile = new File(base,

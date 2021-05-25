@@ -18,8 +18,8 @@ public class Snapshot {
 
     private final SnapshotFile snapshotFile;
 
-    public Snapshot(File file, Pool<PooledByteBuffer> byteBufferPool, Pool<byte[]> byteArrayPool) {
-        this.snapshotFile = new SnapshotFile(file, byteBufferPool, byteArrayPool);
+    public Snapshot(File file, Pool<PooledByteBuffer> byteBufferPool) {
+        this.snapshotFile = new SnapshotFile(file, byteBufferPool);
     }
 
     public int getLastIncludeIndex() {
