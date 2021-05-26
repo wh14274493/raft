@@ -85,8 +85,7 @@ public class Client {
     }
 
     public Channel connect() throws InterruptedException {
-        bootstrap.bind(33333);
-        return bootstrap.connect("127.0.0.1", 6666).sync().channel();
+        return bootstrap.connect("192.168.31.73", 6666).sync().channel();
     }
 
     public static void main(String[] args) throws InterruptedException {
@@ -114,7 +113,7 @@ public class Client {
         String v = value.substring(0, 256);
         String id = UUID.randomUUID().toString();
         log.info("start at {}", System.nanoTime());
-        IntStream.range(0, 10).forEach(index -> {
+        IntStream.range(0, 10000).forEach(index -> {
             SetCommand setCommand = SetCommand.builder().id(id + index).entry(new Entry(index + "wanghao", v)).build();
             channel.write(setCommand);
         });

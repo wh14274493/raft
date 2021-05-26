@@ -1,10 +1,10 @@
 package cn.ttplatform.wh;
 
 import cn.ttplatform.wh.config.ClientProperties;
+import cn.ttplatform.wh.constant.LaunchOption;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
@@ -28,27 +28,10 @@ public class Application {
 
     private CommandLine parseOptions(String[] args) throws ParseException {
         Options options = new Options();
-        options.addOption(Option.builder("i")
-            .hasArg()
-            .argName("master-id")
-            .desc("master node id.")
-            .build());
-        options.addOption(Option.builder("h")
-            .hasArg()
-            .argName("host")
-            .desc("host of master node.")
-            .build());
-        options.addOption(Option.builder("p")
-            .hasArg()
-            .argName("port")
-            .type(Number.class)
-            .desc("port of master node.")
-            .build());
-        options.addOption(Option.builder("c")
-            .hasArg()
-            .argName("properties-path")
-            .desc("properties file path.")
-            .build());
+        options.addOption(LaunchOption.ID);
+        options.addOption(LaunchOption.HOST);
+        options.addOption(LaunchOption.PORT);
+        options.addOption(LaunchOption.CONFIG);
         CommandLineParser parser = new DefaultParser();
         return parser.parse(options, args);
     }

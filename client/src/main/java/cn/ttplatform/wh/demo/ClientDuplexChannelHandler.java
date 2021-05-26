@@ -21,13 +21,13 @@ public class ClientDuplexChannelHandler extends ChannelDuplexHandler {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         Channel channel = ctx.channel();
-        channel.eventLoop().scheduleAtFixedRate(channel::flush, 10, 300, TimeUnit.MILLISECONDS);
+        channel.eventLoop().scheduleAtFixedRate(channel::flush, 10, 400, TimeUnit.MILLISECONDS);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
-        log.debug("channelInactive");
+        log.info("channelInactive");
     }
 
     @Override
@@ -46,6 +46,8 @@ public class ClientDuplexChannelHandler extends ChannelDuplexHandler {
         if (i % 10000 == 0) {
             log.info("time = {}, count = {}, msg = {}", System.nanoTime(), i, msg);
         }
+
+//        log.info(msg.toString());
     }
 
 }

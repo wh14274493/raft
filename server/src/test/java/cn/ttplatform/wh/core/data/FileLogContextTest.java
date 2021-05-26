@@ -37,7 +37,6 @@ public class FileLogContextTest {
         String path = Objects.requireNonNull(LogFileIndexTest.class.getClassLoader().getResource("")).getPath();
         GlobalContext context = GlobalContext.builder()
             .properties(new ServerProperties(path))
-            .byteArrayPool(new ByteArrayPool(10, 10 * 1024 * 1024))
             .byteBufferPool(new DirectByteBufferPool(10, 10 * 1024 * 1024))
             .linkedBufferPool(new FixedSizeLinkedBufferPool(10))
             .build();

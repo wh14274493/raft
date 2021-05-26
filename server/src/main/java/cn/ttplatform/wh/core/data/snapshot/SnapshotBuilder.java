@@ -25,11 +25,9 @@ public class SnapshotBuilder {
     private int lastIncludeTerm;
     private ReadableAndWriteableFile generatingFile;
     private final File parent;
-    private final Pool<byte[]> byteArrayPool;
     private final Pool<PooledByteBuffer> byteBufferPool;
 
-    public SnapshotBuilder(File parent, Pool<byte[]> byteArrayPool, Pool<PooledByteBuffer> byteBufferPool) {
-        this.byteArrayPool = byteArrayPool;
+    public SnapshotBuilder(File parent, Pool<PooledByteBuffer> byteBufferPool) {
         this.byteBufferPool = byteBufferPool;
         this.parent = parent;
     }

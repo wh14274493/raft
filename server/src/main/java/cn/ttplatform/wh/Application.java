@@ -1,14 +1,20 @@
 package cn.ttplatform.wh;
 
+import static cn.ttplatform.wh.constant.LaunchOption.CLUSTER_OPTION;
+import static cn.ttplatform.wh.constant.LaunchOption.HOST_OPTION;
+import static cn.ttplatform.wh.constant.LaunchOption.ID_OPTION;
+import static cn.ttplatform.wh.constant.LaunchOption.MODE_OPTION;
+import static cn.ttplatform.wh.constant.LaunchOption.PORT_OPTION;
+
 import cn.ttplatform.wh.config.RunMode;
 import cn.ttplatform.wh.config.ServerProperties;
+import cn.ttplatform.wh.constant.LaunchOption;
 import cn.ttplatform.wh.core.Node;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
@@ -31,41 +37,12 @@ public class Application {
 
     private CommandLine parseOptions(String[] args) throws ParseException {
         Options options = new Options();
-        options.addOption(Option.builder("i")
-            .longOpt("id")
-            .hasArg()
-            .argName("node-id")
-            .desc("node id. must be unique in group. ")
-            .build());
-        options.addOption(Option.builder("h")
-            .hasArg()
-            .argName("host")
-            .desc("host of node.")
-            .build());
-        options.addOption(Option.builder("p")
-            .longOpt("port-server")
-            .hasArg()
-            .argName("port")
-            .type(Number.class)
-            .desc("port of server.")
-            .build());
-        options.addOption(Option.builder("c")
-            .hasArg()
-            .argName("properties-path")
-            .desc("properties file path.")
-            .build());
-        options.addOption(Option.builder("m")
-            .hasArg()
-            .argName("mode")
-            .desc("service operation mode. single or cluster.")
-            .build());
-        options.addOption(Option.builder("C")
-            .hasArgs()
-            .argName("node-endpoint")
-            .desc(
-                "cluster config, required. format: <node-endpoint> <node-endpoint>..., format of node-endpoint: "
-                    + "<node-id>,<host>,<port-raft-node>, eg: A,localhost,8000 B,localhost,8010")
-            .build());
+        options.addOption(LaunchOption.ID);
+        options.addOption(LaunchOption.HOST);
+        options.addOption(LaunchOption.PORT);
+        options.addOption(LaunchOption.CONFIG);
+        options.addOption(LaunchOption.MODE);
+        options.addOption(LaunchOption.CLUSTER);
         if (args.length == 0) {
             HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("[OPTION]...", options);
@@ -77,31 +54,31 @@ public class Application {
 
     public ServerProperties initConfig(CommandLine commandLine) {
         ServerProperties properties;
-        if (commandLine.hasOption('c')) {
+        if (commandLine.hasOption(LaunchOption.CONFIG_OPTION)) {
             properties = new ServerProperties(commandLine.getOptionValue('c'));
         } else {
             properties = new ServerProperties();
         }
-        if (commandLine.hasOption('m')) {
-            String mode = commandLine.getOptionValue('m');
-            if ("single".equals(mode)) {
+        if (commandLine.hasOption(MODE_OPTION)) {
+            String mode = commandLine.getOptionValue(MODE_OPTION);
+            if (RunMode.SINGLE.toString().equals(mode.toUpperCase())) {
                 properties.setMode(RunMode.SINGLE);
                 properties.setClusterInfo(null);
             } else {
                 properties.setMode(RunMode.CLUSTER);
-                if (commandLine.hasOption('C')) {
-                    properties.setClusterInfo(commandLine.getOptionValue("C"));
+                if (commandLine.hasOption(CLUSTER_OPTION)) {
+                    properties.setClusterInfo(commandLine.getOptionValue(CLUSTER_OPTION));
                 }
             }
         }
-        if (commandLine.hasOption('i')) {
-            properties.setNodeId(commandLine.getOptionValue('i'));
+        if (commandLine.hasOption(ID_OPTION)) {
+            properties.setNodeId(commandLine.getOptionValue(ID_OPTION));
         }
-        if (commandLine.hasOption('h')) {
-            properties.setHost(commandLine.getOptionValue('h'));
+        if (commandLine.hasOption(HOST_OPTION)) {
+            properties.setHost(commandLine.getOptionValue(HOST_OPTION));
         }
-        if (commandLine.hasOption('p')) {
-            properties.setPort(Integer.parseInt(commandLine.getOptionValue('p')));
+        if (commandLine.hasOption(PORT_OPTION)) {
+            properties.setPort(Integer.parseInt(commandLine.getOptionValue(PORT_OPTION)));
         }
         return properties;
     }

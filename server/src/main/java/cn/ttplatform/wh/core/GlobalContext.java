@@ -20,7 +20,6 @@ import cn.ttplatform.wh.cmd.factory.SetCommandFactory;
 import cn.ttplatform.wh.cmd.factory.SetResultCommandFactory;
 import cn.ttplatform.wh.config.RunMode;
 import cn.ttplatform.wh.config.ServerProperties;
-import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.constant.ReadWriteFileStrategy;
 import cn.ttplatform.wh.core.connector.Connector;
 import cn.ttplatform.wh.core.connector.message.PreVoteMessage;
@@ -65,8 +64,6 @@ import cn.ttplatform.wh.core.listener.handler.SetCommandHandler;
 import cn.ttplatform.wh.core.support.ChannelPool;
 import cn.ttplatform.wh.core.support.CommonDistributor;
 import cn.ttplatform.wh.exception.OperateFileException;
-import cn.ttplatform.wh.support.ByteArrayPool;
-import cn.ttplatform.wh.support.DistributableFactory;
 import cn.ttplatform.wh.support.DistributableFactoryManager;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Message;
@@ -104,7 +101,6 @@ public class GlobalContext {
     private final ServerProperties properties;
     private final Pool<LinkedBuffer> linkedBufferPool;
     private final Pool<PooledByteBuffer> byteBufferPool;
-    private final Pool<byte[]> byteArrayPool;
     private final CommonDistributor distributor;
     private final DistributableFactoryManager factoryManager;
     private final TaskExecutor executor;
@@ -134,7 +130,6 @@ public class GlobalContext {
             this.byteBufferPool = new IndirectByteBufferPool(properties.getByteBufferPoolSize(),
                 properties.getByteBufferSizeLimit());
         }
-        this.byteArrayPool = new ByteArrayPool(properties.getByteArrayPoolSize(), properties.getByteArraySizeLimit());
         this.distributor = buildDistributor();
         this.factoryManager = buildFactoryManager();
         this.executor = new SingleThreadExecutor();

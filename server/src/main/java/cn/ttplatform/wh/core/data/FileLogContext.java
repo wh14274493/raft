@@ -53,14 +53,13 @@ public class FileLogContext implements LogContext {
         this.context = context;
         ServerProperties properties = context.getProperties();
         File base = properties.getBase();
-        Pool<byte[]> byteArrayPool = context.getByteArrayPool();
         Pool<PooledByteBuffer> byteBufferPool = context.getByteBufferPool();
         this.snapshot = new Snapshot(getLatestFile(base, SNAPSHOT_NAME_PATTERN, FileName.EMPTY_SNAPSHOT_FILE_NAME),
             byteBufferPool);
         this.logFile = new LogFile(getLatestFile(base, LOG_NAME_PATTERN, FileName.EMPTY_LOG_FILE_NAME), byteBufferPool);
         this.logIndexFile = new LogIndexFile(getLatestFile(base, INDEX_NAME_PATTERN, FileName.EMPTY_INDEX_FILE_NAME),
             byteBufferPool, snapshot.getLastIncludeIndex());
-        this.snapshotBuilder = new SnapshotBuilder(base, byteArrayPool, byteBufferPool);
+        this.snapshotBuilder = new SnapshotBuilder(base, byteBufferPool);
         this.commitIndex = logIndexFile.getMaxIndex();
         this.nextIndex = commitIndex + 1;
     }

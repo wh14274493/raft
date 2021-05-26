@@ -119,12 +119,9 @@ public class ServerProperties {
      */
     private int byteBufferSizeLimit;
 
-    private int byteArrayPoolSize;
-    private int byteArraySizeLimit;
-
     public ServerProperties(String configPath) {
         Properties properties = new Properties();
-        File file = new File(configPath, "server.properties");
+        File file = new File(configPath);
         try (FileInputStream fis = new FileInputStream(file)) {
             properties.load(fis);
             loadProperties(properties);
@@ -135,24 +132,20 @@ public class ServerProperties {
 
     public ServerProperties() {
         Properties properties = new Properties();
-        try (InputStream fis = this.getClass().getResourceAsStream("server.properties")) {
-            properties.load(fis);
-            loadProperties(properties);
-        } catch (IOException e) {
-            throw new OperateFileException(e.getMessage());
-        }
+        loadProperties(properties);
     }
 
     private void loadProperties(Properties properties) {
         nodeId = properties.getProperty("nodeId", UUID.randomUUID().toString());
         String modeProperty = properties.getProperty("mode", "single");
-        if ("single".equals(modeProperty)) {
+        if (RunMode.SINGLE.toString().equals(modeProperty)) {
             mode = RunMode.SINGLE;
         } else {
             mode = RunMode.CLUSTER;
             clusterInfo = properties.getProperty("clusterInfo");
         }
-        port = Integer.parseInt(properties.getProperty("port", "8888"));
+        host = properties.getProperty("host", "localhost");
+        port = Integer.parseInt(properties.getProperty("port", "8190"));
         bossThreads = Integer.parseInt(properties.getProperty("bossThreads", "1"));
         workerThreads = Integer.parseInt(properties.getProperty("workerThreads", "1"));
         minElectionTimeout = Integer.parseInt(properties.getProperty("minElectionTimeout", "3000"));
@@ -160,7 +153,7 @@ public class ServerProperties {
         logReplicationDelay = Long.parseLong(properties.getProperty("logReplicationDelay", "1000"));
         logReplicationInterval = Long.parseLong(properties.getProperty("logReplicationInterval", "1000"));
         retryTimeout = Long.parseLong(properties.getProperty("retryTimeout", "800"));
-        String defaultBasePath = Objects.requireNonNull(this.getClass().getResource("")).getPath();
+        String defaultBasePath = Objects.requireNonNull(this.getClass().getClassLoader().getResource("")).getPath();
         base = new File(properties.getProperty("basePath", defaultBasePath));
         snapshotGenerateThreshold = Integer
             .parseInt(properties.getProperty("snapshotGenerateThreshold", String.valueOf(1024 * 1024 * 10)));
@@ -174,5 +167,4 @@ public class ServerProperties {
         byteBufferPoolSize = Integer.parseInt(properties.getProperty("byteBufferPoolSize", "10"));
         byteBufferSizeLimit = Integer.parseInt(properties.getProperty("byteBufferSizeLimit", String.valueOf(1024 * 1024 * 10)));
     }
-
 }
