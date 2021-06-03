@@ -18,7 +18,7 @@ import cn.ttplatform.wh.cmd.factory.SetCommandFactory;
 import cn.ttplatform.wh.cmd.factory.SetResultCommandFactory;
 import cn.ttplatform.wh.support.ByteArrayPool;
 import cn.ttplatform.wh.support.DistributableCodec;
-import cn.ttplatform.wh.support.DistributableFactoryManager;
+import cn.ttplatform.wh.support.DistributableFactoryRegistry;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Pool;
 import io.netty.bootstrap.Bootstrap;
@@ -54,7 +54,7 @@ public class Client {
     public Client() {
         Pool<byte[]> byteArrayPool = new ByteArrayPool(10, 1024 * 1024 * 10);
         Pool<LinkedBuffer> bufferPool = new FixedSizeLinkedBufferPool(3);
-        DistributableFactoryManager factoryManager = new DistributableFactoryManager();
+        DistributableFactoryRegistry factoryManager = new DistributableFactoryRegistry();
         factoryManager.register(new GetClusterInfoResultCommandFactory(bufferPool));
         factoryManager.register(new GetClusterInfoCommandFactory(bufferPool));
         factoryManager.register(new RedirectCommandFactory(bufferPool));
@@ -85,7 +85,7 @@ public class Client {
     }
 
     public Channel connect() throws InterruptedException {
-        return bootstrap.connect("192.168.31.73", 6666).sync().channel();
+        return bootstrap.connect("localhost", 6666).sync().channel();
     }
 
     public static void main(String[] args) throws InterruptedException {
@@ -113,7 +113,7 @@ public class Client {
         String v = value.substring(0, 256);
         String id = UUID.randomUUID().toString();
         log.info("start at {}", System.nanoTime());
-        IntStream.range(0, 10000).forEach(index -> {
+        IntStream.range(0, 10).forEach(index -> {
             SetCommand setCommand = SetCommand.builder().id(id + index).entry(new Entry(index + "wanghao", v)).build();
             channel.write(setCommand);
         });

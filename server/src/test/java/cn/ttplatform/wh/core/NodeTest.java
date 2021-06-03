@@ -1,8 +1,6 @@
 package cn.ttplatform.wh.core;
 
-import static org.junit.Assert.*;
-
-import cn.ttplatform.wh.config.ServerProperties;
+import cn.ttplatform.wh.Node;
 import org.junit.Before;
 import org.junit.Test;
 

@@ -16,10 +16,10 @@ public class DistributableCodec extends ByteToMessageCodec<Distributable> {
 
     private static final int FIXED_MESSAGE_HEADER_LENGTH = Integer.BYTES + Integer.BYTES;
 
-    private final DistributableFactoryManager factoryManager;
+    private final DistributableFactoryRegistry factoryManager;
     private RequestFailedCommand requestFailedCommand;
 
-    public DistributableCodec(DistributableFactoryManager factoryManager) {
+    public DistributableCodec(DistributableFactoryRegistry factoryManager) {
         this.factoryManager = factoryManager;
     }
 

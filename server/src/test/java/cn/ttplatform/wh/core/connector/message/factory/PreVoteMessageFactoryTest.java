@@ -1,7 +1,8 @@
 package cn.ttplatform.wh.core.connector.message.factory;
 
+import cn.ttplatform.wh.message.factory.PreVoteMessageFactory;
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.core.connector.message.PreVoteMessage;
+import cn.ttplatform.wh.message.PreVoteMessage;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Pool;
 import io.netty.buffer.ByteBuf;

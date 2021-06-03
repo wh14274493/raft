@@ -32,7 +32,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>cn.ttplatform.wh.Application</mainClass>
+              <mainClass>cn.ttplatform.wh.Server</mainClass>
             </manifest>
           </archive>
           <descriptorRefs>
