@@ -136,8 +136,12 @@ public class LogFile {
                 term = byteBuffer.getInt();
                 type = byteBuffer.getInt();
                 cmdLength = byteBuffer.getInt();
-                cmd = new byte[cmdLength];
-                byteBuffer.get(cmd, 0, cmdLength);
+                if (cmdLength == 0) {
+                    cmd = null;
+                } else {
+                    cmd = new byte[cmdLength];
+                    byteBuffer.get(cmd, 0, cmdLength);
+                }
                 offset += cmdLength + LOG_ENTRY_HEADER_SIZE;
                 res.add(LogFactory.createEntry(type, term, index, cmd, cmdLength));
             }

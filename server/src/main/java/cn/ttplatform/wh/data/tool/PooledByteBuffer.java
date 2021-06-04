@@ -78,11 +78,16 @@ public class PooledByteBuffer {
         return buffer.put(bytes, offset, length);
     }
 
-    public boolean hasRemaining(){
+    public boolean hasRemaining() {
         return buffer.hasRemaining();
     }
 
     public void recycle() {
         pool.recycle(this);
+    }
+
+    @Override
+    public String toString() {
+        return buffer.toString();
     }
 }

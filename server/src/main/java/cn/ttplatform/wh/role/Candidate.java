@@ -46,9 +46,4 @@ public class Candidate extends AbstractRole {
     public RoleType getType() {
         return RoleType.CANDIDATE;
     }
-
-    @Override
-    public boolean compare(Role oldRole) {
-        return false;
-    }
 }

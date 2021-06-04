@@ -10,14 +10,14 @@ import org.apache.log4j.Layout;
  * @date 2021/5/26 23:15
  */
 @Slf4j
-public class CustomAppender extends DailyRollingFileAppender {
+public class DailyRollingFileAppenderWrapper extends DailyRollingFileAppender {
 
-    public CustomAppender() {
+    public DailyRollingFileAppenderWrapper() {
         super();
         addShutdownHook();
     }
 
-    public CustomAppender(Layout layout, String filename, String datePattern) throws IOException {
+    public DailyRollingFileAppenderWrapper(Layout layout, String filename, String datePattern) throws IOException {
         super(layout, filename, datePattern);
         addShutdownHook();
     }
@@ -25,7 +25,7 @@ public class CustomAppender extends DailyRollingFileAppender {
     private void addShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             qw.flush();
-            log.debug("flush all log4j buffer");
+            log.debug("flush {} buffer.", qw.toString());
         }, "log4j-thread"));
     }
 }

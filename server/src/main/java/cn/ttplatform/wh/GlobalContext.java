@@ -3,6 +3,7 @@ package cn.ttplatform.wh;
 import cn.ttplatform.wh.cmd.ClusterChangeCommand;
 import cn.ttplatform.wh.cmd.ClusterChangeResultCommand;
 import cn.ttplatform.wh.cmd.Entry;
+import cn.ttplatform.wh.cmd.GetClusterInfoResultCommand;
 import cn.ttplatform.wh.cmd.GetCommand;
 import cn.ttplatform.wh.cmd.GetResultCommand;
 import cn.ttplatform.wh.cmd.SetCommand;
@@ -58,7 +59,7 @@ import cn.ttplatform.wh.scheduler.Scheduler;
 import cn.ttplatform.wh.scheduler.SingleThreadScheduler;
 import cn.ttplatform.wh.support.ChannelPool;
 import cn.ttplatform.wh.support.CommonDistributor;
-import cn.ttplatform.wh.support.ThreadFactory;
+import cn.ttplatform.wh.support.NamedThreadFactory;
 import cn.ttplatform.wh.support.DistributableFactoryRegistry;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Message;
@@ -132,19 +133,19 @@ public class GlobalContext {
         this.distributor = buildDistributor();
         this.factoryManager = buildFactoryManager();
         this.executor = new ThreadPoolExecutor(
-            0,
+            1,
             1,
             0L,
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<>(),
-            new ThreadFactory("core-"));
+            new NamedThreadFactory("core-"));
         this.snapshotGenerateExecutor = new ThreadPoolExecutor(
             0,
             1,
             60L,
             TimeUnit.SECONDS,
             new ArrayBlockingQueue<>(1),
-            new ThreadFactory("snapshotTask-"),
+            new NamedThreadFactory("snapshotTask-"),
             (r, e) -> logger.error("There is currently an executing task, reject this operation."));
         this.boss = new NioEventLoopGroup(properties.getBossThreads());
         this.worker = new NioEventLoopGroup(properties.getWorkerThreads());
@@ -404,6 +405,22 @@ public class GlobalContext {
         channelPool.reply(cmd.getId(), GetResultCommand.builder().id(cmd.getId()).value(stateMachine.get(cmd.getKey())).build());
     }
 
+    public void replyGetClusterInfoResult(String requestId) {
+        RunMode mode = node.getMode();
+        GetClusterInfoResultCommand respCommand = GetClusterInfoResultCommand.builder()
+            .id(requestId)
+            .leader(node.getSelfId())
+            .mode(mode.toString())
+            .size(stateMachine.getPairs())
+            .build();
+        if (mode == RunMode.CLUSTER) {
+            respCommand.setPhase(cluster.getPhase().toString());
+            respCommand.setNewConfig(cluster.getNewConfigMap().toString());
+            respCommand.setOldConfig(cluster.getEndpointMap().toString());
+        }
+        channelPool.reply(requestId, respCommand);
+    }
+
     public void addGetTasks(int index, GetCommand cmd) {
         if (index > stateMachine.getApplied()) {
             List<GetCommand> getCommands = pendingGetCommandMap.computeIfAbsent(index, k -> new ArrayList<>());
@@ -438,9 +455,13 @@ public class GlobalContext {
 
     public void close() {
         snapshotGenerateExecutor.shutdownNow();
-        executor.shutdown();
         logManager.close();
-        scheduler.close();
+        if (executor != null) {
+            executor.shutdown();
+        }
+        if (scheduler != null) {
+            scheduler.close();
+        }
     }
 
 }

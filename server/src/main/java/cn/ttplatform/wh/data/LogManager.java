@@ -1,15 +1,10 @@
 package cn.ttplatform.wh.data;
 
-import static cn.ttplatform.wh.data.FileConstant.EMPTY_SNAPSHOT_FILE_NAME;
-import static cn.ttplatform.wh.data.FileConstant.INDEX_NAME_SUFFIX;
-import static cn.ttplatform.wh.data.FileConstant.LOG_NAME_SUFFIX;
-import static cn.ttplatform.wh.data.FileConstant.SNAPSHOT_NAME_PATTERN;
-import static cn.ttplatform.wh.data.FileConstant.SNAPSHOT_NAME_SUFFIX;
-
 import cn.ttplatform.wh.GlobalContext;
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.data.log.Log;
 import cn.ttplatform.wh.data.log.LogFile;
+import cn.ttplatform.wh.data.log.LogIndex;
 import cn.ttplatform.wh.data.log.LogIndexFile;
 import cn.ttplatform.wh.data.snapshot.Snapshot;
 import cn.ttplatform.wh.data.snapshot.SnapshotBuilder;
@@ -25,11 +20,10 @@ import cn.ttplatform.wh.support.Pool;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.stream.IntStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,8 +35,8 @@ import org.slf4j.LoggerFactory;
 public class LogManager {
 
     private final Logger logger = LoggerFactory.getLogger(LogManager.class);
-    private final LinkedList<Log> pending = new LinkedList<>();
-    private final Pool<PooledByteBuffer> byteBufferPool;
+    private final TreeMap<Integer, Log> pending = new TreeMap<>();
+    private final Pool<PooledByteBuffer> bufferPool;
     private final SnapshotBuilder snapshotBuilder;
     private final GlobalContext context;
     private final File base;
@@ -56,50 +50,32 @@ public class LogManager {
         this.context = context;
         ServerProperties properties = context.getProperties();
         this.base = properties.getBase();
-        this.byteBufferPool = context.getByteBufferPool();
-        File[] files = base.listFiles();
-        File latestSnapshotFile = getLatestFile(base, files);
-        this.snapshot = new Snapshot(latestSnapshotFile, byteBufferPool);
+        this.bufferPool = context.getByteBufferPool();
+        File latestSnapshotFile = FileConstant.getLatestSnapshotFile(base);
+        this.snapshot = new Snapshot(latestSnapshotFile, bufferPool);
         String path = latestSnapshotFile.getPath();
-        File latestLogFile = new File(path.replace(SNAPSHOT_NAME_SUFFIX, LOG_NAME_SUFFIX));
-        this.logFile = new LogFile(latestLogFile, byteBufferPool);
-        File latestLogIndexFile = new File(path.replace(SNAPSHOT_NAME_SUFFIX, INDEX_NAME_SUFFIX));
-        this.logIndexFile = new LogIndexFile(latestLogIndexFile, byteBufferPool, snapshot.getLastIncludeIndex());
-        if (logIndexFile.isEmpty()) {
+        this.logFile = new LogFile(FileConstant.getMatchedLogFile(path), bufferPool);
+        File latestLogIndexFile = FileConstant.getMatchedLogIndexFile(path);
+        this.logIndexFile = new LogIndexFile(latestLogIndexFile, bufferPool, snapshot.getLastIncludeIndex());
+        if (!logFile.isEmpty() && logIndexFile.isEmpty()) {
             // means that the index file is wrong or missing.
             rebuildIndexFile();
         }
-        this.snapshotBuilder = new SnapshotBuilder(base, byteBufferPool);
+        this.snapshotBuilder = new SnapshotBuilder(base, bufferPool);
         this.commitIndex = logIndexFile.getMaxIndex();
         this.nextIndex = commitIndex + 1;
     }
 
-    private File getLatestFile(File parent, File[] files) {
-        if (files == null || files.length == 0) {
-            return new File(parent, EMPTY_SNAPSHOT_FILE_NAME);
-        }
-        Optional<File> fileOptional = Arrays.stream(files)
-            .filter(file -> SNAPSHOT_NAME_PATTERN.matcher(file.getName()).matches()).min((o1, o2) -> {
-                String o1Name = o1.getName();
-                String[] o1Pieces = o1Name.substring(0, o1Name.lastIndexOf('.')).split("-");
-                String o2Name = o2.getName();
-                String[] o2Pieces = o2Name.substring(0, o1Name.lastIndexOf('.')).split("-");
-                return Integer.parseInt(o2Pieces[2]) - Integer.parseInt(o1Pieces[2]);
-            });
-        return fileOptional.orElse(new File(parent, EMPTY_SNAPSHOT_FILE_NAME));
-    }
 
     /**
      * Rebuild the index file based on the log file
      */
     private void rebuildIndexFile() {
-        logger.info("rebuild index file.");
         PooledByteBuffer byteBuffer = logFile.loadAll();
         // allocate a buffer that size is 10MB. And this buffer can include 524288 index records.
-        PooledByteBuffer buffer = byteBufferPool.allocate(10 * 1024 * 1024);
+        PooledByteBuffer buffer = bufferPool.allocate(10 * 1024 * 1024);
         try {
             long offset = 0L;
-            long position = 0L;
             while (byteBuffer.hasRemaining()) {
                 while (byteBuffer.hasRemaining() && buffer.hasRemaining()) {
                     buffer.putInt(byteBuffer.getInt());
@@ -109,15 +85,14 @@ public class LogManager {
                     offset = offset + 16 + byteBuffer.getInt();
                     byteBuffer.position((int) offset);
                 }
-                int lastIndex = buffer.position();
                 logIndexFile.append(buffer);
-                position += lastIndex;
             }
         } finally {
-            byteBufferPool.recycle(byteBuffer);
-            byteBufferPool.recycle(buffer);
+            bufferPool.recycle(byteBuffer);
+            bufferPool.recycle(buffer);
         }
         logIndexFile.initialize();
+        logger.info("rebuild index file success.");
     }
 
     public int getNextIndex() {
@@ -134,7 +109,7 @@ public class LogManager {
 
     public int getTermOfLastLog() {
         if (!pending.isEmpty()) {
-            return pending.getLast().getTerm();
+            return pending.lastEntry().getValue().getTerm();
         }
         if (!logIndexFile.isEmpty()) {
             return logIndexFile.getLastLogMetaData().getTerm();
@@ -144,7 +119,7 @@ public class LogManager {
 
     public int getTermOfLog(int index) {
         return Optional.ofNullable(logIndexFile.getLogMetaData(index))
-            .orElseThrow(() -> new IncorrectLogIndexNumberException("not found log meta data for index " + index + "."))
+            .orElseThrow(() -> new IncorrectLogIndexNumberException("not found log meta data for index[" + index + "]."))
             .getTerm();
     }
 
@@ -163,11 +138,11 @@ public class LogManager {
 
     public int pendingLog(Log log) {
         log.setIndex(nextIndex);
-        if (!pending.isEmpty() && log.getIndex() != pending.getLast().getIndex() + 1) {
+        if (!pending.isEmpty() && log.getIndex() != pending.lastEntry().getKey() + 1) {
             // maybe received an expired message
             throw new IncorrectLogIndexNumberException("The index[" + log.getIndex() + "] number of the log is incorrect ");
         }
-        pending.add(log);
+        pending.put(log.getIndex(), log);
         nextIndex++;
         return log.getIndex();
     }
@@ -176,22 +151,22 @@ public class LogManager {
         removeAfter(index);
         Cluster cluster = context.getCluster();
         if (entries != null && !entries.isEmpty()) {
-            for (Log logEntry : entries) {
-                if (logEntry.getType() == Log.OLD_NEW) {
-                    logger.info("receive a OLD_NEW log[{}] from leader", logEntry);
-                    cluster.applyOldNewConfig(logEntry.getCommand());
+            for (Log log : entries) {
+                if (log.getType() == Log.OLD_NEW) {
+                    logger.info("receive a OLD_NEW log[{}] from leader", log);
+                    cluster.applyOldNewConfig(log.getCommand());
                     cluster.enterOldNewPhase();
-                } else if (logEntry.getType() == Log.NEW) {
-                    logger.info("receive a NEW log[{}] from leader", logEntry);
-                    cluster.applyNewConfig(logEntry.getCommand());
+                } else if (log.getType() == Log.NEW) {
+                    logger.info("receive a NEW log[{}] from leader", log);
+                    cluster.applyNewConfig(log.getCommand());
                     cluster.enterNewPhase();
                 }
-                if (!pending.isEmpty() && logEntry.getIndex() != pending.getLast().getIndex() + 1) {
+                if (!pending.isEmpty() && log.getIndex() != pending.lastEntry().getKey() + 1) {
                     // maybe received an expired message
                     throw new IncorrectLogIndexNumberException(
-                        "The index[" + logEntry.getIndex() + "] number of the log is incorrect ");
+                        "The index[" + log.getIndex() + "] number of the log is incorrect.");
                 }
-                pending.add(logEntry);
+                pending.put(log.getIndex(), log);
             }
             nextIndex = entries.get(entries.size() - 1).getIndex() + 1;
             logger.debug("update nextIndex[{}]", nextIndex);
@@ -208,8 +183,8 @@ public class LogManager {
             logFile.removeAfter(index);
             logIndexFile.removeAfter(index);
         } else {
-            while (!pending.isEmpty() && pending.peekLast().getIndex() > index) {
-                pending.pollLast();
+            while (!pending.isEmpty() && pending.lastEntry().getKey() > index) {
+                pending.pollLastEntry();
             }
         }
     }
@@ -236,8 +211,6 @@ public class LogManager {
     public Message createAppendLogEntriesMessage(String leaderId, int term, Endpoint endpoint, int size) {
         int lastIncludeIndex = snapshot.getLastIncludeIndex();
         int lastIncludeTerm = snapshot.getLastIncludeTerm();
-        logger
-            .debug("create AppendLogEntriesMessage, lastIncludeIndex:{}, lastIncludeTerm:{}.", lastIncludeIndex, lastIncludeTerm);
         int endpointNextIndex = endpoint.getNextIndex();
         if (endpointNextIndex <= lastIncludeIndex) {
             return null;
@@ -290,12 +263,10 @@ public class LogManager {
             logger.debug("find log by newCommitIndex[{}] is {}, unmatched.", newCommitIndex, log);
             return false;
         }
-        commitIndex = newCommitIndex;
-        logger.debug("update commitIndex to {}", commitIndex);
-        int size = commitIndex - logIndexFile.getMaxIndex();
+        int size = newCommitIndex - logIndexFile.getMaxIndex();
         List<Log> committedLogs = new ArrayList<>(size);
-        while (!pending.isEmpty() && pending.peekFirst().getIndex() <= commitIndex) {
-            committedLogs.add(pending.pollFirst());
+        while (!pending.isEmpty() && pending.firstEntry().getKey() <= newCommitIndex) {
+            committedLogs.add(pending.pollFirstEntry().getValue());
         }
         if (committedLogs.size() == 1) {
             long offset = logFile.append(committedLogs.get(0));
@@ -304,8 +275,11 @@ public class LogManager {
             long[] offsets = logFile.append(committedLogs);
             logIndexFile.append(committedLogs, offsets);
         }
-        logger.debug("append {} logs", committedLogs.size());
-        logger.debug("commit {} success.", commitIndex);
+        commitIndex = newCommitIndex;
+        if (logger.isDebugEnabled()) {
+            logger.debug("append {} logs", committedLogs.size());
+            logger.debug("commit {} success.", commitIndex);
+        }
         return true;
     }
 
@@ -330,8 +304,7 @@ public class LogManager {
         // if the lastIncludeIndex < oldGeneration.getLastIncludeIndex() means this message is an expired messages.
         // need to prevent repeated consumption of expired messages
         if (lastIncludeIndex <= snapshot.getLastIncludeIndex()) {
-            logger.warn("install snapshot message is expired");
-            throw new UnsupportedOperationException("the message is expired");
+            throw new UnsupportedOperationException("the InstallSnapshotMessage is expired");
         }
         int lastIncludeTerm = message.getLastIncludeTerm();
         String sourceId = message.getSourceId();
@@ -342,12 +315,10 @@ public class LogManager {
         }
         long expectedOffset = snapshotBuilder.getInstallOffset();
         if (offset != expectedOffset) {
-            logger.warn("the offset[{}] of message is unmatched, expect {}.", offset, expectedOffset);
-            throw new UnsupportedOperationException("the offset is unmatched");
+            throw new IllegalArgumentException(String.format("the offset[%d] is unmatched. expect %d", offset, expectedOffset));
         }
         if (!sourceId.equals(snapshotSource)) {
-            logger.info("the snapshotSource has changed, receive a message that offset!=0.");
-            throw new UnsupportedOperationException("the snapshotSource has changed, receive a message that offset!=0.");
+            throw new IllegalArgumentException("the snapshotSource has changed, receive a message that offset!=0.");
         }
         snapshotBuilder.append(message.getChunk());
         if (message.isDone()) {
@@ -359,19 +330,17 @@ public class LogManager {
     public void completeBuildingSnapshot(SnapshotBuilder snapshotBuilder, int lastIncludeTerm, int lastIncludeIndex) {
         context.getExecutor().execute(() -> {
             snapshotBuilder.complete();
-            this.snapshot = new Snapshot(snapshotBuilder.getFile(), byteBufferPool);
-            File logGeneratingFile = new File(base,
-                String.format(FileConstant.LOG_GENERATING_FILE_NAME, lastIncludeTerm, lastIncludeIndex));
-            File logIndexGeneratingFile = new File(base,
-                String.format(FileConstant.INDEX_GENERATING_FILE_NAME, lastIncludeTerm, lastIncludeIndex));
+            this.snapshot = new Snapshot(snapshotBuilder.getFile(), bufferPool);
+            File newLogFile = FileConstant.newLogFile(base, lastIncludeIndex, lastIncludeTerm);
+            File newLogIndexFile = FileConstant.newLogIndexFile(base, lastIncludeIndex, lastIncludeTerm);
             long offset = logIndexFile.getEntryOffset(lastIncludeIndex + 1);
             try {
                 if (offset != -1L) {
                     // means that lastIncludeIndex == lastLogIndex
-                    this.logFile.transferTo(offset, logGeneratingFile.toPath());
+                    this.logFile.transferTo(offset, newLogFile.toPath());
                 }
-                this.logFile = new LogFile(logGeneratingFile, byteBufferPool);
-                this.logIndexFile = new LogIndexFile(logIndexGeneratingFile, byteBufferPool, lastIncludeIndex);
+                this.logFile = new LogFile(newLogFile, bufferPool);
+                this.logIndexFile = new LogIndexFile(newLogIndexFile, bufferPool, lastIncludeIndex);
                 rebuildIndexFile();
             } catch (IOException e) {
                 throw new OperateFileException("transfer log error.", e);
@@ -399,7 +368,7 @@ public class LogManager {
         int maxLogIndex = logIndexFile.getMaxIndex();
         if (index > maxLogIndex) {
             logger.debug("index[{}] > maxEntryIndex[{}], find log from pending.", index, maxLogIndex);
-            return pending.get(index - maxLogIndex - 1);
+            return pending.get(index);
         }
         return logFile.getEntry(logIndexFile.getEntryOffset(index), logIndexFile.getEntryOffset(index + 1));
     }
@@ -426,8 +395,6 @@ public class LogManager {
         List<Log> res = new ArrayList<>(to - from);
         int maxLogIndex = logIndexFile.getMaxIndex();
         if (from > maxLogIndex) {
-            from = from - maxLogIndex - 1;
-            to = to - maxLogIndex - 1;
             IntStream.range(from, to).forEach(index -> res.add(pending.get(index)));
             return res;
         }
@@ -439,8 +406,8 @@ public class LogManager {
             end = logFile.size();
         }
         logFile.loadEntriesIntoList(start, end, res);
-        to = to - maxLogIndex - 1;
-        IntStream.range(0, to).forEach(index -> res.add(pending.get(index)));
+        from = maxLogIndex + 1;
+        IntStream.range(from, to).forEach(index -> res.add(pending.get(index)));
         return res;
     }
 

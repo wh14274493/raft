@@ -105,7 +105,6 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
         PooledByteBuffer byteBuffer = bufferPool.allocate(size);
         readByteBufferAt(position, byteBuffer, size);
         byte[] res = new byte[size];
-        byteBuffer.flip();
         byteBuffer.get(res, 0, size);
         bufferPool.recycle(byteBuffer);
         return res;

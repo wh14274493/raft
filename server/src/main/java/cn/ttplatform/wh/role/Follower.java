@@ -52,11 +52,4 @@ public class Follower extends AbstractRole {
             preVoteCounts, voteTo);
     }
 
-    @Override
-    public boolean compare(Role oldRole) {
-        Follower old = (Follower) oldRole;
-        return Objects.equals(voteTo, old.getVoteTo()) && Objects.equals(leaderId, old.getLeaderId())
-            && preVoteCounts == old.getPreVoteCounts();
-    }
-
 }

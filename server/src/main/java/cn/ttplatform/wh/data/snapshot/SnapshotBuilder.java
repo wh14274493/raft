@@ -35,7 +35,7 @@ public class SnapshotBuilder {
         this.lastIncludeIndex = lastIncludeIndex;
         this.lastIncludeTerm = lastIncludeTerm;
         this.snapshotSource = snapshotSource;
-        this.file = new File(parent, String.format(FileConstant.SNAPSHOT_GENERATING_FILE_NAME, lastIncludeTerm, lastIncludeIndex));
+        this.file = FileConstant.newSnapshotFile(parent, lastIncludeIndex, lastIncludeTerm);
         try {
             Files.deleteIfExists(file.toPath());
             Files.createFile(file.toPath());

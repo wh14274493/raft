@@ -115,8 +115,8 @@ public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {
-            log.info("fire IdleStateEvent[{}].", evt);
             ctx.channel().close();
+            log.info("fire IdleStateEvent[{}].", evt);
         } else {
             log.info("fire Event[{}].", evt);
             super.userEventTriggered(ctx, evt);

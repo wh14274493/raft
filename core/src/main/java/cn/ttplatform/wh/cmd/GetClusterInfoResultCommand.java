@@ -24,6 +24,7 @@ public class GetClusterInfoResultCommand extends AbstractCommand {
     private String mode;
     private String newConfig;
     private String oldConfig;
+    private int size;
 
     @Override
     public int getType() {
@@ -37,6 +38,7 @@ public class GetClusterInfoResultCommand extends AbstractCommand {
             ", leader='" + leader + '\'' +
             ", phase='" + phase + '\'' +
             ", mode='" + mode + '\'' +
+            ", size=" + size +
             ", newConfig='" + newConfig + '\'' +
             ", oldConfig='" + oldConfig + '\'' +
             '}';

@@ -69,6 +69,7 @@ public class Sender {
         if (channel == null) {
             return null;
         }
+        log.debug("encode a message[{}] to {}", message, metaData.getNodeId());
         return channel.writeAndFlush(message);
     }
 
@@ -77,6 +78,7 @@ public class Sender {
         if (channel == null) {
             return null;
         }
+        log.debug("encode a message[{}] to {}", message, nodeId);
         return channel.writeAndFlush(message);
     }
 

@@ -9,19 +9,19 @@ import static cn.ttplatform.wh.constant.LaunchOption.PORT_OPTION;
 import cn.ttplatform.wh.config.RunMode;
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.constant.LaunchOption;
-import lombok.extern.slf4j.Slf4j;
+import java.net.URL;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.log4j.helpers.Loader;
 
 /**
  * @author Wang Hao
  * @date 2021/3/15 15:25
  */
-@Slf4j
 public class Server {
 
     private void run(String[] args) throws ParseException {
@@ -55,7 +55,8 @@ public class Server {
     public ServerProperties initConfig(CommandLine commandLine) {
         ServerProperties properties;
         if (commandLine.hasOption(LaunchOption.CONFIG_OPTION)) {
-            properties = new ServerProperties(commandLine.getOptionValue('c'));
+            String value = commandLine.getOptionValue('c');
+            properties = new ServerProperties(value);
         } else {
             properties = new ServerProperties();
         }
@@ -84,6 +85,8 @@ public class Server {
     }
 
     public static void main(String[] args) throws Exception {
+        System.setProperty("log4j.defaultInitOverride", "true");
         new Server().run(args);
     }
+
 }

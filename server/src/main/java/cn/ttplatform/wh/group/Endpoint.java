@@ -44,14 +44,13 @@ public class Endpoint implements Comparable<Endpoint> {
             return false;
         }
         this.matchIndex = matchIndex;
-        this.nextIndex = matchIndex + 1;
-        log.debug("update {} replicationState[matchIndex={},nextIndex={}]", metaData.getNodeId(), matchIndex,
-            nextIndex);
+        this.nextIndex = matched ? matchIndex + 1 : nextIndex;
+        log.debug("update {} replicationState[matchIndex={},nextIndex={}]", metaData.getNodeId(), matchIndex, nextIndex);
         return true;
     }
 
     public void quickMatchNextIndex(boolean lastMatched) {
-        log.debug("{} match helper is {}", this.metaData, quickMatchHelper);
+        log.debug("{} matched is {}, match helper is {}", this.metaData, matched, quickMatchHelper);
         if (!matched) {
             matched = quickMatchHelper.isMatched();
         }
@@ -59,7 +58,7 @@ public class Endpoint implements Comparable<Endpoint> {
             if (nextIndex > 0) {
                 nextIndex--;
             }
-            // at this point, we should use log snapshots to synchronize followerd logs
+            // at this point, we should use log snapshots to synchronize follower logs
         } else {
             quickMatchHelper.update(lastMatched);
             nextIndex = quickMatchHelper.getIndex();

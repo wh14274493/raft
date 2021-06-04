@@ -25,12 +25,4 @@ public interface Role {
      */
     RoleType getType();
 
-    /**
-     * compare the state of current role to another role be given
-     *
-     * @param oldRole an role object maybe changed
-     * @return res
-     */
-    boolean compareState(Role oldRole);
-
 }

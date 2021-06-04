@@ -24,9 +24,4 @@ public class Leader extends AbstractRole {
     public RoleType getType() {
         return RoleType.LEADER;
     }
-
-    @Override
-    public boolean compare(Role oldRole) {
-        return false;
-    }
 }

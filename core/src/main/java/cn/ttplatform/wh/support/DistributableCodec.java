@@ -25,7 +25,6 @@ public class DistributableCodec extends ByteToMessageCodec<Distributable> {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Distributable msg, ByteBuf out) {
-//        log.trace("encode a message[{}]", msg);
         DistributableFactory factory = factoryManager.getFactory(msg.getType());
         factory.getBytes(msg, out);
     }
@@ -50,7 +49,7 @@ public class DistributableCodec extends ByteToMessageCodec<Distributable> {
             out.add(distributable);
         } catch (Exception e) {
             log.error(e.getMessage());
-            ctx.channel().write(failedCommand(e.getMessage()));
+            ctx.channel().writeAndFlush(failedCommand(e.getMessage()));
         } finally {
             in.readerIndex(newReaderIndex);
         }

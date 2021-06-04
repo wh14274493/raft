@@ -5,10 +5,15 @@ import io.netty.channel.EventLoopGroup;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 import lombok.Data;
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.helpers.Loader;
+import org.apache.log4j.helpers.OptionConverter;
 
 /**
  * @author Wang Hao
@@ -118,6 +123,8 @@ public class ServerProperties {
      */
     private int byteBufferSizeLimit;
 
+    private Level logLevel;
+
     public ServerProperties(String configPath) {
         Properties properties = new Properties();
         File file = new File(configPath);
@@ -127,11 +134,19 @@ public class ServerProperties {
         } catch (IOException e) {
             throw new OperateFileException(e.getMessage());
         }
+        try (FileInputStream fis = new FileInputStream(file)) {
+            OptionConverter.selectAndConfigure(fis, null, LogManager.getLoggerRepository());
+        } catch (IOException e) {
+            throw new OperateFileException(e.getMessage());
+        }
+
     }
 
     public ServerProperties() {
         Properties properties = new Properties();
         loadProperties(properties);
+        URL resource = Loader.getResource("log4j.properties");
+        OptionConverter.selectAndConfigure(resource, null, LogManager.getLoggerRepository());
     }
 
     private void loadProperties(Properties properties) {
@@ -165,5 +180,10 @@ public class ServerProperties {
         readWriteFileStrategy = properties.getProperty("readWriteFileStrategy", "direct access");
         byteBufferPoolSize = Integer.parseInt(properties.getProperty("byteBufferPoolSize", "10"));
         byteBufferSizeLimit = Integer.parseInt(properties.getProperty("byteBufferSizeLimit", String.valueOf(1024 * 1024 * 10)));
+        logLevel = OptionConverter.toLevel(properties.getProperty("logLevel"), Level.DEBUG);
+    }
+
+    private void setLogLevel() {
+        LogManager.getRootLogger().setLevel(logLevel);
     }
 }

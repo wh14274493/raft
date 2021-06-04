@@ -1,6 +1,5 @@
 package cn.ttplatform.wh.role;
 
-import java.util.Objects;
 import java.util.concurrent.ScheduledFuture;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -29,19 +28,4 @@ public abstract class AbstractRole implements Role {
         }
     }
 
-    @Override
-    public boolean compareState(Role oldRole) {
-        if (this.term == oldRole.getTerm() && Objects.equals(this.getType(), oldRole.getType())) {
-            return compare(oldRole);
-        }
-        return false;
-    }
-
-    /**
-     * judge the state of current object whether equals oldRole or not
-     *
-     * @param oldRole oldRole
-     * @return judgement
-     */
-    public abstract boolean compare(Role oldRole);
 }
