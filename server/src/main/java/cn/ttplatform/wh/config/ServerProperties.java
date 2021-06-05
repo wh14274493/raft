@@ -167,8 +167,7 @@ public class ServerProperties {
         logReplicationDelay = Long.parseLong(properties.getProperty("logReplicationDelay", "1000"));
         logReplicationInterval = Long.parseLong(properties.getProperty("logReplicationInterval", "1000"));
         retryTimeout = Long.parseLong(properties.getProperty("retryTimeout", "800"));
-        String defaultBasePath = Objects.requireNonNull(this.getClass().getClassLoader().getResource("")).getPath();
-        base = new File(properties.getProperty("basePath", defaultBasePath));
+        base = new File(properties.getProperty("basePath", System.getProperty("user.home")));
         snapshotGenerateThreshold = Integer
             .parseInt(properties.getProperty("snapshotGenerateThreshold", String.valueOf(1024 * 1024 * 10)));
         maxTransferLogs = Integer.parseInt(properties.getProperty("maxTransferLogs", "10000"));

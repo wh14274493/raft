@@ -40,7 +40,6 @@ public class ChannelPool {
     public ChannelFuture reply(String id, Command command) {
         Channel channel = removeChannel(id);
         if (channel != null) {
-            log.debug("reply {} to {}.", command, channel);
             return channel.writeAndFlush(command);
         }
         log.debug("channel for {} is null", id);

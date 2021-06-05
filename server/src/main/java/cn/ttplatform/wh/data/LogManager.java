@@ -4,7 +4,6 @@ import cn.ttplatform.wh.GlobalContext;
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.data.log.Log;
 import cn.ttplatform.wh.data.log.LogFile;
-import cn.ttplatform.wh.data.log.LogIndex;
 import cn.ttplatform.wh.data.log.LogIndexFile;
 import cn.ttplatform.wh.data.snapshot.Snapshot;
 import cn.ttplatform.wh.data.snapshot.SnapshotBuilder;
@@ -118,6 +117,10 @@ public class LogManager {
     }
 
     public int getTermOfLog(int index) {
+        Log log = pending.get(index);
+        if (log != null) {
+            return log.getTerm();
+        }
         return Optional.ofNullable(logIndexFile.getLogMetaData(index))
             .orElseThrow(() -> new IncorrectLogIndexNumberException("not found log meta data for index[" + index + "]."))
             .getTerm();
@@ -308,7 +311,6 @@ public class LogManager {
         }
         int lastIncludeTerm = message.getLastIncludeTerm();
         String sourceId = message.getSourceId();
-        String snapshotSource = snapshotBuilder.getSnapshotSource();
         long offset = message.getOffset();
         if (offset == 0L) {
             snapshotBuilder.setBaseInfo(lastIncludeIndex, lastIncludeTerm, sourceId);
@@ -317,7 +319,7 @@ public class LogManager {
         if (offset != expectedOffset) {
             throw new IllegalArgumentException(String.format("the offset[%d] is unmatched. expect %d", offset, expectedOffset));
         }
-        if (!sourceId.equals(snapshotSource)) {
+        if (!sourceId.equals(snapshotBuilder.getSnapshotSource())) {
             throw new IllegalArgumentException("the snapshotSource has changed, receive a message that offset!=0.");
         }
         snapshotBuilder.append(message.getChunk());

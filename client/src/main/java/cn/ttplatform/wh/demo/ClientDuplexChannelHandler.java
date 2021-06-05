@@ -43,12 +43,12 @@ public class ClientDuplexChannelHandler extends ChannelDuplexHandler {
 //                            log.info("{}: {} ", index, msg.toString());
 //        index++;
 
-//        int i = index.incrementAndGet();
-//        if (i % 10000 == 0) {
-//            log.info("time = {}, count = {}, msg = {}", System.nanoTime(), i, msg);
-//        }
+        int i = index.incrementAndGet();
+        if (i % 10000 == 0) {
+            log.info("time = {}, count = {}, msg = {}", System.nanoTime(), i, msg);
+        }
 
-        log.info(msg.toString());
+//        log.info(msg.toString());
     }
 
 }
