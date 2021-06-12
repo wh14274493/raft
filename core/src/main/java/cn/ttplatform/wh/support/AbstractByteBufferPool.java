@@ -1,5 +1,6 @@
 package cn.ttplatform.wh.support;
 
+import java.nio.ByteBuffer;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -7,22 +8,22 @@ import java.util.TreeMap;
  * @author Wang Hao
  * @date 2021/4/21 13:07
  */
-public abstract class AbstractPool<T> implements Pool<T> {
+public abstract class AbstractByteBufferPool implements Pool<ByteBuffer> {
 
     protected final int bufferSizeLimit;
     protected final int poolSize;
-    protected final TreeMap<Integer, T> pool;
+    protected final TreeMap<Integer, ByteBuffer> pool;
 
-    protected AbstractPool(int poolSize, int bufferSizeLimit) {
+    protected AbstractByteBufferPool(int poolSize, int bufferSizeLimit) {
         this.bufferSizeLimit = bufferSizeLimit;
         this.poolSize = poolSize;
         this.pool = new TreeMap<>();
     }
 
     @Override
-    public T allocate(int size) {
+    public ByteBuffer allocate(int size) {
         if (!pool.isEmpty()) {
-            Entry<Integer, T> bufferEntry = pool.ceilingEntry(size);
+            Entry<Integer, ByteBuffer> bufferEntry = pool.ceilingEntry(size);
             if (bufferEntry != null) {
                 return pool.remove(bufferEntry.getKey());
             }
@@ -36,5 +37,5 @@ public abstract class AbstractPool<T> implements Pool<T> {
      * @param size chunk size
      * @return a new buffer
      */
-    public abstract T doAllocate(int size);
+    public abstract ByteBuffer doAllocate(int size);
 }

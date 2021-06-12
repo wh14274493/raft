@@ -4,7 +4,6 @@ import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.exception.MessageParseException;
 import cn.ttplatform.wh.support.Factory;
 import cn.ttplatform.wh.support.Pool;
-import cn.ttplatform.wh.data.tool.PooledByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.protostuff.ByteBufferInput;
 import io.protostuff.LinkedBuffer;
@@ -97,11 +96,10 @@ public class StateMachine {
         return dataFactory.getBytes(data);
     }
 
-    public void applySnapshotData(PooledByteBuffer snapshot, int lastIncludeIndex) {
-        data = dataFactory.create(snapshot.getBuffer(), snapshot.limit());
+    public void applySnapshotData(ByteBuffer snapshot, int lastIncludeIndex) {
+        data = dataFactory.create(snapshot, snapshot.limit());
         applied = lastIncludeIndex;
         log.info("apply snapshot that lastIncludeIndex is {}.", lastIncludeIndex);
-        snapshot.recycle();
     }
 
     private static class DataFactory implements Factory<Map<String, String>> {

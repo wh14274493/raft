@@ -1,21 +1,13 @@
 package cn.ttplatform.wh.data.log;
 
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.DSYNC;
-import static java.nio.file.StandardOpenOption.READ;
-import static java.nio.file.StandardOpenOption.WRITE;
-
+import cn.ttplatform.wh.data.tool.Bits;
 import cn.ttplatform.wh.data.tool.ByteBufferWriter;
-import cn.ttplatform.wh.data.tool.PooledByteBuffer;
 import cn.ttplatform.wh.data.tool.ReadableAndWriteableFile;
 import cn.ttplatform.wh.exception.IncorrectLogIndexNumberException;
-import cn.ttplatform.wh.support.LRUCache;
+import cn.ttplatform.wh.support.LRU;
 import cn.ttplatform.wh.support.Pool;
 import java.io.File;
-import java.io.IOException;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -34,12 +26,12 @@ public final class LogIndexFile {
      */
     private static final int ITEM_LENGTH = Integer.BYTES * 3 + Long.BYTES;
     private final LogIndexCache logIndexCache;
-    private final Pool<PooledByteBuffer> byteBufferPool;
+    private final Pool<ByteBuffer> byteBufferPool;
     private final ReadableAndWriteableFile file;
     private int minIndex;
     private int maxIndex;
 
-    public LogIndexFile(File file, Pool<PooledByteBuffer> byteBufferPool, int lastIncludeIndex) {
+    public LogIndexFile(File file, Pool<ByteBuffer> byteBufferPool, int lastIncludeIndex) {
         this.file = new ByteBufferWriter(file, byteBufferPool);
         this.logIndexCache = new LogIndexCache(100);
         this.byteBufferPool = byteBufferPool;
@@ -50,17 +42,17 @@ public final class LogIndexFile {
 
     public void initialize() {
         if (!isEmpty()) {
-            PooledByteBuffer byteBuffer = byteBufferPool.allocate(ITEM_LENGTH);
+            ByteBuffer byteBuffer = byteBufferPool.allocate(ITEM_LENGTH);
             try {
-                this.file.readByteBufferAt(0L, byteBuffer, ITEM_LENGTH);
-                this.minIndex = byteBuffer.getInt();
-                logIndexCache.put(minIndex, LogIndex.builder().index(minIndex).term(byteBuffer.getInt()).type(byteBuffer.getInt())
-                    .offset(byteBuffer.getLong()).build());
+                this.file.readBytes(0L, byteBuffer, ITEM_LENGTH);
+                this.minIndex = Bits.getInt(byteBuffer);
+                logIndexCache.put(minIndex, LogIndex.builder().index(minIndex).term(Bits.getInt(byteBuffer))
+                    .type(Bits.getInt(byteBuffer)).offset(Bits.getLong(byteBuffer)).build());
                 byteBuffer.clear();
-                this.file.readByteBufferAt(this.file.size() - ITEM_LENGTH, byteBuffer, ITEM_LENGTH);
-                this.maxIndex = byteBuffer.getInt();
-                logIndexCache.put(maxIndex, LogIndex.builder().index(maxIndex).term(byteBuffer.getInt()).type(byteBuffer.getInt())
-                    .offset(byteBuffer.getLong()).build());
+                this.file.readBytes(this.file.size() - ITEM_LENGTH, byteBuffer, ITEM_LENGTH);
+                this.maxIndex = Bits.getInt(byteBuffer);
+                logIndexCache.put(maxIndex, LogIndex.builder().index(maxIndex).term(Bits.getInt(byteBuffer))
+                    .type(Bits.getInt(byteBuffer)).offset(Bits.getLong(byteBuffer)).build());
             } finally {
                 byteBufferPool.recycle(byteBuffer);
             }
@@ -72,17 +64,15 @@ public final class LogIndexFile {
         if (index < minIndex || index > maxIndex) {
             return null;
         }
-        PooledByteBuffer byteBuffer = byteBufferPool.allocate(ITEM_LENGTH);
-        LogIndex logIndex;
+        ByteBuffer byteBuffer = byteBufferPool.allocate(ITEM_LENGTH);
         try {
             long position = (long) (index - minIndex) * ITEM_LENGTH;
-            this.file.readByteBufferAt(position, byteBuffer, ITEM_LENGTH);
-            logIndex = LogIndex.builder().index(byteBuffer.getInt()).term(byteBuffer.getInt()).type(byteBuffer.getInt())
-                .offset(byteBuffer.getLong()).build();
+            this.file.readBytes(position, byteBuffer, ITEM_LENGTH);
+            return LogIndex.builder().index(Bits.getInt(byteBuffer)).term(Bits.getInt(byteBuffer)).type(Bits.getInt(byteBuffer))
+                .offset(Bits.getLong(byteBuffer)).build();
         } finally {
             byteBufferPool.recycle(byteBuffer);
         }
-        return logIndex;
     }
 
     public int getMaxIndex() {
@@ -118,12 +108,12 @@ public final class LogIndexFile {
         maxIndex = index;
         LogIndexFile.log.debug("update maxLogIndex = {}.", maxIndex);
         LogIndex logIndex = LogIndex.builder().index(index).term(log.getTerm()).offset(offset).type(log.getType()).build();
-        PooledByteBuffer byteBuffer = byteBufferPool.allocate(ITEM_LENGTH);
+        ByteBuffer byteBuffer = byteBufferPool.allocate(ITEM_LENGTH);
         try {
-            byteBuffer.putInt(logIndex.getIndex());
-            byteBuffer.putInt(logIndex.getTerm());
-            byteBuffer.putInt(logIndex.getType());
-            byteBuffer.putLong(logIndex.getOffset());
+            Bits.putInt(log.getIndex(), byteBuffer);
+            Bits.putInt(log.getTerm(), byteBuffer);
+            Bits.putInt(log.getType(), byteBuffer);
+            Bits.putLong(logIndex.getOffset(), byteBuffer);
             file.append(byteBuffer, ITEM_LENGTH);
             logIndexCache.put(logIndex.getIndex(), logIndex);
         } finally {
@@ -143,15 +133,15 @@ public final class LogIndexFile {
         maxIndex = logs.get(logs.size() - 1).getIndex();
         log.debug("update maxLogIndex = {}.", maxIndex);
         int contentLength = logs.size() * ITEM_LENGTH;
-        PooledByteBuffer byteBuffer = byteBufferPool.allocate(contentLength);
+        ByteBuffer byteBuffer = byteBufferPool.allocate(contentLength);
         try {
             Log log;
             for (int i = 0; i < logs.size(); i++) {
                 log = logs.get(i);
-                byteBuffer.putInt(log.getIndex());
-                byteBuffer.putInt(log.getTerm());
-                byteBuffer.putInt(log.getType());
-                byteBuffer.putLong(offsets[i]);
+                Bits.putInt(log.getIndex(), byteBuffer);
+                Bits.putInt(log.getTerm(), byteBuffer);
+                Bits.putInt(log.getType(), byteBuffer);
+                Bits.putLong(offsets[i], byteBuffer);
                 LogIndex logIndex = LogIndex.builder()
                     .index(log.getIndex())
                     .term(log.getTerm())
@@ -166,8 +156,8 @@ public final class LogIndexFile {
         }
     }
 
-    public void append(PooledByteBuffer byteBuffer) {
-        file.append(byteBuffer,byteBuffer.position());
+    public void append(ByteBuffer byteBuffer) {
+        file.append(byteBuffer, byteBuffer.position());
     }
 
     public void removeAfter(int index) {
@@ -184,17 +174,6 @@ public final class LogIndexFile {
         }
     }
 
-    public void transferTo(int index, Path dst) throws IOException {
-        Files.deleteIfExists(dst);
-        FileChannel dstChannel = FileChannel.open(dst, READ, WRITE, DSYNC, CREATE);
-        long offset = (long) ITEM_LENGTH * (index - 1);
-        file.transferTo(offset, file.size() - offset, dstChannel);
-    }
-
-    public void delete() {
-        file.delete();
-    }
-
     public boolean isEmpty() {
         return file.isEmpty();
     }
@@ -207,19 +186,19 @@ public final class LogIndexFile {
         file.close();
     }
 
-    static class LogIndexCache extends LRUCache<Integer, LogIndex> {
+    static class LogIndexCache extends LRU<Integer, LogIndex> {
 
         public LogIndexCache(int capacity) {
             super(capacity);
         }
 
         public void removeAfter(int index) {
-            Iterator<Map.Entry<Integer, Entry<Integer, LogIndex>>> iterator = cache.entrySet().iterator();
+            Iterator<Map.Entry<Integer, KVEntry<Integer, LogIndex>>> iterator = cache.entrySet().iterator();
             while (iterator.hasNext()) {
-                Map.Entry<Integer, Entry<Integer, LogIndex>> next = iterator.next();
+                Map.Entry<Integer, KVEntry<Integer, LogIndex>> next = iterator.next();
                 if (next.getKey() > index) {
-                    Entry<Integer, LogIndex> entry = next.getValue();
-                    remove(entry);
+                    KVEntry<Integer, LogIndex> kvEntry = next.getValue();
+                    remove(kvEntry);
                     iterator.remove();
                     size--;
                 }

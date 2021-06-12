@@ -3,7 +3,7 @@ package cn.ttplatform.wh.message.handler;
 import cn.ttplatform.wh.GlobalContext;
 import cn.ttplatform.wh.Node;
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.data.LogManager;
+import cn.ttplatform.wh.data.DataManager;
 import cn.ttplatform.wh.exception.IncorrectLogIndexNumberException;
 import cn.ttplatform.wh.group.Cluster;
 import cn.ttplatform.wh.group.Phase;
@@ -78,20 +78,20 @@ public class AppendLogEntriesMessageHandler extends AbstractDistributableHandler
         String currentLeaderId = node.isFollower() ? ((Follower) node.getRole()).getLeaderId() : "";
         String newLeaderId = message.getLeaderId();
         node.changeToFollower(message.getTerm(), newLeaderId, null, 0, 0, System.currentTimeMillis());
-        LogManager logManager = context.getLogManager();
+        DataManager dataManager = context.getDataManager();
         int preLogIndex = message.getPreLogIndex();
-        if (Objects.equals(currentLeaderId, newLeaderId) && message.isMatched() && preLogIndex < logManager.getNextIndex() - 1) {
+        if (Objects.equals(currentLeaderId, newLeaderId) && message.isMatched() && preLogIndex < dataManager.getNextIndex() - 1) {
             throw new IncorrectLogIndexNumberException("preLogIndex < log.getNextIndex(), maybe a expired message.");
         }
 
-        boolean checkIndexAndTermIfMatched = logManager.checkIndexAndTermIfMatched(preLogIndex, message.getPreLogTerm());
+        boolean checkIndexAndTermIfMatched = dataManager.checkIndexAndTermIfMatched(preLogIndex, message.getPreLogTerm());
         if (checkIndexAndTermIfMatched && !message.isMatched()) {
             return true;
         }
         if (checkIndexAndTermIfMatched) {
             AppendLogEntriesMessageHandler.log.debug("checkIndexAndTerm Matched");
-            logManager.pendingLogs(preLogIndex, message.getLogEntries());
-            if (logManager.advanceCommitIndex(message.getLeaderCommitIndex(), message.getTerm())) {
+            dataManager.pendingLogs(preLogIndex, message.getLogEntries());
+            if (dataManager.advanceCommitIndex(message.getLeaderCommitIndex(), message.getTerm())) {
                 context.advanceLastApplied(message.getLeaderCommitIndex());
             }
             return true;

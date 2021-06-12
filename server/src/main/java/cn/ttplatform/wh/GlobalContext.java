@@ -22,6 +22,18 @@ import cn.ttplatform.wh.cmd.factory.SetResultCommandFactory;
 import cn.ttplatform.wh.config.RunMode;
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.constant.ReadWriteFileStrategy;
+import cn.ttplatform.wh.data.DataManager;
+import cn.ttplatform.wh.data.log.Log;
+import cn.ttplatform.wh.data.log.LogFactory;
+import cn.ttplatform.wh.data.snapshot.GenerateSnapshotTask;
+import cn.ttplatform.wh.data.tool.DirectByteBufferPool;
+import cn.ttplatform.wh.data.tool.HeapByteBufferPool;
+import cn.ttplatform.wh.group.Cluster;
+import cn.ttplatform.wh.group.Endpoint;
+import cn.ttplatform.wh.handler.ClusterChangeCommandHandler;
+import cn.ttplatform.wh.handler.GetClusterInfoCommandHandler;
+import cn.ttplatform.wh.handler.GetCommandHandler;
+import cn.ttplatform.wh.handler.SetCommandHandler;
 import cn.ttplatform.wh.message.PreVoteMessage;
 import cn.ttplatform.wh.message.RequestVoteMessage;
 import cn.ttplatform.wh.message.factory.AppendLogEntriesMessageFactory;
@@ -42,31 +54,19 @@ import cn.ttplatform.wh.message.handler.PreVoteResultMessageHandler;
 import cn.ttplatform.wh.message.handler.RequestVoteMessageHandler;
 import cn.ttplatform.wh.message.handler.RequestVoteResultMessageHandler;
 import cn.ttplatform.wh.message.handler.SyncingMessageHandler;
-import cn.ttplatform.wh.data.LogManager;
-import cn.ttplatform.wh.data.log.Log;
-import cn.ttplatform.wh.data.log.LogFactory;
-import cn.ttplatform.wh.data.snapshot.GenerateSnapshotTask;
-import cn.ttplatform.wh.data.tool.DirectByteBufferPool;
-import cn.ttplatform.wh.data.tool.IndirectByteBufferPool;
-import cn.ttplatform.wh.data.tool.PooledByteBuffer;
-import cn.ttplatform.wh.group.Cluster;
-import cn.ttplatform.wh.group.Endpoint;
-import cn.ttplatform.wh.handler.ClusterChangeCommandHandler;
-import cn.ttplatform.wh.handler.GetClusterInfoCommandHandler;
-import cn.ttplatform.wh.handler.GetCommandHandler;
-import cn.ttplatform.wh.handler.SetCommandHandler;
 import cn.ttplatform.wh.scheduler.Scheduler;
 import cn.ttplatform.wh.scheduler.SingleThreadScheduler;
 import cn.ttplatform.wh.support.ChannelPool;
 import cn.ttplatform.wh.support.CommonDistributor;
-import cn.ttplatform.wh.support.NamedThreadFactory;
 import cn.ttplatform.wh.support.DistributableFactoryRegistry;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Message;
+import cn.ttplatform.wh.support.NamedThreadFactory;
 import cn.ttplatform.wh.support.Pool;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.protostuff.LinkedBuffer;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -100,7 +100,7 @@ public class GlobalContext {
     private final Map<Integer, SetCommand> pendingSetCommandMap = new HashMap<>();
     private final ServerProperties properties;
     private final Pool<LinkedBuffer> linkedBufferPool;
-    private final Pool<PooledByteBuffer> byteBufferPool;
+    private final Pool<ByteBuffer> byteBufferPool;
     private final CommonDistributor distributor;
     private final DistributableFactoryRegistry factoryManager;
     private final ThreadPoolExecutor snapshotGenerateExecutor;
@@ -108,7 +108,7 @@ public class GlobalContext {
     private final NioEventLoopGroup boss;
     private final NioEventLoopGroup worker;
     private final StateMachine stateMachine;
-    private final LogManager logManager;
+    private final DataManager dataManager;
     private final EntryFactory entryFactory;
     private final ChannelPool channelPool;
     private Node node;
@@ -127,7 +127,7 @@ public class GlobalContext {
                 properties.getByteBufferSizeLimit());
         } else {
             logger.debug("use BufferAllocator");
-            this.byteBufferPool = new IndirectByteBufferPool(properties.getByteBufferPoolSize(),
+            this.byteBufferPool = new HeapByteBufferPool(properties.getByteBufferPoolSize(),
                 properties.getByteBufferSizeLimit());
         }
         this.distributor = buildDistributor();
@@ -150,7 +150,7 @@ public class GlobalContext {
         this.boss = new NioEventLoopGroup(properties.getBossThreads());
         this.worker = new NioEventLoopGroup(properties.getWorkerThreads());
         this.stateMachine = new StateMachine(this);
-        this.logManager = new LogManager(this);
+        this.dataManager = new DataManager(this);
         this.entryFactory = new EntryFactory(this.linkedBufferPool);
         this.channelPool = new ChannelPool();
     }
@@ -228,8 +228,8 @@ public class GlobalContext {
             node.changeToFollower(currentTerm, null, null, oldCounts, newCounts, 0L);
             PreVoteMessage preVoteMessage = PreVoteMessage.builder()
                 .nodeId(selfId)
-                .lastLogTerm(logManager.getTermOfLastLog())
-                .lastLogIndex(logManager.getIndexOfLastLog())
+                .lastLogTerm(dataManager.getTermOfLastLog())
+                .lastLogIndex(dataManager.getIndexOfLastLog())
                 .build();
             sendMessageToOthers(preVoteMessage);
         }
@@ -241,8 +241,8 @@ public class GlobalContext {
         node.changeToCandidate(term, cluster.inOldConfig(selfId) ? 1 : 0, cluster.inOldConfig(selfId) ? 1 : 0);
         RequestVoteMessage requestVoteMessage = RequestVoteMessage.builder()
             .candidateId(selfId)
-            .lastLogIndex(logManager.getIndexOfLastLog())
-            .lastLogTerm(logManager.getTermOfLastLog())
+            .lastLogIndex(dataManager.getIndexOfLastLog())
+            .lastLogTerm(dataManager.getTermOfLastLog())
             .term(term)
             .build();
         sendMessageToOthers(requestVoteMessage);
@@ -273,11 +273,11 @@ public class GlobalContext {
 
     public void doLogReplication(Endpoint endpoint, int currentTerm) {
 
-        Message message = logManager
+        Message message = dataManager
             .createAppendLogEntriesMessage(node.getSelfId(), currentTerm, endpoint, properties.getMaxTransferLogs());
         if (message == null) {
             // start snapshot replication
-            message = logManager
+            message = dataManager
                 .createInstallSnapshotMessage(currentTerm, endpoint.getSnapshotOffset(), properties.getMaxTransferSize());
         }
         sendMessage(message, endpoint);
@@ -304,14 +304,19 @@ public class GlobalContext {
 
     public void advanceLastApplied(int newCommitIndex) {
         int applied = stateMachine.getApplied();
-        int lastIncludeIndex = logManager.getLastIncludeIndex();
+        int lastIncludeIndex = dataManager.getLastIncludeIndex();
         if (applied == 0 && lastIncludeIndex > 0) {
             logger.debug("lastApplied is 0, and there is a none empty snapshot, then apply snapshot.");
-            stateMachine.applySnapshotData(logManager.getSnapshotData(), lastIncludeIndex);
+            ByteBuffer byteBuffer = dataManager.getSnapshotData();
+            try {
+                stateMachine.applySnapshotData(byteBuffer, lastIncludeIndex);
+            } finally {
+                byteBufferPool.recycle(byteBuffer);
+            }
             applied = lastIncludeIndex;
         }
-        applyLogs(logManager.range(applied + 1, newCommitIndex + 1));
-        if (logManager.shouldGenerateSnapshot(properties.getSnapshotGenerateThreshold())) {
+        applyLogs(dataManager.range(applied + 1, newCommitIndex + 1));
+        if (dataManager.shouldGenerateSnapshot(properties.getSnapshotGenerateThreshold())) {
             boolean result = stateMachine.startGenerating();
             if (result) {
                 snapshotGenerateExecutor.execute(new GenerateSnapshotTask(this, stateMachine.getApplied()));
@@ -323,8 +328,9 @@ public class GlobalContext {
     }
 
     public void applySnapshot(int lastIncludeIndex) {
-        PooledByteBuffer snapshotData = logManager.getSnapshotData();
-        stateMachine.applySnapshotData(snapshotData, lastIncludeIndex);
+        ByteBuffer byteBuffer = dataManager.getSnapshotData();
+        stateMachine.applySnapshotData(byteBuffer, lastIncludeIndex);
+        byteBufferPool.recycle(byteBuffer);
     }
 
     public void applyLogs(List<Log> logs) {
@@ -446,7 +452,7 @@ public class GlobalContext {
     }
 
     public int pendingLog(int type, byte[] cmd) {
-        return logManager.pendingLog(LogFactory.createEntry(type, node.getTerm(), 0, cmd, cmd.length));
+        return dataManager.pendingLog(LogFactory.createEntry(type, node.getTerm(), 0, cmd, cmd.length));
     }
 
     public void addPendingCommand(int index, SetCommand cmd) {
@@ -455,7 +461,7 @@ public class GlobalContext {
 
     public void close() {
         snapshotGenerateExecutor.shutdownNow();
-        logManager.close();
+        dataManager.close();
         if (executor != null) {
             executor.shutdown();
         }

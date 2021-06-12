@@ -9,14 +9,12 @@ import static cn.ttplatform.wh.constant.LaunchOption.PORT_OPTION;
 import cn.ttplatform.wh.config.RunMode;
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.constant.LaunchOption;
-import java.net.URL;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.log4j.helpers.Loader;
 
 /**
  * @author Wang Hao

@@ -3,7 +3,7 @@ package cn.ttplatform.wh.group;
 import cn.ttplatform.wh.GlobalContext;
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.constant.ErrorMessage;
-import cn.ttplatform.wh.data.LogManager;
+import cn.ttplatform.wh.data.DataManager;
 import cn.ttplatform.wh.data.log.Log;
 import cn.ttplatform.wh.message.SyncingMessage;
 import cn.ttplatform.wh.support.Pool;
@@ -134,7 +134,7 @@ public class Cluster {
     public int getNewCommitIndex() {
         if (phase == Phase.OLD_NEW) {
             int oldConfigCommitIndex =
-                endpointMap.size() <= 1 ? context.getLogManager().getNextIndex() - 1 : getNewCommitIndexFrom(endpointMap);
+                endpointMap.size() <= 1 ? context.getDataManager().getNextIndex() - 1 : getNewCommitIndexFrom(endpointMap);
             int newConfigCommitIndex = getNewCommitIndexFrom(newConfigMap);
             log.debug("oldConfigCommitIndex is {}.", oldConfigCommitIndex);
             log.debug("newConfigCommitIndex is {}.", newConfigCommitIndex);
@@ -146,7 +146,7 @@ public class Cluster {
             return newConfigCommitIndex;
         }
         int oldConfigCommitIndex =
-            endpointMap.size() <= 1 ? context.getLogManager().getNextIndex() - 1 : getNewCommitIndexFrom(endpointMap);
+            endpointMap.size() <= 1 ? context.getDataManager().getNextIndex() - 1 : getNewCommitIndexFrom(endpointMap);
         log.debug("oldConfigCommitIndex is {}.", oldConfigCommitIndex);
         return oldConfigCommitIndex;
     }
@@ -278,12 +278,12 @@ public class Cluster {
     public boolean updateNewConfigMap(Set<EndpointMetaData> metaData) {
         AtomicInteger count = new AtomicInteger();
         newConfigMap.clear();
-        LogManager logManager = context.getLogManager();
+        DataManager dataManager = context.getDataManager();
         metaData.forEach(endpointMetaData -> {
             Endpoint endpoint = endpointMap.get(endpointMetaData.getNodeId());
             if (endpoint == null) {
                 endpoint = new Endpoint(endpointMetaData);
-                endpoint.resetReplicationState(logManager.getLastIncludeIndex(), logManager.getNextIndex());
+                endpoint.resetReplicationState(dataManager.getLastIncludeIndex(), dataManager.getNextIndex());
                 count.getAndIncrement();
             } else {
                 endpoint.setMetaData(endpointMetaData);

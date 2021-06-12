@@ -6,16 +6,14 @@ import cn.ttplatform.wh.data.log.Log;
 import cn.ttplatform.wh.data.log.LogFactory;
 import cn.ttplatform.wh.data.log.LogFile;
 import cn.ttplatform.wh.data.tool.DirectByteBufferPool;
-import cn.ttplatform.wh.support.ByteArrayPool;
 import cn.ttplatform.wh.support.Pool;
-import cn.ttplatform.wh.data.tool.PooledByteBuffer;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
@@ -35,11 +33,9 @@ public class LogFileTest {
 
     @Before
     public void setUp() throws IOException {
-        Pool<byte[]> byteArrayPool = new ByteArrayPool(10, 10 * 1024 * 1024);
-        Pool<PooledByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
-        String path = Objects.requireNonNull(LogFileIndexTest.class.getClassLoader().getResource("")).getPath();
-        File file = new File(path, "log.data");
-        Files.deleteIfExists(file.toPath());
+        Pool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
+        String property = System.getProperty("user.home");
+        File file = File.createTempFile(property,"log.data");
         logFile = new LogFile(file, bufferPool);
     }
 
@@ -75,7 +71,7 @@ public class LogFileTest {
         byte[] content = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
         logFile.append(LogFactory.createEntry(1, 1, 1, content, content.length));
         long begin = System.nanoTime();
-        Log entry = logFile.getEntry(0, logFile.size());
+        Log entry = logFile.getLog(0, logFile.size());
         log.debug("load 1 entry index cost {} ns", (System.nanoTime() - begin));
         assertEquals(1, entry.getIndex());
     }
@@ -85,7 +81,7 @@ public class LogFileTest {
         testAppend();
         long begin = System.nanoTime();
         List<Log> res = new ArrayList<>();
-        logFile.loadEntriesIntoList(0, logFile.size(), res);
+        logFile.loadLogsIntoList(0, logFile.size(), res);
         log.debug("load {} LogEntry cost {} ns", res.size(), (System.nanoTime() - begin));
     }
 

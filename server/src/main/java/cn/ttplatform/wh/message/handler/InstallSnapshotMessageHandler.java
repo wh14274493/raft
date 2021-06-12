@@ -7,7 +7,6 @@ import cn.ttplatform.wh.GlobalContext;
 import cn.ttplatform.wh.role.Role;
 import cn.ttplatform.wh.support.AbstractDistributableHandler;
 import cn.ttplatform.wh.support.Distributable;
-import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -59,7 +58,7 @@ public class InstallSnapshotMessageHandler extends AbstractDistributableHandler 
         context.getNode().changeToFollower(message.getTerm(), null, null, 0, 0, System.currentTimeMillis());
         boolean installRes;
         try {
-            installRes = context.getLogManager().installSnapshot(message);
+            installRes = context.getDataManager().installSnapshot(message);
         } catch (UnsupportedOperationException e) {
             // means that maybe message is expired or leader had changed but the offset is incorrect.
             return null;

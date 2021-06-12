@@ -54,7 +54,7 @@ public class RequestVoteMessageHandler extends AbstractDistributableHandler {
             return requestVoteResultMessage;
         }
         if (term > currentTerm) {
-            boolean voted = !context.getLogManager().isNewerThan(lastLogIndex, lastLogTerm);
+            boolean voted = !context.getDataManager().isNewerThan(lastLogIndex, lastLogTerm);
             requestVoteResultMessage.setTerm(term);
             requestVoteResultMessage.setVoted(voted);
             log.debug("the term[{}] > currentTerm[{}], and the vote result is {}.", term, currentTerm, voted);
@@ -65,7 +65,7 @@ public class RequestVoteMessageHandler extends AbstractDistributableHandler {
             return requestVoteResultMessage;
         }
         if (node.isFollower()) {
-            boolean voted = !context.getLogManager().isNewerThan(lastLogIndex, lastLogTerm);
+            boolean voted = !context.getDataManager().isNewerThan(lastLogIndex, lastLogTerm);
             log.debug("the term[{}] == currentTerm[{}], and the vote result is {}.", term, currentTerm, voted);
             String voteTo = ((Follower) role).getVoteTo();
             if (voted && (voteTo == null || "".equals(voteTo))) {

@@ -61,7 +61,7 @@ public class AppendLogEntriesResultMessageHandler extends AbstractDistributableH
             if (message.isSuccess()) {
                 doReplication = endpoint.updateReplicationState(message.getLastLogIndex());
                 int newCommitIndex = context.getCluster().getNewCommitIndex();
-                if (context.getLogManager().advanceCommitIndex(newCommitIndex, currentTerm)) {
+                if (context.getDataManager().advanceCommitIndex(newCommitIndex, currentTerm)) {
                     context.advanceLastApplied(newCommitIndex);
                 }
             } else {

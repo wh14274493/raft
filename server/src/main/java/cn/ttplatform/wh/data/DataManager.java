@@ -7,9 +7,8 @@ import cn.ttplatform.wh.data.log.LogFile;
 import cn.ttplatform.wh.data.log.LogIndexFile;
 import cn.ttplatform.wh.data.snapshot.Snapshot;
 import cn.ttplatform.wh.data.snapshot.SnapshotBuilder;
-import cn.ttplatform.wh.data.tool.PooledByteBuffer;
+import cn.ttplatform.wh.data.tool.Bits;
 import cn.ttplatform.wh.exception.IncorrectLogIndexNumberException;
-import cn.ttplatform.wh.exception.OperateFileException;
 import cn.ttplatform.wh.group.Cluster;
 import cn.ttplatform.wh.group.Endpoint;
 import cn.ttplatform.wh.message.AppendLogEntriesMessage;
@@ -17,8 +16,9 @@ import cn.ttplatform.wh.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.support.Pool;
 import java.io.File;
-import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -31,11 +31,12 @@ import org.slf4j.LoggerFactory;
  * @author Wang Hao
  * @date 2021/2/4 16:55
  */
-public class LogManager {
+public class DataManager {
 
-    private final Logger logger = LoggerFactory.getLogger(LogManager.class);
+    public static final int MAX_CHUNK_SIZE = 16 * 1024 * 1024;
+    private final Logger logger = LoggerFactory.getLogger(DataManager.class);
     private final TreeMap<Integer, Log> pending = new TreeMap<>();
-    private final Pool<PooledByteBuffer> bufferPool;
+    private final Pool<ByteBuffer> byteBufferPool;
     private final SnapshotBuilder snapshotBuilder;
     private final GlobalContext context;
     private final File base;
@@ -45,53 +46,68 @@ public class LogManager {
     private int commitIndex;
     private int nextIndex;
 
-    public LogManager(GlobalContext context) {
+    public DataManager(GlobalContext context) {
         this.context = context;
         ServerProperties properties = context.getProperties();
         this.base = properties.getBase();
-        this.bufferPool = context.getByteBufferPool();
+        this.byteBufferPool = context.getByteBufferPool();
         File latestSnapshotFile = FileConstant.getLatestSnapshotFile(base);
-        this.snapshot = new Snapshot(latestSnapshotFile, bufferPool);
+        this.snapshot = new Snapshot(latestSnapshotFile, byteBufferPool);
         String path = latestSnapshotFile.getPath();
-        this.logFile = new LogFile(FileConstant.getMatchedLogFile(path), bufferPool);
+        this.logFile = new LogFile(FileConstant.getMatchedLogFile(path), byteBufferPool);
         File latestLogIndexFile = FileConstant.getMatchedLogIndexFile(path);
-        this.logIndexFile = new LogIndexFile(latestLogIndexFile, bufferPool, snapshot.getLastIncludeIndex());
+        this.logIndexFile = new LogIndexFile(latestLogIndexFile, byteBufferPool, snapshot.getLastIncludeIndex());
         if (!logFile.isEmpty() && logIndexFile.isEmpty()) {
             // means that the index file is wrong or missing.
             rebuildIndexFile();
         }
-        this.snapshotBuilder = new SnapshotBuilder(base, bufferPool);
+        this.snapshotBuilder = new SnapshotBuilder(base, byteBufferPool);
         this.commitIndex = logIndexFile.getMaxIndex();
         this.nextIndex = commitIndex + 1;
     }
-
 
     /**
      * Rebuild the index file based on the log file
      */
     private void rebuildIndexFile() {
-        PooledByteBuffer byteBuffer = logFile.loadAll();
-        // allocate a buffer that size is 10MB. And this buffer can include 524288 index records.
-        PooledByteBuffer buffer = bufferPool.allocate(10 * 1024 * 1024);
+        ByteBuffer[] buffers = logFile.read();
+        ByteBuffer byteBuffer = byteBufferPool.allocate(MAX_CHUNK_SIZE);
         try {
-            long offset = 0L;
-            while (byteBuffer.hasRemaining()) {
-                while (byteBuffer.hasRemaining() && buffer.hasRemaining()) {
-                    buffer.putInt(byteBuffer.getInt());
-                    buffer.putInt(byteBuffer.getInt());
-                    buffer.putInt(byteBuffer.getInt());
-                    buffer.putLong(offset);
-                    offset = offset + 16 + byteBuffer.getInt();
-                    byteBuffer.position((int) offset);
+            int position = 0;
+            int index = 0;
+            ByteBuffer source = buffers[index++];
+            source.position(0);
+            int count = 0;
+            int fileSize = (int) logFile.size();
+            while (position < fileSize) {
+                while (byteBuffer.hasRemaining()) {
+                    while (count < 16) {
+                        if (!source.hasRemaining()) {
+                            source = buffers[index++];
+                            source.position(0);
+                        }
+                        byteBuffer.put(source.get());
+                        count++;
+                    }
+                    int offset = byteBuffer.position() - 4;
+                    byteBuffer.position(offset);
+                    int cmdLength = Bits.getInt(byteBuffer);
+                    byteBuffer.position(offset);
+                    Bits.putLong(position, byteBuffer);
+                    position = MAX_CHUNK_SIZE * index + source.position() + cmdLength;
+                    source = buffers[position / MAX_CHUNK_SIZE];
+                    source.position(position % MAX_CHUNK_SIZE);
                 }
-                logIndexFile.append(buffer);
+                logIndexFile.append(byteBuffer);
+                byteBuffer.clear();
             }
+            logIndexFile.initialize();
+            logger.info("rebuild index file success.");
         } finally {
-            bufferPool.recycle(byteBuffer);
-            bufferPool.recycle(buffer);
+            byteBufferPool.recycle(byteBuffer);
+            Arrays.stream(buffers).forEach(byteBufferPool::recycle);
         }
-        logIndexFile.initialize();
-        logger.info("rebuild index file success.");
+
     }
 
     public int getNextIndex() {
@@ -332,20 +348,19 @@ public class LogManager {
     public void completeBuildingSnapshot(SnapshotBuilder snapshotBuilder, int lastIncludeTerm, int lastIncludeIndex) {
         context.getExecutor().execute(() -> {
             snapshotBuilder.complete();
-            this.snapshot = new Snapshot(snapshotBuilder.getFile(), bufferPool);
+            this.snapshot = new Snapshot(snapshotBuilder.getFile(), byteBufferPool);
             File newLogFile = FileConstant.newLogFile(base, lastIncludeIndex, lastIncludeTerm);
             File newLogIndexFile = FileConstant.newLogIndexFile(base, lastIncludeIndex, lastIncludeTerm);
             long offset = logIndexFile.getEntryOffset(lastIncludeIndex + 1);
             try {
+                LogFile oldLogFile = this.logFile;
+                this.logFile = new LogFile(newLogFile, byteBufferPool);
                 if (offset != -1L) {
                     // means that lastIncludeIndex == lastLogIndex
-                    this.logFile.transferTo(offset, newLogFile.toPath());
+                    oldLogFile.transferTo(offset, this.logFile);
                 }
-                this.logFile = new LogFile(newLogFile, bufferPool);
-                this.logIndexFile = new LogIndexFile(newLogIndexFile, bufferPool, lastIncludeIndex);
+                this.logIndexFile = new LogIndexFile(newLogIndexFile, byteBufferPool, lastIncludeIndex);
                 rebuildIndexFile();
-            } catch (IOException e) {
-                throw new OperateFileException("transfer log error.", e);
             } finally {
                 context.getStateMachine().stopGenerating();
             }
@@ -372,7 +387,7 @@ public class LogManager {
             logger.debug("index[{}] > maxEntryIndex[{}], find log from pending.", index, maxLogIndex);
             return pending.get(index);
         }
-        return logFile.getEntry(logIndexFile.getEntryOffset(index), logIndexFile.getEntryOffset(index + 1));
+        return logFile.getLog(logIndexFile.getEntryOffset(index), logIndexFile.getEntryOffset(index + 1));
     }
 
     /**
@@ -407,13 +422,13 @@ public class LogManager {
         } else {
             end = logFile.size();
         }
-        logFile.loadEntriesIntoList(start, end, res);
+        logFile.loadLogsIntoList(start, end, res);
         from = maxLogIndex + 1;
         IntStream.range(from, to).forEach(index -> res.add(pending.get(index)));
         return res;
     }
 
-    public PooledByteBuffer getSnapshotData() {
+    public ByteBuffer getSnapshotData() {
         return snapshot.readAll();
     }
 

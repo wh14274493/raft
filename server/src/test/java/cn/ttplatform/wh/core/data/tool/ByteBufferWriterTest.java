@@ -6,12 +6,11 @@ import static org.junit.Assert.assertTrue;
 
 import cn.ttplatform.wh.data.tool.ByteBufferWriter;
 import cn.ttplatform.wh.data.tool.DirectByteBufferPool;
-import cn.ttplatform.wh.data.tool.PooledByteBuffer;
-import cn.ttplatform.wh.support.ByteArrayPool;
 import cn.ttplatform.wh.support.Pool;
 import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
@@ -29,11 +28,11 @@ public class ByteBufferWriterTest {
     ByteBufferWriter byteBufferWriter;
 
     @Before
-    public void setUp() {
-        Pool<byte[]> byteArrayPool = new ByteArrayPool(10, 10 * 1024 * 1024);
-        Pool<PooledByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
-        String path = Objects.requireNonNull(ByteBufferWriterTest.class.getClassLoader().getResource("test.txt")).getPath();
-        byteBufferWriter = new ByteBufferWriter(new File(path), bufferPool);
+    public void setUp() throws IOException {
+        Pool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
+        String property = System.getProperty("user.home");
+        File file = File.createTempFile(property,"log.index");
+        byteBufferWriter = new ByteBufferWriter(file, bufferPool);
     }
 
     @After
@@ -44,15 +43,15 @@ public class ByteBufferWriterTest {
     @Test
     public void writeIntAt() {
         long begin = System.nanoTime();
-        byteBufferWriter.writeIntAt(0, 1);
+        byteBufferWriter.writeInt(0, 1);
         log.info("writeIntAt cost {} ns", (System.nanoTime() - begin));
     }
 
     @Test
     public void readIntAt() {
-        byteBufferWriter.writeIntAt(0, 1);
+        byteBufferWriter.writeInt(0, 1);
         long begin = System.nanoTime();
-        int res = byteBufferWriter.readIntAt(0);
+        int res = byteBufferWriter.readInt(0);
         log.info("readIntAt cost {} ns", (System.nanoTime() - begin));
         log.info("readIntAt result is {}.", res);
     }
@@ -63,7 +62,7 @@ public class ByteBufferWriterTest {
         IntStream.range(0, 1000000).forEach(sb::append);
         byte[] content = sb.toString().getBytes(StandardCharsets.UTF_8);
         long begin = System.nanoTime();
-        byteBufferWriter.writeBytesAt(0, content);
+        byteBufferWriter.write(0, content);
         log.info("writeBytesAt cost {} ns", (System.nanoTime() - begin));
     }
 
@@ -84,7 +83,7 @@ public class ByteBufferWriterTest {
         byte[] content = sb.toString().getBytes(StandardCharsets.UTF_8);
         byteBufferWriter.append(content, content.length);
         long begin = System.nanoTime();
-        byteBufferWriter.readBytesAt(0, (int) byteBufferWriter.size());
+        byteBufferWriter.readBytes(0, (int) byteBufferWriter.size());
         log.info("readBytesAt {} ns", (System.nanoTime() - begin));
     }
 

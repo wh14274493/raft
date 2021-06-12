@@ -1,20 +1,18 @@
 package cn.ttplatform.wh.core.data;
 
-import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.GlobalContext;
-import cn.ttplatform.wh.group.Endpoint;
-import cn.ttplatform.wh.group.EndpointMetaData;
-import cn.ttplatform.wh.core.data.log.LogFileIndexTest;
-import cn.ttplatform.wh.data.LogManager;
+import cn.ttplatform.wh.config.ServerProperties;
+import cn.ttplatform.wh.data.DataManager;
 import cn.ttplatform.wh.data.log.Log;
 import cn.ttplatform.wh.data.log.LogFactory;
 import cn.ttplatform.wh.data.tool.DirectByteBufferPool;
+import cn.ttplatform.wh.group.Endpoint;
+import cn.ttplatform.wh.group.EndpointMetaData;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Message;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
@@ -30,17 +28,17 @@ import org.junit.Test;
 @Slf4j
 public class LogRegistryTest {
 
-    LogManager fileLog;
+    DataManager fileLog;
 
     @Before
     public void setUp() throws Exception {
-        String path = Objects.requireNonNull(LogFileIndexTest.class.getClassLoader().getResource("")).getPath();
+        String property = System.getProperty("user.home");
         GlobalContext context = GlobalContext.builder()
-            .properties(new ServerProperties(path))
+            .properties(new ServerProperties())
             .byteBufferPool(new DirectByteBufferPool(10, 10 * 1024 * 1024))
             .linkedBufferPool(new FixedSizeLinkedBufferPool(10))
             .build();
-        fileLog = new LogManager(context);
+        fileLog = new DataManager(context);
     }
 
     @Test

@@ -16,7 +16,6 @@ import cn.ttplatform.wh.cmd.factory.RedirectCommandFactory;
 import cn.ttplatform.wh.cmd.factory.RequestFailedCommandFactory;
 import cn.ttplatform.wh.cmd.factory.SetCommandFactory;
 import cn.ttplatform.wh.cmd.factory.SetResultCommandFactory;
-import cn.ttplatform.wh.support.ByteArrayPool;
 import cn.ttplatform.wh.support.DistributableCodec;
 import cn.ttplatform.wh.support.DistributableFactoryRegistry;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
@@ -52,7 +51,6 @@ public class Client {
     private final Map<String, Command> pending = new ConcurrentHashMap<>();
 
     public Client() {
-        Pool<byte[]> byteArrayPool = new ByteArrayPool(10, 1024 * 1024 * 10);
         Pool<LinkedBuffer> bufferPool = new FixedSizeLinkedBufferPool(3);
         DistributableFactoryRegistry factoryManager = new DistributableFactoryRegistry();
         factoryManager.register(new GetClusterInfoResultCommandFactory(bufferPool));
@@ -85,6 +83,7 @@ public class Client {
     }
 
     public Channel connect() throws InterruptedException {
+//        return bootstrap.connect("192.168.31.76", 6666).sync().channel();
         return bootstrap.connect("localhost", 6666).sync().channel();
     }
 
@@ -95,7 +94,7 @@ public class Client {
 
 //        client.send(clusterChangeCommand());
 
-        client.send(getClusterInfoCommand());
+//        client.send(getClusterInfoCommand());
 
 //        int count = 0;
 //        List<Channel> channels = new ArrayList<>();
@@ -106,22 +105,22 @@ public class Client {
 //        }
 
         Channel channel = client.connect();
-        StringBuilder value = new StringBuilder();
-        while (value.length() < 256) {
-            value.append(UUID.randomUUID());
-        }
-        String v = value.substring(0, 256);
-        String id = UUID.randomUUID().toString();
+//        StringBuilder value = new StringBuilder();
+//        while (value.length() < 256) {
+//            value.append(UUID.randomUUID());
+//        }
+//        String v = value.substring(0, 3);
+//        String id = UUID.randomUUID().toString();
+//        log.info("start at {}", System.nanoTime());
+//        IntStream.range(0, 50000).forEach(index -> {
+//            channel.write(SetCommand.builder().id(id + index).entry(new Entry(index + "1wanghao11", v)).build());
+//        });
+
         log.info("start at {}", System.nanoTime());
         IntStream.range(0, 50000).forEach(index -> {
-            SetCommand setCommand = SetCommand.builder().id(id + index).entry(new Entry(index + "wanghao11", v)).build();
-            channel.write(setCommand);
+            GetCommand getCommand = GetCommand.builder().id(index+"").key(index + "wanghao").build();
+            channel.write(getCommand);
         });
-
-//        IntStream.range(0, 50000).forEach(index -> {
-//            GetCommand getCommand = GetCommand.builder().id(index+"").key(index + "wanghao").build();
-//            channel.write(getCommand);
-//        });
 
 //        while (true) {
 //            StringBuilder value = new StringBuilder();

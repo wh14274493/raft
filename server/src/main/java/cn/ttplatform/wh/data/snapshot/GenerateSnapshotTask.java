@@ -2,11 +2,11 @@ package cn.ttplatform.wh.data.snapshot;
 
 import cn.ttplatform.wh.GlobalContext;
 import cn.ttplatform.wh.StateMachine;
-import cn.ttplatform.wh.data.LogManager;
-import cn.ttplatform.wh.data.tool.PooledByteBuffer;
+import cn.ttplatform.wh.data.DataManager;
+import cn.ttplatform.wh.data.tool.Bits;
 import cn.ttplatform.wh.exception.OperateFileException;
 import cn.ttplatform.wh.support.Pool;
-import java.util.concurrent.CompletableFuture;
+import java.nio.ByteBuffer;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -33,18 +33,18 @@ public class GenerateSnapshotTask implements Runnable {
         byte[] snapshotData = stateMachine.generateSnapshotData();
         log.info("had generated snapshot data, size is {}.", snapshotData.length);
         try {
-            LogManager logManager = context.getLogManager();
-            int lastIncludeTerm = logManager.getTermOfLog(lastIncludeIndex);
+            DataManager dataManager = context.getDataManager();
+            int lastIncludeTerm = dataManager.getTermOfLog(lastIncludeIndex);
             snapshotBuilder.setBaseInfo(lastIncludeIndex, lastIncludeTerm, context.getNode().getSelfId());
-            Pool<PooledByteBuffer> byteBufferPool = context.getByteBufferPool();
+            Pool<ByteBuffer> byteBufferPool = context.getByteBufferPool();
             int size = snapshotData.length + SnapshotFile.HEADER_LENGTH;
-            PooledByteBuffer byteBuffer = byteBufferPool.allocate(size);
-            byteBuffer.putLong(snapshotData.length);
-            byteBuffer.putInt(lastIncludeIndex);
-            byteBuffer.putInt(lastIncludeTerm);
+            ByteBuffer byteBuffer = byteBufferPool.allocate(size);
+            Bits.putLong(snapshotData.length, byteBuffer);
+            Bits.putInt(lastIncludeIndex, byteBuffer);
+            Bits.putInt(lastIncludeTerm, byteBuffer);
             byteBuffer.put(snapshotData);
             snapshotBuilder.append(byteBuffer, size);
-            logManager.completeBuildingSnapshot(snapshotBuilder, lastIncludeTerm, lastIncludeIndex);
+            dataManager.completeBuildingSnapshot(snapshotBuilder, lastIncludeTerm, lastIncludeIndex);
             log.info("generate snapshot that contains {} bytes lastIncludeIndex is {} and lastIncludeTerm is {}",
                 snapshotData.length, lastIncludeIndex, lastIncludeTerm);
         } catch (OperateFileException e) {

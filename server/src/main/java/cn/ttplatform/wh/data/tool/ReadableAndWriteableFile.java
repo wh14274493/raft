@@ -1,5 +1,6 @@
 package cn.ttplatform.wh.data.tool;
 
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 /**
@@ -8,21 +9,21 @@ import java.nio.channels.FileChannel;
  */
 public interface ReadableAndWriteableFile {
 
-    void writeIntAt(long position, int data);
+    void writeInt(long position, int data);
 
-    int readIntAt(long position);
+    int readInt(long position);
 
-    void writeBytesAt(long position, byte[] chunk);
+    void write(long position, byte[] chunk);
 
-    void writeBytesAt(long position, PooledByteBuffer byteBuffer);
+    void writeBytes(long position, ByteBuffer byteBuffer);
 
     void append(byte[] chunk, int length);
 
-    void append(PooledByteBuffer chunk, int length);
+    void append(ByteBuffer chunk, int length);
 
-    byte[] readBytesAt(long position, int size);
+    byte[] readBytes(long position, int size);
 
-    void readByteBufferAt(long position, PooledByteBuffer byteBuffer, int size);
+    void readBytes(long position, ByteBuffer byteBuffer, int size);
 
     void transferTo(long position, long count, FileChannel channel);
 

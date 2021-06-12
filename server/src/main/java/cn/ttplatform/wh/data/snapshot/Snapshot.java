@@ -1,8 +1,8 @@
 package cn.ttplatform.wh.data.snapshot;
 
-import cn.ttplatform.wh.data.tool.PooledByteBuffer;
 import cn.ttplatform.wh.support.Pool;
 import java.io.File;
+import java.nio.ByteBuffer;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -14,7 +14,7 @@ public class Snapshot {
 
     private final SnapshotFile snapshotFile;
 
-    public Snapshot(File file, Pool<PooledByteBuffer> byteBufferPool) {
+    public Snapshot(File file, Pool<ByteBuffer> byteBufferPool) {
         this.snapshotFile = new SnapshotFile(file, byteBufferPool);
     }
 
@@ -39,7 +39,7 @@ public class Snapshot {
         return snapshotFile.read(offset, (int) size);
     }
 
-    public PooledByteBuffer readAll() {
+    public ByteBuffer readAll() {
         return snapshotFile.readAll();
     }
 

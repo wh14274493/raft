@@ -51,18 +51,18 @@ public class InstallSnapshotResultMessageHandler extends AbstractDistributableHa
         Message installSnapshotMessage;
         if (message.isSuccess()) {
             if (message.isDone()) {
-                endpoint.updateReplicationState(context.getLogManager().getLastIncludeIndex());
+                endpoint.updateReplicationState(context.getDataManager().getLastIncludeIndex());
                 context.doLogReplication(endpoint, currentTerm);
                 return;
             } else {
                 long snapshotOffset = message.getOffset();
                 endpoint.setSnapshotOffset(snapshotOffset);
-                installSnapshotMessage = context.getLogManager().createInstallSnapshotMessage(currentTerm, snapshotOffset,
+                installSnapshotMessage = context.getDataManager().createInstallSnapshotMessage(currentTerm, snapshotOffset,
                     context.getProperties().getMaxTransferSize());
             }
         } else {
             endpoint.setSnapshotOffset(0L);
-            installSnapshotMessage = context.getLogManager()
+            installSnapshotMessage = context.getDataManager()
                 .createInstallSnapshotMessage(currentTerm, 0L, context.getProperties().getMaxTransferSize());
         }
 

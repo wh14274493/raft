@@ -2,12 +2,12 @@ package cn.ttplatform.wh.data.snapshot;
 
 import cn.ttplatform.wh.data.FileConstant;
 import cn.ttplatform.wh.data.tool.ByteBufferWriter;
-import cn.ttplatform.wh.data.tool.PooledByteBuffer;
 import cn.ttplatform.wh.data.tool.ReadableAndWriteableFile;
 import cn.ttplatform.wh.exception.OperateFileException;
 import cn.ttplatform.wh.support.Pool;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,9 +24,9 @@ public class SnapshotBuilder {
     private int lastIncludeTerm;
     private ReadableAndWriteableFile generatingFile;
     private final File parent;
-    private final Pool<PooledByteBuffer> byteBufferPool;
+    private final Pool<ByteBuffer> byteBufferPool;
 
-    public SnapshotBuilder(File parent, Pool<PooledByteBuffer> byteBufferPool) {
+    public SnapshotBuilder(File parent, Pool<ByteBuffer> byteBufferPool) {
         this.byteBufferPool = byteBufferPool;
         this.parent = parent;
     }
@@ -61,7 +61,7 @@ public class SnapshotBuilder {
         generatingFile.append(chunk, chunk.length);
     }
 
-    public void append(PooledByteBuffer chunk, int length) {
+    public void append(ByteBuffer chunk, int length) {
         generatingFile.append(chunk, length);
     }
 

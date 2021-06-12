@@ -1,10 +1,8 @@
 package cn.ttplatform.wh.core;
 
 import cn.ttplatform.wh.StateMachine;
-import cn.ttplatform.wh.data.tool.DirectByteBufferPool;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Pool;
-import cn.ttplatform.wh.data.tool.PooledByteBuffer;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.MessageMapSchema;
 import io.protostuff.ProtostuffIOUtil;
@@ -102,12 +100,11 @@ public class StateMachineTest {
         long begin = System.nanoTime();
         byte[] bytes = stateMachine.generateSnapshotData();
         log.info("generate {} bytes snapshot cost {} ns.", bytes.length, System.nanoTime() - begin);
-        PooledByteBuffer pooledByteBuffer = new PooledByteBuffer(ByteBuffer.allocateDirect(bytes.length),
-            new DirectByteBufferPool(10, 1024 * 1024 * 1024));
-        pooledByteBuffer.put(bytes);
-        pooledByteBuffer.flip();
+        ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
+        buffer.put(bytes);
+        buffer.flip();
         begin = System.nanoTime();
-        stateMachine.applySnapshotData(pooledByteBuffer, 0);
+        stateMachine.applySnapshotData(buffer, 0);
         log.info("apply {} bytes snapshot cost {} ns.", bytes.length, System.nanoTime() - begin);
         Assert.assertEquals(count, stateMachine.getPairs());
     }

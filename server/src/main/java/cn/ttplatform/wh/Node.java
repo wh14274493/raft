@@ -71,7 +71,7 @@ public class Node {
         int term = nodeState.getCurrentTerm() + 1;
         this.role = Leader.builder().term(term).build();
         int index = context.pendingLog(Log.NO_OP_TYPE, new byte[0]);
-        if (context.getLogManager().advanceCommitIndex(index, term)) {
+        if (context.getDataManager().advanceCommitIndex(index, term)) {
             context.advanceLastApplied(index);
         }
         this.receiver.listen();
@@ -185,7 +185,7 @@ public class Node {
         leader.setScheduledFuture(context.logReplicationTask());
         this.role = leader;
         int index = context.pendingLog(Log.NO_OP_TYPE, new byte[0]);
-        context.getCluster().resetReplicationStates(context.getLogManager().getLastIncludeIndex() + 1, index);
+        context.getCluster().resetReplicationStates(context.getDataManager().getLastIncludeIndex() + 1, index);
         if (log.isInfoEnabled()) {
             log.info("become leader.");
             log.info("reset all node replication state with nextIndex[{}]", index);
@@ -212,7 +212,7 @@ public class Node {
          * @param term Current node's term
          */
         public void setCurrentTerm(int term) {
-            file.writeIntAt(0L, term);
+            file.writeInt(0L, term);
         }
 
         /**
@@ -224,7 +224,7 @@ public class Node {
             if (file.isEmpty()) {
                 return 1;
             }
-            return file.readIntAt(0L);
+            return file.readInt(0L);
         }
 
         /**
@@ -238,7 +238,7 @@ public class Node {
                 file.truncate(Integer.BYTES);
                 return;
             }
-            file.writeBytesAt(Integer.BYTES, voteTo.getBytes(Charset.defaultCharset()));
+            file.write(Integer.BYTES, voteTo.getBytes(Charset.defaultCharset()));
         }
 
         /**
@@ -251,7 +251,7 @@ public class Node {
             if (fileSize <= Integer.BYTES) {
                 return null;
             }
-            return new String(file.readBytesAt(Integer.BYTES, (int) (fileSize - Integer.BYTES)), Charset.defaultCharset());
+            return new String(file.readBytes(Integer.BYTES, (int) (fileSize - Integer.BYTES)), Charset.defaultCharset());
         }
 
         public void close() {

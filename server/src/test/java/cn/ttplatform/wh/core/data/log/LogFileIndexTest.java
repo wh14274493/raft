@@ -9,15 +9,13 @@ import cn.ttplatform.wh.data.log.LogFactory;
 import cn.ttplatform.wh.data.log.LogIndex;
 import cn.ttplatform.wh.data.log.LogIndexFile;
 import cn.ttplatform.wh.data.tool.DirectByteBufferPool;
-import cn.ttplatform.wh.data.tool.PooledByteBuffer;
-import cn.ttplatform.wh.support.ByteArrayPool;
 import cn.ttplatform.wh.support.Pool;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
@@ -38,17 +36,14 @@ public class LogFileIndexTest {
 
     @Before
     public void setUp() throws IOException {
-        Pool<PooledByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
-        Pool<byte[]> byteArrAyPool = new ByteArrayPool(10, 10 * 1024 * 1024);
-        path = Objects.requireNonNull(LogFileIndexTest.class.getClassLoader().getResource("")).getPath();
-        File file = new File(path, "log.index");
-        Files.deleteIfExists(file.toPath());
+        Pool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
+        String property = System.getProperty("user.home");
+        File file = File.createTempFile(property,"log.index");
         logIndexFile = new LogIndexFile(file, bufferPool, 0);
     }
 
     @After
     public void tearDown() {
-        logIndexFile.removeAfter(0);
         logIndexFile.close();
     }
 
@@ -98,13 +93,4 @@ public class LogFileIndexTest {
         Assert.assertEquals(logIndexFile.getMinIndex(), logIndexFile.getMaxIndex());
     }
 
-    @Test
-    public void transferTo() throws IOException {
-        testAppend();
-        File file = new File(path, "log-temp.index");
-        Files.deleteIfExists(file.toPath());
-        long begin = System.nanoTime();
-        logIndexFile.transferTo(20, file.toPath());
-        log.debug("transfer indices cost {} ns", (System.nanoTime() - begin));
-    }
 }

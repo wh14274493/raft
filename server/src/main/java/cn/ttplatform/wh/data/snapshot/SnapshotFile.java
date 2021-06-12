@@ -1,12 +1,16 @@
 package cn.ttplatform.wh.data.snapshot;
 
+import cn.ttplatform.wh.data.tool.Bits;
 import cn.ttplatform.wh.data.tool.ByteBufferWriter;
-import cn.ttplatform.wh.data.tool.PooledByteBuffer;
 import cn.ttplatform.wh.data.tool.ReadableAndWriteableFile;
 import cn.ttplatform.wh.exception.SnapshotParseException;
 import cn.ttplatform.wh.support.Pool;
 import java.io.File;
+import java.nio.ByteBuffer;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -20,9 +24,9 @@ public class SnapshotFile {
     public static final int HEADER_LENGTH = 16;
     private final ReadableAndWriteableFile file;
     private SnapshotHeader snapshotHeader;
-    private final Pool<PooledByteBuffer> byteBufferPool;
+    private final Pool<ByteBuffer> byteBufferPool;
 
-    public SnapshotFile(File file, Pool<PooledByteBuffer> byteBufferPool) {
+    public SnapshotFile(File file, Pool<ByteBuffer> byteBufferPool) {
         this.file = new ByteBufferWriter(file, byteBufferPool);
         this.byteBufferPool = byteBufferPool;
         initialize();
@@ -30,33 +34,34 @@ public class SnapshotFile {
 
     public void initialize() {
         if (!file.isEmpty()) {
-            PooledByteBuffer byteBuffer = byteBufferPool.allocate(HEADER_LENGTH);
+            ByteBuffer byteBuffer = byteBufferPool.allocate(HEADER_LENGTH);
             try {
-                file.readByteBufferAt(0L, byteBuffer, HEADER_LENGTH);
-            } catch (Exception e) {
-                throw new SnapshotParseException("parse snapshot header error.");
+                file.readBytes(0L, byteBuffer, HEADER_LENGTH);
+                long contentLength = Bits.getLong(byteBuffer);
+                if (contentLength != file.size() - HEADER_LENGTH) {
+                    throw new SnapshotParseException("snapshot content is unmatched.");
+                }
+                snapshotHeader = SnapshotHeader.builder()
+                    .contentLength(contentLength)
+                    .lastIncludeIndex(Bits.getInt(byteBuffer))
+                    .lastIncludeTerm(Bits.getInt(byteBuffer))
+                    .build();
+            } finally {
+                byteBufferPool.recycle(byteBuffer);
             }
-            long contentLength = byteBuffer.getLong();
-            if (contentLength != file.size() - HEADER_LENGTH) {
-                throw new SnapshotParseException("snapshot content is unmatched.");
-            }
-            snapshotHeader = SnapshotHeader.builder().contentLength(contentLength).lastIncludeIndex(byteBuffer.getInt())
-                .lastIncludeTerm(byteBuffer.getInt())
-                .build();
-            byteBuffer.recycle();
         } else {
             snapshotHeader = new SnapshotHeader();
         }
     }
 
     public byte[] read(long offset, int size) {
-        return file.readBytesAt(offset, size);
+        return file.readBytes(offset, size);
     }
 
-    public PooledByteBuffer readAll() {
-        PooledByteBuffer byteBuffer = byteBufferPool.allocate((int) snapshotHeader.getContentLength());
+    public ByteBuffer readAll() {
+        ByteBuffer byteBuffer = byteBufferPool.allocate((int) snapshotHeader.getContentLength());
         try {
-            file.readByteBufferAt(HEADER_LENGTH, byteBuffer, (int) snapshotHeader.getContentLength());
+            file.readBytes(HEADER_LENGTH, byteBuffer, (int) snapshotHeader.getContentLength());
         } finally {
             byteBufferPool.recycle(byteBuffer);
         }
@@ -81,6 +86,23 @@ public class SnapshotFile {
 
     public void close() {
         file.close();
+    }
+
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    static class SnapshotHeader {
+
+        private int lastIncludeIndex;
+        private int lastIncludeTerm;
+        private long contentLength;
+
+        public void reset() {
+            lastIncludeIndex = 0;
+            lastIncludeTerm = 0;
+            contentLength = 0;
+        }
     }
 
 }

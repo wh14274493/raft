@@ -38,7 +38,7 @@ public class PreVoteMessageHandler extends AbstractDistributableHandler {
         }
         PreVoteMessage message = (PreVoteMessage) distributable;
         PreVoteResultMessage preVoteResultMessage = PreVoteResultMessage.builder()
-            .isVoted(!context.getLogManager().isNewerThan(message.getLastLogIndex(), message.getLastLogTerm()))
+            .isVoted(!context.getDataManager().isNewerThan(message.getLastLogIndex(), message.getLastLogTerm()))
             .build();
         context.sendMessage(preVoteResultMessage, message.getSourceId());
     }

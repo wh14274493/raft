@@ -125,6 +125,10 @@ public class ServerProperties {
 
     private Level logLevel;
 
+    private int blockCacheSize;
+
+    private int blockSize;
+
     public ServerProperties(String configPath) {
         Properties properties = new Properties();
         File file = new File(configPath);
