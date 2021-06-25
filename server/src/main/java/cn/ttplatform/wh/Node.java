@@ -78,7 +78,7 @@ public class Node {
     }
 
     private void startInClusterMode() {
-        context.setConnector(new Sender(context));
+        context.setSender(new Sender(context));
         context.setScheduler(new SingleThreadScheduler(properties));
         context.setCluster(new Cluster(context));
         this.role = Follower.builder()

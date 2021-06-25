@@ -114,7 +114,7 @@ public class GlobalContext {
     private Node node;
     private Scheduler scheduler;
     private Cluster cluster;
-    private Sender connector;
+    private Sender sender;
     private ClusterChangeCommand clusterChangeCommand;
 
     public GlobalContext(Node node) {
@@ -202,7 +202,7 @@ public class GlobalContext {
         node.setMode(RunMode.CLUSTER);
         this.cluster = new Cluster(this);
         this.scheduler = new SingleThreadScheduler(properties);
-        this.connector = new Sender(this);
+        this.sender = new Sender(this);
     }
 
     public ScheduledFuture<?> electionTimeoutTask() {
@@ -291,7 +291,7 @@ public class GlobalContext {
 
     public void sendMessage(Message message, Endpoint endpoint) {
         message.setSourceId(properties.getNodeId());
-        connector.send(message, endpoint.getMetaData());
+        sender.send(message, endpoint.getMetaData());
     }
 
     public void sendMessage(Message message, String nodeId) {
@@ -299,7 +299,7 @@ public class GlobalContext {
             return;
         }
         message.setSourceId(properties.getNodeId());
-        connector.send(message, nodeId);
+        sender.send(message, nodeId);
     }
 
     public void advanceLastApplied(int newCommitIndex) {
