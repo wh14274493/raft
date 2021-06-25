@@ -7,3 +7,6 @@
 /client/target/
 /core/target/
 /server/src/main/resources/data/
+/server/server.iml
+/client/client.iml
+/core/core.iml
