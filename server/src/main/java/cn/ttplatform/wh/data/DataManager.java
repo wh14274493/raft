@@ -16,6 +16,8 @@ import cn.ttplatform.wh.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.support.Pool;
 import java.io.File;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,7 +35,7 @@ import org.slf4j.LoggerFactory;
  */
 public class DataManager {
 
-    public static final int MAX_CHUNK_SIZE = 16 * 1024 * 1024;
+    public static final int MAX_CHUNK_SIZE = 20 * 1024 * 1024;
     private final Logger logger = LoggerFactory.getLogger(DataManager.class);
     private final TreeMap<Integer, Log> pending = new TreeMap<>();
     private final Pool<ByteBuffer> byteBufferPool;
@@ -71,7 +73,7 @@ public class DataManager {
      */
     private void rebuildIndexFile() {
         ByteBuffer[] buffers = logFile.read();
-        ByteBuffer byteBuffer = byteBufferPool.allocate(MAX_CHUNK_SIZE);
+        ByteBuffer destination = byteBufferPool.allocate(MAX_CHUNK_SIZE);
         try {
             int position = 0;
             int index = 0;
@@ -80,34 +82,33 @@ public class DataManager {
             int count = 0;
             int fileSize = (int) logFile.size();
             while (position < fileSize) {
-                while (byteBuffer.hasRemaining()) {
+                while (destination.hasRemaining()) {
                     while (count < 16) {
                         if (!source.hasRemaining()) {
                             source = buffers[index++];
                             source.position(0);
                         }
-                        byteBuffer.put(source.get());
+                        destination.put(source.get());
                         count++;
                     }
-                    int offset = byteBuffer.position() - 4;
-                    byteBuffer.position(offset);
-                    int cmdLength = Bits.getInt(byteBuffer);
-                    byteBuffer.position(offset);
-                    Bits.putLong(position, byteBuffer);
-                    position = MAX_CHUNK_SIZE * index + source.position() + cmdLength;
-                    source = buffers[position / MAX_CHUNK_SIZE];
-                    source.position(position % MAX_CHUNK_SIZE);
+                    int offset = destination.position() - 4;
+                    destination.position(offset);
+                    int cmdLength = Bits.getInt(destination);
+                    destination.position(offset);
+                    Bits.putLong(position, destination);
+                    position = source.capacity() * index + source.position() + cmdLength;
+                    source = buffers[position / source.capacity()];
+                    source.position(position & (source.capacity() - 1));
                 }
-                logIndexFile.append(byteBuffer);
-                byteBuffer.clear();
+                logIndexFile.append(destination);
+                destination.clear();
             }
             logIndexFile.initialize();
             logger.info("rebuild index file success.");
         } finally {
-            byteBufferPool.recycle(byteBuffer);
+            byteBufferPool.recycle(destination);
             Arrays.stream(buffers).forEach(byteBufferPool::recycle);
         }
-
     }
 
     public int getNextIndex() {

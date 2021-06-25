@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 import lombok.Data;
@@ -186,7 +185,4 @@ public class ServerProperties {
         logLevel = OptionConverter.toLevel(properties.getProperty("logLevel"), Level.DEBUG);
     }
 
-    private void setLogLevel() {
-        LogManager.getRootLogger().setLevel(logLevel);
-    }
 }

@@ -48,7 +48,7 @@ public class LogBuffer implements LogOperation {
     @Override
     public void append(ByteBuffer byteBuffer) {
         try {
-            blockCache.appendByteBuffer(byteBuffer);
+            blockCache.appendBlock(byteBuffer);
         } finally {
             byteBufferPool.recycle(byteBuffer);
         }
@@ -79,12 +79,12 @@ public class LogBuffer implements LogOperation {
 
     @Override
     public ByteBuffer[] read() {
-        return blockCache.getBuffers(0L);
+        return blockCache.getBlocks(0L);
     }
 
     @Override
     public void transferTo(long offset, LogOperation logOperation) {
-        ByteBuffer[] buffers = blockCache.getBuffers(offset);
+        ByteBuffer[] buffers = blockCache.getBlocks(offset);
         Arrays.stream(buffers).forEach(logOperation::append);
     }
 
