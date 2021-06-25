@@ -1,19 +1,7 @@
 package cn.ttplatform.wh.data.log;
 
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.DSYNC;
-import static java.nio.file.StandardOpenOption.READ;
-import static java.nio.file.StandardOpenOption.WRITE;
-
-import cn.ttplatform.wh.data.tool.Bits;
-import cn.ttplatform.wh.exception.IncorrectLogIndexNumberException;
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * @author Wang Hao
@@ -40,8 +28,6 @@ public interface LogIndexOperation {
     void append(ByteBuffer byteBuffer);
 
     void removeAfter(int index);
-
-    void transferTo(int index, Path dst) throws IOException;
 
     boolean isEmpty();
 

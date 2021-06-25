@@ -3,8 +3,10 @@ package cn.ttplatform.wh.data;
 import cn.ttplatform.wh.GlobalContext;
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.data.log.Log;
-import cn.ttplatform.wh.data.log.LogFile;
-import cn.ttplatform.wh.data.log.LogIndexFile;
+import cn.ttplatform.wh.data.log.LogBuffer;
+import cn.ttplatform.wh.data.log.LogIndexBuffer;
+import cn.ttplatform.wh.data.log.LogIndexOperation;
+import cn.ttplatform.wh.data.log.LogOperation;
 import cn.ttplatform.wh.data.snapshot.Snapshot;
 import cn.ttplatform.wh.data.snapshot.SnapshotBuilder;
 import cn.ttplatform.wh.data.tool.Bits;
@@ -16,8 +18,6 @@ import cn.ttplatform.wh.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.support.Pool;
 import java.io.File;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,9 +42,9 @@ public class DataManager {
     private final SnapshotBuilder snapshotBuilder;
     private final GlobalContext context;
     private final File base;
-    private LogFile logFile;
+    private LogOperation logOperation;
     private Snapshot snapshot;
-    private LogIndexFile logIndexFile;
+    private LogIndexOperation logIndexOperation;
     private int commitIndex;
     private int nextIndex;
 
@@ -56,15 +56,15 @@ public class DataManager {
         File latestSnapshotFile = FileConstant.getLatestSnapshotFile(base);
         this.snapshot = new Snapshot(latestSnapshotFile, byteBufferPool);
         String path = latestSnapshotFile.getPath();
-        this.logFile = new LogFile(FileConstant.getMatchedLogFile(path), byteBufferPool);
+        this.logOperation = new LogBuffer(FileConstant.getMatchedLogFile(path), context);
         File latestLogIndexFile = FileConstant.getMatchedLogIndexFile(path);
-        this.logIndexFile = new LogIndexFile(latestLogIndexFile, byteBufferPool, snapshot.getLastIncludeIndex());
-        if (!logFile.isEmpty() && logIndexFile.isEmpty()) {
+        this.logIndexOperation = new LogIndexBuffer(latestLogIndexFile, context);
+        if (!logOperation.isEmpty() && logIndexOperation.isEmpty()) {
             // means that the index file is wrong or missing.
             rebuildIndexFile();
         }
         this.snapshotBuilder = new SnapshotBuilder(base, byteBufferPool);
-        this.commitIndex = logIndexFile.getMaxIndex();
+        this.commitIndex = logIndexOperation.getMaxIndex();
         this.nextIndex = commitIndex + 1;
     }
 
@@ -72,7 +72,7 @@ public class DataManager {
      * Rebuild the index file based on the log file
      */
     private void rebuildIndexFile() {
-        ByteBuffer[] buffers = logFile.read();
+        ByteBuffer[] buffers = logOperation.read();
         ByteBuffer destination = byteBufferPool.allocate(MAX_CHUNK_SIZE);
         try {
             int position = 0;
@@ -80,7 +80,7 @@ public class DataManager {
             ByteBuffer source = buffers[index++];
             source.position(0);
             int count = 0;
-            int fileSize = (int) logFile.size();
+            int fileSize = (int) logOperation.size();
             while (position < fileSize) {
                 while (destination.hasRemaining()) {
                     while (count < 16) {
@@ -100,10 +100,10 @@ public class DataManager {
                     source = buffers[position / source.capacity()];
                     source.position(position & (source.capacity() - 1));
                 }
-                logIndexFile.append(destination);
+                logIndexOperation.append(destination);
                 destination.clear();
             }
-            logIndexFile.initialize();
+            logIndexOperation.initialize();
             logger.info("rebuild index file success.");
         } finally {
             byteBufferPool.recycle(destination);
@@ -127,8 +127,8 @@ public class DataManager {
         if (!pending.isEmpty()) {
             return pending.lastEntry().getValue().getTerm();
         }
-        if (!logIndexFile.isEmpty()) {
-            return logIndexFile.getLastLogMetaData().getTerm();
+        if (!logIndexOperation.isEmpty()) {
+            return logIndexOperation.getLastLogMetaData().getTerm();
         }
         return snapshot.getLastIncludeTerm();
     }
@@ -138,8 +138,9 @@ public class DataManager {
         if (log != null) {
             return log.getTerm();
         }
-        return Optional.ofNullable(logIndexFile.getLogMetaData(index))
-            .orElseThrow(() -> new IncorrectLogIndexNumberException("not found log meta data for index[" + index + "]."))
+        return Optional.ofNullable(logIndexOperation.getLogMetaData(index))
+            .orElseThrow(
+                () -> new IncorrectLogIndexNumberException("not found log meta data for index[" + index + "]."))
             .getTerm();
     }
 
@@ -160,7 +161,8 @@ public class DataManager {
         log.setIndex(nextIndex);
         if (!pending.isEmpty() && log.getIndex() != pending.lastEntry().getKey() + 1) {
             // maybe received an expired message
-            throw new IncorrectLogIndexNumberException("The index[" + log.getIndex() + "] number of the log is incorrect ");
+            throw new IncorrectLogIndexNumberException(
+                "The index[" + log.getIndex() + "] number of the log is incorrect ");
         }
         pending.put(log.getIndex(), log);
         nextIndex++;
@@ -197,11 +199,11 @@ public class DataManager {
         if (isEmpty() || index >= getIndexOfLastLog()) {
             return;
         }
-        int maxLogIndex = logIndexFile.getMaxIndex();
+        int maxLogIndex = logIndexOperation.getMaxIndex();
         if (index <= maxLogIndex) {
             pending.clear();
-            logFile.removeAfter(index);
-            logIndexFile.removeAfter(index);
+            logOperation.removeAfter(index);
+            logIndexOperation.removeAfter(index);
         } else {
             while (!pending.isEmpty() && pending.lastEntry().getKey() > index) {
                 pending.pollLastEntry();
@@ -275,7 +277,8 @@ public class DataManager {
      */
     public boolean advanceCommitIndex(int newCommitIndex, int term) {
         if (newCommitIndex <= commitIndex) {
-            logger.debug("newCommitIndex[{}]<=commitIndex[{}], can not advance commitIndex", newCommitIndex, commitIndex);
+            logger
+                .debug("newCommitIndex[{}]<=commitIndex[{}], can not advance commitIndex", newCommitIndex, commitIndex);
             return false;
         }
         Log log = getLog(newCommitIndex);
@@ -283,17 +286,17 @@ public class DataManager {
             logger.debug("find log by newCommitIndex[{}] is {}, unmatched.", newCommitIndex, log);
             return false;
         }
-        int size = newCommitIndex - logIndexFile.getMaxIndex();
+        int size = newCommitIndex - logIndexOperation.getMaxIndex();
         List<Log> committedLogs = new ArrayList<>(size);
         while (!pending.isEmpty() && pending.firstEntry().getKey() <= newCommitIndex) {
             committedLogs.add(pending.pollFirstEntry().getValue());
         }
         if (committedLogs.size() == 1) {
-            long offset = logFile.append(committedLogs.get(0));
-            logIndexFile.append(committedLogs.get(0), offset);
+            long offset = logOperation.append(committedLogs.get(0));
+            logIndexOperation.append(committedLogs.get(0), offset);
         } else {
-            long[] offsets = logFile.append(committedLogs);
-            logIndexFile.append(committedLogs, offsets);
+            long[] offsets = logOperation.append(committedLogs);
+            logIndexOperation.append(committedLogs, offsets);
         }
         commitIndex = newCommitIndex;
         if (logger.isDebugEnabled()) {
@@ -310,7 +313,7 @@ public class DataManager {
      * @return res
      */
     public boolean shouldGenerateSnapshot(int snapshotGenerateThreshold) {
-        return logFile.size() >= snapshotGenerateThreshold;
+        return logOperation.size() >= snapshotGenerateThreshold;
     }
 
     /**
@@ -334,7 +337,8 @@ public class DataManager {
         }
         long expectedOffset = snapshotBuilder.getInstallOffset();
         if (offset != expectedOffset) {
-            throw new IllegalArgumentException(String.format("the offset[%d] is unmatched. expect %d", offset, expectedOffset));
+            throw new IllegalArgumentException(
+                String.format("the offset[%d] is unmatched. expect %d", offset, expectedOffset));
         }
         if (!sourceId.equals(snapshotBuilder.getSnapshotSource())) {
             throw new IllegalArgumentException("the snapshotSource has changed, receive a message that offset!=0.");
@@ -352,15 +356,15 @@ public class DataManager {
             this.snapshot = new Snapshot(snapshotBuilder.getFile(), byteBufferPool);
             File newLogFile = FileConstant.newLogFile(base, lastIncludeIndex, lastIncludeTerm);
             File newLogIndexFile = FileConstant.newLogIndexFile(base, lastIncludeIndex, lastIncludeTerm);
-            long offset = logIndexFile.getEntryOffset(lastIncludeIndex + 1);
+            long offset = logIndexOperation.getEntryOffset(lastIncludeIndex + 1);
             try {
-                LogFile oldLogFile = this.logFile;
-                this.logFile = new LogFile(newLogFile, byteBufferPool);
+                LogOperation oldLogOperation = this.logOperation;
+                this.logOperation = new LogBuffer(newLogFile, context);
                 if (offset != -1L) {
                     // means that lastIncludeIndex == lastLogIndex
-                    oldLogFile.transferTo(offset, this.logFile);
+                    oldLogOperation.transferTo(offset, this.logOperation);
                 }
-                this.logIndexFile = new LogIndexFile(newLogIndexFile, byteBufferPool, lastIncludeIndex);
+                this.logIndexOperation = new LogIndexBuffer(newLogIndexFile, context);
                 rebuildIndexFile();
             } finally {
                 context.getStateMachine().stopGenerating();
@@ -373,7 +377,7 @@ public class DataManager {
             logger.debug("young generation is empty.");
             return null;
         }
-        long minLogIndex = logIndexFile.getMinIndex();
+        long minLogIndex = logIndexOperation.getMinIndex();
         if (index < minLogIndex) {
             logger.debug("index[{}] < minEntryIndex[{}]", index, minLogIndex);
             return null;
@@ -383,17 +387,18 @@ public class DataManager {
             logger.debug("index[{}] > lastLogIndex[{}]", index, lastLogIndex);
             return null;
         }
-        int maxLogIndex = logIndexFile.getMaxIndex();
+        int maxLogIndex = logIndexOperation.getMaxIndex();
         if (index > maxLogIndex) {
             logger.debug("index[{}] > maxEntryIndex[{}], find log from pending.", index, maxLogIndex);
             return pending.get(index);
         }
-        return logFile.getLog(logIndexFile.getEntryOffset(index), logIndexFile.getEntryOffset(index + 1));
+        return logOperation
+            .getLog(logIndexOperation.getEntryOffset(index), logIndexOperation.getEntryOffset(index + 1));
     }
 
     /**
-     * Find the log list from the {@param from} position to the {@param to} position, but this list does not contain the {@param
-     * to} position
+     * Find the log list from the {@param from} position to the {@param to} position, but this list does not contain the
+     * {@param to} position
      *
      * @param from start index
      * @param to   end index
@@ -407,23 +412,23 @@ public class DataManager {
         if (from >= to || from > lastIndex) {
             return Collections.emptyList();
         }
-        from = Math.max(logIndexFile.getMinIndex(), from);
+        from = Math.max(logIndexOperation.getMinIndex(), from);
         to = Math.min(to, lastIndex + 1);
         logger.debug("sublist from {} to {}", from, to);
         List<Log> res = new ArrayList<>(to - from);
-        int maxLogIndex = logIndexFile.getMaxIndex();
+        int maxLogIndex = logIndexOperation.getMaxIndex();
         if (from > maxLogIndex) {
             IntStream.range(from, to).forEach(index -> res.add(pending.get(index)));
             return res;
         }
-        long start = logIndexFile.getEntryOffset(from);
+        long start = logIndexOperation.getEntryOffset(from);
         long end;
         if (to <= maxLogIndex) {
-            end = logIndexFile.getEntryOffset(to);
+            end = logIndexOperation.getEntryOffset(to);
         } else {
-            end = logFile.size();
+            end = logOperation.size();
         }
-        logFile.loadLogsIntoList(start, end, res);
+        logOperation.loadLogsIntoList(start, end, res);
         from = maxLogIndex + 1;
         IntStream.range(from, to).forEach(index -> res.add(pending.get(index)));
         return res;
@@ -434,13 +439,13 @@ public class DataManager {
     }
 
     public boolean isEmpty() {
-        return pending.isEmpty() && logFile.isEmpty() && logIndexFile.isEmpty();
+        return pending.isEmpty() && logOperation.isEmpty() && logIndexOperation.isEmpty();
     }
 
     public void close() {
-        logFile.close();
+        logOperation.close();
         snapshot.close();
-        logIndexFile.close();
+        logIndexOperation.close();
     }
 
 }

@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2020/7/1 下午10:13
  */
 @Slf4j
-public final class LogIndexFile {
+public final class LogIndexFile implements LogIndexOperation{
 
     /**
      * index(4 bytes) + term(4 bytes) + type(4 bytes) + offset(8 bytes) = 20
@@ -40,6 +40,7 @@ public final class LogIndexFile {
         initialize();
     }
 
+    @Override
     public void initialize() {
         if (!isEmpty()) {
             ByteBuffer byteBuffer = byteBufferPool.allocate(ITEM_LENGTH);
@@ -75,27 +76,33 @@ public final class LogIndexFile {
         }
     }
 
+    @Override
     public int getMaxIndex() {
         return maxIndex;
     }
 
+    @Override
     public int getMinIndex() {
         return minIndex;
     }
 
+    @Override
     public LogIndex getLastLogMetaData() {
         return getLogMetaData(maxIndex);
     }
 
+    @Override
     public LogIndex getLogMetaData(int index) {
         return Optional.ofNullable(logIndexCache.get(index)).orElse(loadLogIndex(index));
     }
 
+    @Override
     public long getEntryOffset(int index) {
         LogIndex logIndex = getLogMetaData(index);
         return logIndex != null ? logIndex.getOffset() : -1L;
     }
 
+    @Override
     public void append(Log log, long offset) {
         int index = log.getIndex();
         if (isEmpty()) {
@@ -121,6 +128,7 @@ public final class LogIndexFile {
         }
     }
 
+    @Override
     public void append(List<Log> logs, long[] offsets) {
         if (isEmpty()) {
             minIndex = logs.get(0).getIndex();
@@ -156,10 +164,12 @@ public final class LogIndexFile {
         }
     }
 
+    @Override
     public void append(ByteBuffer byteBuffer) {
         file.append(byteBuffer, byteBuffer.position());
     }
 
+    @Override
     public void removeAfter(int index) {
         if (index < minIndex) {
             file.clear();
@@ -174,14 +184,17 @@ public final class LogIndexFile {
         }
     }
 
+    @Override
     public boolean isEmpty() {
         return file.isEmpty();
     }
 
+    @Override
     public long size() {
         return file.size();
     }
 
+    @Override
     public void close() {
         file.close();
     }

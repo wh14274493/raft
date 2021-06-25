@@ -37,8 +37,6 @@ public interface LogOperation {
 
     void removeAfter(long offset);
 
-    void delete();
-
     void close();
 
     long size();

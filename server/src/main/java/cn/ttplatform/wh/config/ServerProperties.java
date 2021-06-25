@@ -9,7 +9,6 @@ import java.net.URL;
 import java.util.Properties;
 import java.util.UUID;
 import lombok.Data;
-import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.helpers.Loader;
 import org.apache.log4j.helpers.OptionConverter;
@@ -122,11 +121,13 @@ public class ServerProperties {
      */
     private int byteBufferSizeLimit;
 
-    private Level logLevel;
-
     private int blockCacheSize;
 
     private int blockSize;
+
+    private int logIndexCacheSize;
+
+    private long blockFlushInterval;
 
     public ServerProperties(String configPath) {
         Properties properties = new Properties();
@@ -171,8 +172,7 @@ public class ServerProperties {
         logReplicationInterval = Long.parseLong(properties.getProperty("logReplicationInterval", "1000"));
         retryTimeout = Long.parseLong(properties.getProperty("retryTimeout", "800"));
         base = new File(properties.getProperty("basePath", System.getProperty("user.home")));
-        snapshotGenerateThreshold = Integer
-            .parseInt(properties.getProperty("snapshotGenerateThreshold", String.valueOf(1024 * 1024 * 10)));
+        snapshotGenerateThreshold = Integer.parseInt(properties.getProperty("snapshotGenerateThreshold", String.valueOf(1024 * 1024 * 10)));
         maxTransferLogs = Integer.parseInt(properties.getProperty("maxTransferLogs", "10000"));
         maxTransferSize = Integer.parseInt(properties.getProperty("maxTransferSize", "10240"));
         linkedBuffPollSize = Integer.parseInt(properties.getProperty("linkedBuffPollSize", "16"));
@@ -182,7 +182,8 @@ public class ServerProperties {
         readWriteFileStrategy = properties.getProperty("readWriteFileStrategy", "direct access");
         byteBufferPoolSize = Integer.parseInt(properties.getProperty("byteBufferPoolSize", "10"));
         byteBufferSizeLimit = Integer.parseInt(properties.getProperty("byteBufferSizeLimit", String.valueOf(1024 * 1024 * 10)));
-        logLevel = OptionConverter.toLevel(properties.getProperty("logLevel"), Level.DEBUG);
+        logIndexCacheSize = Integer.parseInt(properties.getProperty("logIndexCacheSize", String.valueOf(100)));
+        blockFlushInterval = Long.parseLong(properties.getProperty("blockFlushInterval","1000"));
     }
 
 }

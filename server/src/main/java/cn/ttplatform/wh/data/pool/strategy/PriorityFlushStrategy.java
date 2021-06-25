@@ -15,41 +15,60 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PriorityFlushStrategy implements FlushStrategy {
 
+    private volatile boolean shutdown;
     private final ScheduledThreadPoolExecutor executor;
     private final TreeSet<Block> blocks;
     private final ReentrantLock lock = new ReentrantLock();
 
-    public PriorityFlushStrategy() {
+    public PriorityFlushStrategy(long interval) {
         blocks = new TreeSet<>((o1, o2) -> (int) (o1.getStartOffset() - o2.getStartOffset()));
-        this.executor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("flush-"));
+        this.executor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("Priority-flush-"));
         executor.scheduleWithFixedDelay(() -> {
             if (blocks.isEmpty()) {
                 return;
             }
+            Block block;
             lock.lock();
             try {
-                Block block = blocks.pollFirst();
-                if (block != null && block.dirty()) {
-                    block.flush();
-                    log.info("flush a dirty block[{}].", block);
-                }
+                block = blocks.pollFirst();
             } finally {
                 lock.unlock();
             }
-        }, 1000L, 1000L, TimeUnit.MILLISECONDS);
-    }
-
-    public void stopFlush() {
-        executor.shutdown();
+            if (block != null && block.dirty()) {
+                block.flush();
+                log.info("flush a dirty block[{}].", block);
+            }
+        }, interval, interval, TimeUnit.MILLISECONDS);
     }
 
     @Override
     public void flush(Block block) {
-        lock.lock();
-        try {
-            blocks.add(block);
-        } finally {
-            lock.unlock();
+        if (!shutdown) {
+            lock.lock();
+            try {
+                blocks.add(block);
+            } finally {
+                lock.unlock();
+            }
         }
+    }
+
+    @Override
+    public void flush() {
+        shutdown = true;
+        while (!blocks.isEmpty()) {
+            Block block;
+            lock.lock();
+            try {
+                block = blocks.pollFirst();
+            } finally {
+                lock.unlock();
+            }
+            if (block != null && block.dirty()) {
+                block.flush();
+                log.info("flush a dirty block[{}].", block);
+            }
+        }
+        executor.shutdown();
     }
 }

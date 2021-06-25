@@ -49,7 +49,7 @@ public class BlockCache {
             this.header = fileChannel.map(MapMode.READ_WRITE, 0, dataOffset);
             header.position(0);
             this.fileSize = Bits.getLong(header);
-            this.flushStrategy = new PriorityFlushStrategy();
+            this.flushStrategy = new PriorityFlushStrategy(properties.getBlockFlushInterval());
         } catch (IOException e) {
             throw new OperateFileException("open file channel error.", e);
         }
@@ -77,7 +77,8 @@ public class BlockCache {
     private Block getBlock(long position) {
         long blockId = calculateBlockId(position);
         if (blockId > fileSize) {
-            throw new IndexOutOfBoundsException(String.format("index[%d] is greater than fileSize[%d].", blockId, fileSize));
+            throw new IndexOutOfBoundsException(
+                String.format("index[%d] is greater than fileSize[%d].", blockId, fileSize));
         }
         Block block = blocks.get(blockId);
         if (block == null) {
@@ -130,18 +131,15 @@ public class BlockCache {
     }
 
     public void appendByteBuffer(ByteBuffer byteBuffer) {
-//        int offset = 0;
-//        byteBuffer.flip();
-//        int limit = byteBuffer.limit();
-//        while (byteBuffer.hasRemaining()) {
-//            Block block = getBlock(fileSize);
-//            block.getByteBuffer().put(byteBuffer);
-//            int length = Math.min(limit - offset, (int) (block.endOffset - fileSize));
-//            block.put((int) (fileSize - block.startOffset), bytes, offset, length);
-//            offset += length;
-//            fileSize += length;
-//        }
-//        updateFileSize(fileSize);
+        int offset = 0;
+        byteBuffer.flip();
+        while (byteBuffer.hasRemaining()) {
+            Block block = getBlock(fileSize);
+            block.put((int) (fileSize - block.startOffset), byteBuffer);
+            fileSize += byteBuffer.position() - offset;
+            offset = byteBuffer.position();
+        }
+        updateFileSize(fileSize);
     }
 
     public void appendBytes(byte[] bytes) {
@@ -186,7 +184,8 @@ public class BlockCache {
     }
 
     public long getLong(long position) {
-        return Bits.makeLong(get(position++), get(position++), get(position++), get(position++), get(position++), get(position++),
+        return Bits.makeLong(get(position++), get(position++), get(position++), get(position++), get(position++),
+            get(position++),
             get(position++), get(position));
     }
 
@@ -227,6 +226,10 @@ public class BlockCache {
 
     public long getSize() {
         return fileSize;
+    }
+
+    public void close() {
+        flushStrategy.flush();
     }
 
     @ToString
@@ -274,6 +277,12 @@ public class BlockCache {
             } catch (IOException e) {
                 throw new OperateFileException("write an byte[] data to file[index(" + startOffset + ")] error");
             }
+        }
+
+        public void put(int position, ByteBuffer source) {
+            byteBuffer.position(position);
+            byteBuffer.put(source);
+            dirty = true;
         }
 
         public void put(int position, byte[] src, int offset, int length) {

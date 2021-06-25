@@ -94,13 +94,8 @@ public class LogBuffer implements LogOperation {
     }
 
     @Override
-    public void delete() {
-
-    }
-
-    @Override
     public void close() {
-
+        blockCache.close();
     }
 
     @Override

@@ -200,11 +200,6 @@ public class LogFile implements LogOperation {
     }
 
     @Override
-    public void delete() {
-        file.delete();
-    }
-
-    @Override
     public void close() {
         file.close();
     }

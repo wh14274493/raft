@@ -4,13 +4,9 @@ import cn.ttplatform.wh.GlobalContext;
 import cn.ttplatform.wh.data.FileConstant;
 import cn.ttplatform.wh.data.log.LogIndexFile.LogIndexCache;
 import cn.ttplatform.wh.data.pool.BlockCache;
-import cn.ttplatform.wh.data.tool.Bits;
 import cn.ttplatform.wh.exception.IncorrectLogIndexNumberException;
-import cn.ttplatform.wh.support.Pool;
 import java.io.File;
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +26,6 @@ public class LogIndexBuffer implements LogIndexOperation {
     private int maxIndex;
     BlockCache blockCache;
     private final LogIndexCache logIndexCache;
-    Pool<ByteBuffer> byteBufferPool;
 
     public LogIndexBuffer(File file, GlobalContext context) {
         this.logIndexCache = new LogIndexCache(100);
@@ -81,7 +76,8 @@ public class LogIndexBuffer implements LogIndexOperation {
 
     @Override
     public LogIndex getLogMetaData(int index) {
-        return Optional.ofNullable(logIndexCache.get(index)).orElse(loadLogIndex((long) (index - minIndex) * ITEM_LENGTH));
+        return Optional.ofNullable(logIndexCache.get(index))
+            .orElse(loadLogIndex((long) (index - minIndex) * ITEM_LENGTH));
     }
 
     @Override
@@ -97,12 +93,14 @@ public class LogIndexBuffer implements LogIndexOperation {
             minIndex = index;
         } else {
             if (index != maxIndex + 1) {
-                throw new IncorrectLogIndexNumberException("index[" + index + "] is not correct, maxEntryIndex is " + maxIndex);
+                throw new IncorrectLogIndexNumberException(
+                    "index[" + index + "] is not correct, maxEntryIndex is " + maxIndex);
             }
         }
         maxIndex = index;
         LogIndexBuffer.log.debug("update maxLogIndex = {}.", maxIndex);
-        LogIndex logIndex = LogIndex.builder().index(index).term(log.getTerm()).offset(offset).type(log.getType()).build();
+        LogIndex logIndex = LogIndex.builder().index(index).term(log.getTerm()).offset(offset).type(log.getType())
+            .build();
         blockCache.appendInt(log.getIndex());
         blockCache.appendInt(log.getTerm());
         blockCache.appendInt(log.getType());
@@ -140,31 +138,36 @@ public class LogIndexBuffer implements LogIndexOperation {
 
     @Override
     public void append(ByteBuffer byteBuffer) {
-//        file.append(byteBuffer, byteBuffer.position());
+        blockCache.appendByteBuffer(byteBuffer);
     }
 
     @Override
     public void removeAfter(int index) {
-
-    }
-
-    @Override
-    public void transferTo(int index, Path dst) throws IOException {
-
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return false;
+        if (index < minIndex) {
+            blockCache.removeAfter(0L);
+            logIndexCache.clear();
+            minIndex = 0;
+            maxIndex = 0;
+        } else if (index < maxIndex) {
+            long position = (long) (index - minIndex + 1) * ITEM_LENGTH;
+            blockCache.removeAfter(position);
+            maxIndex = index;
+            logIndexCache.removeAfter(index);
+        }
     }
 
     @Override
     public long size() {
-        return 0;
+        return blockCache.getSize();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return blockCache.getSize() == 0L;
     }
 
     @Override
     public void close() {
-
+        blockCache.close();
     }
 }
