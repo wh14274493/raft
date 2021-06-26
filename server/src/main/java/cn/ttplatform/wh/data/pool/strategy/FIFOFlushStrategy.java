@@ -21,7 +21,7 @@ public class FIFOFlushStrategy implements FlushStrategy {
 
     public FIFOFlushStrategy(long interval) {
         this.executor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("fifo-flush-"));
-        executor.scheduleWithFixedDelay(() -> {
+        executor.scheduleAtFixedRate(() -> {
             if (queue.isEmpty()) {
                 return;
             }

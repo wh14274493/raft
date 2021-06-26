@@ -2,13 +2,11 @@ package cn.ttplatform.wh.data.pool.strategy;
 
 import cn.ttplatform.wh.data.pool.BlockCache.Block;
 import cn.ttplatform.wh.support.NamedThreadFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.TreeSet;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
-
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Wang Hao
@@ -24,7 +22,7 @@ public class PriorityFlushStrategy implements FlushStrategy {
     public PriorityFlushStrategy(long interval) {
         blocks = new TreeSet<>((o1, o2) -> (int) (o1.getStartOffset() - o2.getStartOffset()));
         this.executor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("Priority-flush-"));
-        executor.scheduleWithFixedDelay(() -> {
+        executor.scheduleAtFixedRate(() -> {
             if (blocks.isEmpty()) {
                 return;
             }
@@ -34,7 +32,7 @@ public class PriorityFlushStrategy implements FlushStrategy {
             }
             if (block != null && block.dirty()) {
                 block.flush();
-                log.info("flush a dirty block[{}].", block);
+                log.info("async flush a dirty block[{}].", block);
             }
         }, interval, interval, TimeUnit.MILLISECONDS);
     }
@@ -58,7 +56,7 @@ public class PriorityFlushStrategy implements FlushStrategy {
             }
             if (block != null && block.dirty()) {
                 block.flush();
-                log.info("flush a dirty block[{}].", block);
+                log.info("sync flush a dirty block[{}].", block);
             }
         }
         executor.shutdown();

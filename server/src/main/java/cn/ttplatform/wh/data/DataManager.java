@@ -61,9 +61,9 @@ public class DataManager {
         File latestSnapshotFile = FileConstant.getLatestSnapshotFile(base);
         this.snapshot = new Snapshot(latestSnapshotFile, byteBufferPool);
         String path = latestSnapshotFile.getPath();
-        this.logOperation = new LogBuffer(FileConstant.getMatchedLogFile(path), context);
+        this.logOperation = new LogBuffer(FileConstant.getMatchedLogFile(path), properties);
         File latestLogIndexFile = FileConstant.getMatchedLogIndexFile(path);
-        this.logIndexOperation = new LogIndexBuffer(latestLogIndexFile, context);
+        this.logIndexOperation = new LogIndexBuffer(latestLogIndexFile, properties);
         if (!logOperation.isEmpty() && logIndexOperation.isEmpty()) {
             // means that the index file is wrong or missing.
             rebuildIndexFile();
@@ -207,7 +207,7 @@ public class DataManager {
         int maxLogIndex = logIndexOperation.getMaxIndex();
         if (index <= maxLogIndex) {
             pending.clear();
-            logOperation.removeAfter(index);
+            logOperation.removeAfter(logIndexOperation.getLogOffset(index + 1));
             logIndexOperation.removeAfter(index);
         } else {
             while (!pending.isEmpty() && pending.lastEntry().getKey() > index) {
@@ -361,15 +361,15 @@ public class DataManager {
             this.snapshot = new Snapshot(snapshotBuilder.getFile(), byteBufferPool);
             File newLogFile = FileConstant.newLogFile(base, lastIncludeIndex, lastIncludeTerm);
             File newLogIndexFile = FileConstant.newLogIndexFile(base, lastIncludeIndex, lastIncludeTerm);
-            long offset = logIndexOperation.getEntryOffset(lastIncludeIndex + 1);
+            long offset = logIndexOperation.getLogOffset(lastIncludeIndex + 1);
             try {
                 LogOperation oldLogOperation = this.logOperation;
-                this.logOperation = new LogBuffer(newLogFile, context);
+                this.logOperation = new LogBuffer(newLogFile, context.getProperties());
                 if (offset != -1L) {
                     // means that lastIncludeIndex == lastLogIndex
                     oldLogOperation.transferTo(offset, this.logOperation);
                 }
-                this.logIndexOperation = new LogIndexBuffer(newLogIndexFile, context);
+                this.logIndexOperation = new LogIndexBuffer(newLogIndexFile, context.getProperties());
                 rebuildIndexFile();
             } finally {
                 context.getStateMachine().stopGenerating();
@@ -397,8 +397,7 @@ public class DataManager {
             logger.debug("index[{}] > maxEntryIndex[{}], find log from pending.", index, maxLogIndex);
             return pending.get(index);
         }
-        return logOperation
-                .getLog(logIndexOperation.getEntryOffset(index), logIndexOperation.getEntryOffset(index + 1));
+        return logOperation.getLog(logIndexOperation.getLogOffset(index), logIndexOperation.getLogOffset(index + 1));
     }
 
     /**
@@ -426,10 +425,10 @@ public class DataManager {
             IntStream.range(from, to).forEach(index -> res.add(pending.get(index)));
             return res;
         }
-        long start = logIndexOperation.getEntryOffset(from);
+        long start = logIndexOperation.getLogOffset(from);
         long end;
         if (to <= maxLogIndex) {
-            end = logIndexOperation.getEntryOffset(to);
+            end = logIndexOperation.getLogOffset(to);
         } else {
             end = logOperation.size();
         }

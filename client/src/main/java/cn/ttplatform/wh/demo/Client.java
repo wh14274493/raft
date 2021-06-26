@@ -105,22 +105,22 @@ public class Client {
 //        }
 
         Channel channel = client.connect();
-//        StringBuilder value = new StringBuilder();
-//        while (value.length() < 256) {
-//            value.append(UUID.randomUUID());
-//        }
-//        String v = value.substring(0, 3);
-//        String id = UUID.randomUUID().toString();
-//        log.info("start at {}", System.nanoTime());
-//        IntStream.range(0, 50000).forEach(index -> {
-//            channel.write(SetCommand.builder().id(id + index).entry(new Entry(index + "1wanghao11", v)).build());
-//        });
-
+        StringBuilder value = new StringBuilder();
+        while (value.length() < 256) {
+            value.append(UUID.randomUUID());
+        }
+        String v = value.substring(0, 3);
+        String id = UUID.randomUUID().toString();
         log.info("start at {}", System.nanoTime());
-        IntStream.range(0, 5).forEach(index -> {
-            GetCommand getCommand = GetCommand.builder().id(index+"").key(index + "wanghao").build();
-            channel.write(getCommand);
+        IntStream.range(0, 100000).forEach(index -> {
+            channel.write(SetCommand.builder().id(id + index).entry(new Entry(index + "1wanghao11", v)).build());
         });
+
+//        log.info("start at {}", System.nanoTime());
+//        IntStream.range(0, 1).forEach(index -> {
+//            GetCommand getCommand = GetCommand.builder().id(index+"").key(index + "wanghao").build();
+//            channel.write(getCommand);
+//        });
 
 //        while (true) {
 //            StringBuilder value = new StringBuilder();
@@ -137,7 +137,7 @@ public class Client {
 
 //        log.info("start at {}", System.nanoTime());
 //        IntStream.range(0, 1).forEach(index -> channel
-//            .write(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao" + index).build()));
+//            .write(GetCommand.builder().id(UUID.randomUUID().toString()).key(index + "1wanghao11").build()));
 //        channel.flush();
     }
 

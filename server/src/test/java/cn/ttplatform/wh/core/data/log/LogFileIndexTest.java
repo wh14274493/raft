@@ -10,14 +10,15 @@ import cn.ttplatform.wh.data.log.LogIndex;
 import cn.ttplatform.wh.data.log.LogIndexFile;
 import cn.ttplatform.wh.data.tool.DirectByteBufferPool;
 import cn.ttplatform.wh.support.Pool;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
+
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Assert;
@@ -38,7 +39,7 @@ public class LogFileIndexTest {
     public void setUp() throws IOException {
         Pool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
         String property = System.getProperty("user.home");
-        File file = File.createTempFile(property,"log.index");
+        File file = File.createTempFile(property, "log.index");
         logIndexFile = new LogIndexFile(file, bufferPool, 0);
     }
 
@@ -57,9 +58,9 @@ public class LogFileIndexTest {
     @Test
     public void getEntryOffset() {
         logIndexFile.append(LogFactory.createEntry(1, 1, 1, new byte[0], 0), 0L);
-        long entryOffset = logIndexFile.getEntryOffset(1);
+        long entryOffset = logIndexFile.getLogOffset(1);
         assertEquals(0, entryOffset);
-        entryOffset = logIndexFile.getEntryOffset(2);
+        entryOffset = logIndexFile.getLogOffset(2);
         assertEquals(-1, entryOffset);
     }
 

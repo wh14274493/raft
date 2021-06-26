@@ -50,7 +50,7 @@ public class LogFileTest {
         byte[] content = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
         long begin = System.nanoTime();
         logFile.append(LogFactory.createEntry(1, 1, 1, content, content.length));
-        log.debug("append 1 entry indices cost {} ns", (System.nanoTime() - begin));
+        log.info("append 1 entry indices cost {} ns", (System.nanoTime() - begin));
     }
 
     @Test
@@ -62,7 +62,7 @@ public class LogFileTest {
             .forEach(index -> logEntries.add(LogFactory.createEntry(1, 1, index + 1, content, content.length)));
         long begin = System.nanoTime();
         long[] append = logFile.append(logEntries);
-        log.debug("append {} entry indices cost {} ns", capacity, (System.nanoTime() - begin));
+        log.info("append {} entry indices cost {} ns", capacity, (System.nanoTime() - begin));
         assertEquals(capacity, append.length);
     }
 
@@ -72,7 +72,7 @@ public class LogFileTest {
         logFile.append(LogFactory.createEntry(1, 1, 1, content, content.length));
         long begin = System.nanoTime();
         Log entry = logFile.getLog(0, logFile.size());
-        log.debug("load 1 entry index cost {} ns", (System.nanoTime() - begin));
+        log.info("load 1 entry index cost {} ns", (System.nanoTime() - begin));
         assertEquals(1, entry.getIndex());
     }
 
@@ -82,7 +82,7 @@ public class LogFileTest {
         long begin = System.nanoTime();
         List<Log> res = new ArrayList<>();
         logFile.loadLogsIntoList(0, logFile.size(), res);
-        log.debug("load {} LogEntry cost {} ns", res.size(), (System.nanoTime() - begin));
+        log.info("load {} LogEntry cost {} ns", res.size(), (System.nanoTime() - begin));
     }
 
 }

@@ -1,2 +1,67 @@
 [2021-06-26 11:31:29,816] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:119)]: start at 59112472554100
 [2021-06-26 11:31:39,972] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 12:05:25,932] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:119)]: start at 61148588665900
+[2021-06-26 12:05:36,086] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 16:30:57,634] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:119)]: start at 77080445228200
+[2021-06-26 16:31:07,763] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 16:31:47,512] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:119)]: start at 77130322358800
+[2021-06-26 16:32:27,162] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 16:33:09,009] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 77211820095900
+[2021-06-26 16:33:22,713] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 16:34:27,619] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 77290429708200
+[2021-06-26 16:34:27,625] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:138)]: start at 77290436146700
+[2021-06-26 16:34:37,746] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 16:34:48,259] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 77311069918000
+[2021-06-26 16:34:48,266] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:138)]: start at 77311076447500
+[2021-06-26 16:34:48,394] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:51)]: SetResultCommand{id='b0e2866c-bc25-443f-940c-a9d64029b8510', result=true}
+[2021-06-26 16:34:48,395] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:51)]: GetResultCommand{id='5f5cbc3b-479e-4f97-94b2-7665e7ee468f', value='762'}
+[2021-06-26 16:34:58,388] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 16:47:30,432] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 78073242498000
+[2021-06-26 16:47:30,493] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:138)]: start at 78073302940100
+[2021-06-26 16:47:31,728] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 78074537941300, count = 5000, msg = SetResultCommand{id='89a71f99-7060-46b1-b634-8bea1edacfc44999', result=true}
+[2021-06-26 16:47:41,357] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 16:48:46,821] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 78149630737800
+[2021-06-26 16:48:46,872] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:138)]: start at 78149682453400
+[2021-06-26 16:48:47,178] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 78149989068000, count = 5000, msg = SetResultCommand{id='29673844-449c-42c1-a3f8-1c4aefb8f5604999', result=true}
+[2021-06-26 16:48:57,137] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 16:50:23,760] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 78246569854400
+[2021-06-26 16:50:34,284] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 16:52:19,566] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 78362375091100
+[2021-06-26 16:52:29,800] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 16:53:00,653] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 78403462544700
+[2021-06-26 16:53:01,732] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 78404543212800, count = 10000, msg = SetResultCommand{id='23ea8e64-2163-4853-ae71-ca8ce31f40ec9999', result=true}
+[2021-06-26 16:53:01,994] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 78404804061100, count = 20000, msg = SetResultCommand{id='23ea8e64-2163-4853-ae71-ca8ce31f40ec19999', result=true}
+[2021-06-26 16:53:02,281] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 78405091949300, count = 30000, msg = SetResultCommand{id='23ea8e64-2163-4853-ae71-ca8ce31f40ec29999', result=true}
+[2021-06-26 16:53:02,545] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 78405355773700, count = 40000, msg = SetResultCommand{id='23ea8e64-2163-4853-ae71-ca8ce31f40ec39999', result=true}
+[2021-06-26 16:53:11,267] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 16:55:58,338] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 78581147488600
+[2021-06-26 16:56:08,358] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 17:17:32,185] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 79874994393300
+[2021-06-26 17:17:34,775] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 79877585592200, count = 10000, msg = SetResultCommand{id='a260d3df-7640-44e1-85ef-3d23c091450b9999', result=true}
+[2021-06-26 17:17:35,114] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 79877925264700, count = 20000, msg = SetResultCommand{id='a260d3df-7640-44e1-85ef-3d23c091450b19999', result=true}
+[2021-06-26 17:17:42,826] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 20:28:14,774] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 91317558861300
+[2021-06-26 20:28:15,755] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 91318542079800, count = 10000, msg = SetResultCommand{id='3ead33b8-04f2-4392-80d3-3c3592a0fef89999', result=true}
+[2021-06-26 20:28:16,051] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 91318838226400, count = 20000, msg = SetResultCommand{id='3ead33b8-04f2-4392-80d3-3c3592a0fef819999', result=true}
+[2021-06-26 20:28:16,294] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 91319081269200, count = 30000, msg = SetResultCommand{id='3ead33b8-04f2-4392-80d3-3c3592a0fef829999', result=true}
+[2021-06-26 20:28:16,474] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 91319261552800, count = 40000, msg = SetResultCommand{id='3ead33b8-04f2-4392-80d3-3c3592a0fef839999', result=true}
+[2021-06-26 20:28:16,595] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 91319382308700, count = 50000, msg = SetResultCommand{id='3ead33b8-04f2-4392-80d3-3c3592a0fef849999', result=true}
+[2021-06-26 20:28:25,434] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 20:40:46,532] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 92069161314400
+[2021-06-26 20:40:56,974] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 20:42:43,198] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:119)]: start at 92185802219600
+[2021-06-26 20:42:53,345] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 20:43:42,493] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 92245085969400
+[2021-06-26 20:43:43,333] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 92245926646900, count = 10000, msg = SetResultCommand{id='b7b4c122-bffd-4a94-9222-e6e497655ab19999', result=true}
+[2021-06-26 20:43:43,555] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 92246148426900, count = 20000, msg = SetResultCommand{id='b7b4c122-bffd-4a94-9222-e6e497655ab119999', result=true}
+[2021-06-26 20:43:43,716] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 92246309395600, count = 30000, msg = SetResultCommand{id='b7b4c122-bffd-4a94-9222-e6e497655ab129999', result=true}
+[2021-06-26 20:43:43,899] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 92246493290700, count = 40000, msg = SetResultCommand{id='b7b4c122-bffd-4a94-9222-e6e497655ab139999', result=true}
+[2021-06-26 20:43:44,050] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 92246643300400, count = 50000, msg = SetResultCommand{id='b7b4c122-bffd-4a94-9222-e6e497655ab149999', result=true}
+[2021-06-26 20:43:52,971] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 20:44:16,074] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 92278661874200
+[2021-06-26 20:44:16,753] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 92279341618500, count = 10000, msg = SetResultCommand{id='44671803-1b8f-497b-97aa-f36056319e599999', result=true}
+[2021-06-26 20:44:16,914] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 92279502688400, count = 20000, msg = SetResultCommand{id='44671803-1b8f-497b-97aa-f36056319e5919999', result=true}
+[2021-06-26 20:44:17,036] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 92279625530500, count = 30000, msg = SetResultCommand{id='44671803-1b8f-497b-97aa-f36056319e5929999', result=true}
+[2021-06-26 20:44:26,748] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-26 22:24:41,842] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 98304210468900
+[2021-06-26 22:26:02,277] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 98384645192500

@@ -31,7 +31,7 @@ public class LogFile implements LogOperation {
     public long append(Log log) {
         long offset = file.size();
         byte[] command = log.getCommand();
-        int outLength = LogFile.LOG_ENTRY_HEADER_SIZE + command.length;
+        int outLength = LOG_ENTRY_HEADER_SIZE + command.length;
         ByteBuffer byteBuffer = byteBufferPool.allocate(outLength);
         try {
             Bits.putInt(log.getIndex(), byteBuffer);

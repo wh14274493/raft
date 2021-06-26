@@ -94,7 +94,7 @@ public final class LogIndexFile implements LogIndexOperation{
     }
 
     @Override
-    public long getEntryOffset(int index) {
+    public long getLogOffset(int index) {
         LogIndex logIndex = getLogMetaData(index);
         return logIndex != null ? logIndex.getOffset() : -1L;
     }

@@ -1,16 +1,14 @@
 package cn.ttplatform.wh.data.log;
 
-import cn.ttplatform.wh.GlobalContext;
+import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.data.FileConstant;
 import cn.ttplatform.wh.data.pool.BlockCache;
-import cn.ttplatform.wh.support.Pool;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
-
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Wang Hao
@@ -21,8 +19,9 @@ public class LogBuffer implements LogOperation {
 
     private final BlockCache blockCache;
 
-    public LogBuffer(File file, GlobalContext context) {
-        this.blockCache = new BlockCache(context, file, FileConstant.LOG_FILE_HEADER_SIZE);
+    public LogBuffer(File file, ServerProperties properties) {
+        this.blockCache = new BlockCache(properties.getBlockCacheSize(), properties.getBlockSize(),
+                properties.getBlockFlushInterval(), file, FileConstant.LOG_FILE_HEADER_SIZE);
     }
 
     @Override
@@ -77,7 +76,7 @@ public class LogBuffer implements LogOperation {
 
     @Override
     public ByteBuffer[] read() {
-        return blockCache.getBlocks(0L);
+        return blockCache.getBlocks(FileConstant.LOG_FILE_HEADER_SIZE);
     }
 
     @Override

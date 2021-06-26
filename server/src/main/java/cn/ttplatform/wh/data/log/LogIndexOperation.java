@@ -19,7 +19,7 @@ public interface LogIndexOperation {
 
     LogIndex getLogMetaData(int index);
 
-    long getEntryOffset(int index);
+    long getLogOffset(int index);
 
     void append(Log log, long offset);
 

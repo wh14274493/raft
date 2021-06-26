@@ -59,7 +59,7 @@ public class LRU<K, V> {
         KVEntry<K, V> old = null;
         KVEntry<K, V> kvEntry = getEntry(key);
         if (kvEntry == null) {
-            old = removeFirst();
+            old = removeFirstIfNeeded();
             kvEntry = new KVEntry<>(key, value);
             cache.put(key, kvEntry);
             tail.next = kvEntry;
@@ -72,7 +72,7 @@ public class LRU<K, V> {
         return old;
     }
 
-    private KVEntry<K, V> removeFirst() {
+    private KVEntry<K, V> removeFirstIfNeeded() {
         KVEntry<K, V> kvEntry = null;
         if (used == capacity) {
             kvEntry = cache.remove(head.next.key);
@@ -92,6 +92,7 @@ public class LRU<K, V> {
         cache.clear();
         head.next.pre = null;
         head.next = null;
+        tail = head;
         used = 0;
     }
 
@@ -104,14 +105,18 @@ public class LRU<K, V> {
     }
 
     protected void remove(KVEntry<K, V> kvEntry) {
-        KVEntry<K, V> next = kvEntry.next;
-        KVEntry<K, V> pre = kvEntry.pre;
-        pre.next = next;
-        if (next != null) {
+        if (kvEntry == tail) {
+            tail = kvEntry.pre;
+            kvEntry.pre = null;
+            tail.next = null;
+        } else {
+            KVEntry<K, V> next = kvEntry.next;
+            KVEntry<K, V> pre = kvEntry.pre;
+            pre.next = next;
             next.pre = pre;
+            kvEntry.pre = null;
+            kvEntry.next = null;
         }
-        kvEntry.pre = null;
-        kvEntry.next = null;
     }
 
     @Override
