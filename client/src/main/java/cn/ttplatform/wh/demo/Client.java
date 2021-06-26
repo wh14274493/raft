@@ -109,7 +109,7 @@ public class Client {
         while (value.length() < 256) {
             value.append(UUID.randomUUID());
         }
-        String v = value.substring(0, 3);
+        String v = value.substring(0, 256);
         String id = UUID.randomUUID().toString();
         log.info("start at {}", System.nanoTime());
         IntStream.range(0, 100000).forEach(index -> {
@@ -117,8 +117,8 @@ public class Client {
         });
 
 //        log.info("start at {}", System.nanoTime());
-//        IntStream.range(0, 1).forEach(index -> {
-//            GetCommand getCommand = GetCommand.builder().id(index+"").key(index + "wanghao").build();
+//        IntStream.range(0, 100000).forEach(index -> {
+//            GetCommand getCommand = GetCommand.builder().id(index+"").key(index + "1wanghao11").build();
 //            channel.write(getCommand);
 //        });
 

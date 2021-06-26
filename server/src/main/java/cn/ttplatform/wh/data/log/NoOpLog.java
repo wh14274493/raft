@@ -27,6 +27,6 @@ public class NoOpLog extends AbstractLog {
 
     @Override
     public String toString() {
-        return "NoOpLogEntry{metadata=" + metadata + '}';
+        return "NoOpLog{metadata=" + metadata + '}';
     }
 }

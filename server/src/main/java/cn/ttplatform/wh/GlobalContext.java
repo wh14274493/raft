@@ -66,6 +66,7 @@ import cn.ttplatform.wh.support.Pool;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.protostuff.LinkedBuffer;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -78,6 +79,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -124,29 +126,29 @@ public class GlobalContext {
         if (ReadWriteFileStrategy.DIRECT.equals(properties.getReadWriteFileStrategy())) {
             logger.debug("use DirectBufferAllocator");
             this.byteBufferPool = new DirectByteBufferPool(properties.getByteBufferPoolSize(),
-                properties.getByteBufferSizeLimit());
+                    properties.getByteBufferSizeLimit());
         } else {
             logger.debug("use BufferAllocator");
             this.byteBufferPool = new HeapByteBufferPool(properties.getByteBufferPoolSize(),
-                properties.getByteBufferSizeLimit());
+                    properties.getByteBufferSizeLimit());
         }
         this.distributor = buildDistributor();
         this.factoryManager = buildFactoryManager();
         this.executor = new ThreadPoolExecutor(
-            1,
-            1,
-            0L,
-            TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(),
-            new NamedThreadFactory("core-"));
+                1,
+                1,
+                0L,
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(),
+                new NamedThreadFactory("core-"));
         this.snapshotGenerateExecutor = new ThreadPoolExecutor(
-            0,
-            1,
-            60L,
-            TimeUnit.SECONDS,
-            new ArrayBlockingQueue<>(1),
-            new NamedThreadFactory("snapshotTask-"),
-            (r, e) -> logger.error("There is currently an executing task, reject this operation."));
+                0,
+                1,
+                60L,
+                TimeUnit.SECONDS,
+                new ArrayBlockingQueue<>(1),
+                new NamedThreadFactory("snapshotTask-"),
+                (r, e) -> logger.error("There is currently an executing task, reject this operation."));
         this.boss = new NioEventLoopGroup(properties.getBossThreads());
         this.worker = new NioEventLoopGroup(properties.getWorkerThreads());
         this.stateMachine = new StateMachine(this);
@@ -227,10 +229,10 @@ public class GlobalContext {
             int newCounts = cluster.inNewConfig(selfId) ? 1 : 0;
             node.changeToFollower(currentTerm, null, null, oldCounts, newCounts, 0L);
             PreVoteMessage preVoteMessage = PreVoteMessage.builder()
-                .nodeId(selfId)
-                .lastLogTerm(dataManager.getTermOfLastLog())
-                .lastLogIndex(dataManager.getIndexOfLastLog())
-                .build();
+                    .nodeId(selfId)
+                    .lastLogTerm(dataManager.getTermOfLastLog())
+                    .lastLogIndex(dataManager.getIndexOfLastLog())
+                    .build();
             sendMessageToOthers(preVoteMessage);
         }
     }
@@ -240,11 +242,11 @@ public class GlobalContext {
         String selfId = cluster.getSelfId();
         node.changeToCandidate(term, cluster.inOldConfig(selfId) ? 1 : 0, cluster.inOldConfig(selfId) ? 1 : 0);
         RequestVoteMessage requestVoteMessage = RequestVoteMessage.builder()
-            .candidateId(selfId)
-            .lastLogIndex(dataManager.getIndexOfLastLog())
-            .lastLogTerm(dataManager.getTermOfLastLog())
-            .term(term)
-            .build();
+                .candidateId(selfId)
+                .lastLogIndex(dataManager.getIndexOfLastLog())
+                .lastLogTerm(dataManager.getTermOfLastLog())
+                .term(term)
+                .build();
         sendMessageToOthers(requestVoteMessage);
     }
 
@@ -265,7 +267,7 @@ public class GlobalContext {
             // returned in time, causing the master to resend the last message because it does not receive a reply. If
             // the slave does not handle it, an unknown error will occur.
             if (!endpoint.isReplicating() || System.currentTimeMillis() - endpoint.getLastHeartBeat() >= properties
-                .getMinElectionTimeout()) {
+                    .getMinElectionTimeout()) {
                 doLogReplication(endpoint, currentTerm);
             }
         });
@@ -274,11 +276,11 @@ public class GlobalContext {
     public void doLogReplication(Endpoint endpoint, int currentTerm) {
 
         Message message = dataManager
-            .createAppendLogEntriesMessage(node.getSelfId(), currentTerm, endpoint, properties.getMaxTransferLogs());
+                .createAppendLogEntriesMessage(node.getSelfId(), currentTerm, endpoint, properties.getMaxTransferLogs());
         if (message == null) {
             // start snapshot replication
             message = dataManager
-                .createInstallSnapshotMessage(currentTerm, endpoint.getSnapshotOffset(), properties.getMaxTransferSize());
+                    .createInstallSnapshotMessage(currentTerm, endpoint.getSnapshotOffset(), properties.getMaxTransferSize());
         }
         sendMessage(message, endpoint);
         endpoint.setReplicating(true);
@@ -322,7 +324,7 @@ public class GlobalContext {
                 snapshotGenerateExecutor.execute(new GenerateSnapshotTask(this, stateMachine.getApplied()));
             } else {
                 // Perhaps the threshold for log snapshot generation should be appropriately increased
-                logger.warn("There is currently an executing task, reject this operation.");
+                logger.debug("There is currently an executing task, reject this operation.");
             }
         }
     }
@@ -388,7 +390,7 @@ public class GlobalContext {
             String requestId = setCmd.getId();
             if (requestId != null) {
                 ChannelFuture channelFuture = channelPool
-                    .reply(requestId, SetResultCommand.builder().id(requestId).result(true).build());
+                        .reply(requestId, SetResultCommand.builder().id(requestId).result(true).build());
                 if (channelFuture != null) {
                     channelFuture.addListener(future -> {
                         if (future.isSuccess()) {
@@ -402,9 +404,9 @@ public class GlobalContext {
 
     private void replyGetResult(int index) {
         Optional.ofNullable(pendingGetCommandMap.remove(index))
-            .orElse(Collections.emptyList())
-            .forEach(cmd -> channelPool
-                .reply(cmd.getId(), GetResultCommand.builder().id(cmd.getId()).value(stateMachine.get(cmd.getKey())).build()));
+                .orElse(Collections.emptyList())
+                .forEach(cmd -> channelPool
+                        .reply(cmd.getId(), GetResultCommand.builder().id(cmd.getId()).value(stateMachine.get(cmd.getKey())).build()));
     }
 
     public void replyGetResult(GetCommand cmd) {
@@ -414,11 +416,11 @@ public class GlobalContext {
     public void replyGetClusterInfoResult(String requestId) {
         RunMode mode = node.getMode();
         GetClusterInfoResultCommand respCommand = GetClusterInfoResultCommand.builder()
-            .id(requestId)
-            .leader(node.getSelfId())
-            .mode(mode.toString())
-            .size(stateMachine.getPairs())
-            .build();
+                .id(requestId)
+                .leader(node.getSelfId())
+                .mode(mode.toString())
+                .size(stateMachine.getPairs())
+                .build();
         if (mode == RunMode.CLUSTER) {
             respCommand.setPhase(cluster.getPhase().toString());
             respCommand.setNewConfig(cluster.getNewConfigMap().toString());
@@ -433,7 +435,7 @@ public class GlobalContext {
             getCommands.add(cmd);
         } else {
             channelPool
-                .reply(cmd.getId(), GetResultCommand.builder().id(cmd.getId()).value(stateMachine.get(cmd.getKey())).build());
+                    .reply(cmd.getId(), GetResultCommand.builder().id(cmd.getId()).value(stateMachine.get(cmd.getKey())).build());
         }
     }
 

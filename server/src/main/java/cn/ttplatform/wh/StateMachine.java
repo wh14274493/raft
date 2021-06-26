@@ -11,11 +11,13 @@ import io.protostuff.MessageMapSchema;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -69,6 +71,9 @@ public class StateMachine {
     }
 
     public void setApplied(int applied) {
+        if (applied <= this.applied) {
+            return;
+        }
         this.applied = applied;
     }
 

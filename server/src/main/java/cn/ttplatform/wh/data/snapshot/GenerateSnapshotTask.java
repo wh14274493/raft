@@ -37,7 +37,7 @@ public class GenerateSnapshotTask implements Runnable {
             int lastIncludeTerm = dataManager.getTermOfLog(lastIncludeIndex);
             snapshotBuilder.setBaseInfo(lastIncludeIndex, lastIncludeTerm, context.getNode().getSelfId());
             Pool<ByteBuffer> byteBufferPool = context.getByteBufferPool();
-            int size = snapshotData.length + SnapshotFile.HEADER_LENGTH;
+            int size = snapshotData.length + SnapshotFile.SnapshotHeader.BYTES;
             ByteBuffer byteBuffer = byteBufferPool.allocate(size);
             Bits.putLong(snapshotData.length, byteBuffer);
             Bits.putInt(lastIncludeIndex, byteBuffer);

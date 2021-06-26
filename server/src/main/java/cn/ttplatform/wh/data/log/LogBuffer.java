@@ -71,7 +71,29 @@ public class LogBuffer implements LogOperation {
 
     @Override
     public void loadLogsIntoList(long start, long end, List<Log> res) {
-        res.add(getLog(start, end));
+        int index;
+        int term;
+        int type;
+        int cmdLength;
+        byte[] cmd;
+        while (start < end) {
+            index = blockCache.getInt(start);
+            start += 4;
+            term = blockCache.getInt(start);
+            start += 4;
+            type = blockCache.getInt(start);
+            start += 4;
+            cmdLength = blockCache.getInt(start);
+            start += 4;
+            if (cmdLength == 0) {
+                cmd = null;
+            } else {
+                cmd = new byte[cmdLength];
+                blockCache.get(start, cmd);
+            }
+            start += cmdLength;
+            res.add(LogFactory.createEntry(type, term, index, cmd, cmdLength));
+        }
     }
 
     @Override

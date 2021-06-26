@@ -42,6 +42,7 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
             log.info("open file[{}].", file);
             this.header = ByteBuffer.allocateDirect(8);
             fileChannel.read(header, 0L);
+            header.position(0);
             fileSize = Bits.getLong(header);
         } catch (IOException e) {
             throw new OperateFileException("open file channel error.", e);

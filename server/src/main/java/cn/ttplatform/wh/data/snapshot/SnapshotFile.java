@@ -5,13 +5,16 @@ import cn.ttplatform.wh.data.tool.ByteBufferWriter;
 import cn.ttplatform.wh.data.tool.ReadableAndWriteableFile;
 import cn.ttplatform.wh.exception.SnapshotParseException;
 import cn.ttplatform.wh.support.Pool;
+
 import java.io.File;
 import java.nio.ByteBuffer;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Wang Hao
@@ -19,9 +22,9 @@ import lombok.Setter;
  */
 @Setter
 @Getter
+@Slf4j
 public class SnapshotFile {
 
-    public static final int HEADER_LENGTH = 16;
     private final ReadableAndWriteableFile file;
     private SnapshotHeader snapshotHeader;
     private final Pool<ByteBuffer> byteBufferPool;
@@ -34,18 +37,19 @@ public class SnapshotFile {
 
     public void initialize() {
         if (!file.isEmpty()) {
-            ByteBuffer byteBuffer = byteBufferPool.allocate(HEADER_LENGTH);
+            ByteBuffer byteBuffer = byteBufferPool.allocate(SnapshotHeader.BYTES);
             try {
-                file.readBytes(0L, byteBuffer, HEADER_LENGTH);
-                long contentLength = Bits.getLong(byteBuffer);
-                if (contentLength != file.size() - HEADER_LENGTH) {
-                    throw new SnapshotParseException("snapshot content is unmatched.");
+                file.readBytes(0L, byteBuffer, SnapshotHeader.BYTES);
+                byteBuffer.position(0);
+                long fileSize = Bits.getLong(byteBuffer);
+                if (fileSize > file.size()) {
+                    throw new SnapshotParseException("read an incomplete log snapshot file.");
                 }
                 snapshotHeader = SnapshotHeader.builder()
-                    .contentLength(contentLength)
-                    .lastIncludeIndex(Bits.getInt(byteBuffer))
-                    .lastIncludeTerm(Bits.getInt(byteBuffer))
-                    .build();
+                        .fileSize(fileSize)
+                        .lastIncludeIndex(Bits.getInt(byteBuffer))
+                        .lastIncludeTerm(Bits.getInt(byteBuffer))
+                        .build();
             } finally {
                 byteBufferPool.recycle(byteBuffer);
             }
@@ -59,12 +63,8 @@ public class SnapshotFile {
     }
 
     public ByteBuffer readAll() {
-        ByteBuffer byteBuffer = byteBufferPool.allocate((int) snapshotHeader.getContentLength());
-        try {
-            file.readBytes(HEADER_LENGTH, byteBuffer, (int) snapshotHeader.getContentLength());
-        } finally {
-            byteBufferPool.recycle(byteBuffer);
-        }
+        ByteBuffer byteBuffer = byteBufferPool.allocate(snapshotHeader.getContentLength());
+        file.readBytes(SnapshotHeader.BYTES, byteBuffer, snapshotHeader.getContentLength());
         return byteBuffer;
     }
 
@@ -94,14 +94,22 @@ public class SnapshotFile {
     @NoArgsConstructor
     static class SnapshotHeader {
 
+        /**
+         * fileSize(8 bytes) + lastIncludeIndex(4 bytes) + lastIncludeTerm(4 bytes) = 16
+         */
+        public static final int BYTES = 8 + 4 + 4;
         private int lastIncludeIndex;
         private int lastIncludeTerm;
-        private long contentLength;
+        private long fileSize;
 
         public void reset() {
             lastIncludeIndex = 0;
             lastIncludeTerm = 0;
-            contentLength = 0;
+            fileSize = 0;
+        }
+
+        public int getContentLength() {
+            return (int) (fileSize - BYTES);
         }
     }
 

@@ -92,13 +92,17 @@ public class BlockCache {
     }
 
     public ByteBuffer[] getBlocks(long position) {
-        ByteBuffer[] byteBuffers = new ByteBuffer[(int) ((fileSize - position) / blockSize) + 1];
+        int total = (int) (fileSize - position);
+        ByteBuffer[] byteBuffers = new ByteBuffer[(total / blockSize) + 1];
         int index = 0;
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(blockSize);
         while (position < fileSize) {
             if (!byteBuffer.hasRemaining()) {
                 byteBuffers[index++] = byteBuffer;
                 byteBuffer = ByteBuffer.allocateDirect(blockSize);
+                if (index == byteBuffers.length - 1) {
+                    byteBuffer.limit(total - blockSize * index);
+                }
             }
             while (position < fileSize && byteBuffer.hasRemaining()) {
                 Block block = getBlock(position);
@@ -124,7 +128,7 @@ public class BlockCache {
 
     public void appendBlock(ByteBuffer byteBuffer) {
         addBlock(fileSize, new Block(fileSize, byteBuffer));
-        updateFileSize(byteBuffer.capacity());
+        updateFileSize(byteBuffer.limit());
     }
 
     public void appendByteBuffer(ByteBuffer byteBuffer) {
@@ -221,7 +225,7 @@ public class BlockCache {
         int offset = 0;
         while (offset < bytes.length && position < fileSize) {
             Block block = getBlock(position);
-            int length = Math.min(bytes.length - offset, (int) (block.endOffset - position));
+            int length = Math.min(bytes.length - offset, (int) (block.endOffset - position + 1));
             block.get((int) (position - block.startOffset), bytes, offset, length);
             offset += length;
             position += length;
@@ -332,7 +336,7 @@ public class BlockCache {
             int length;
             if (destination.remaining() < byteBuffer.remaining()) {
                 length = destination.remaining();
-                byteBuffer.limit(byteBuffer.position() + destination.remaining());
+                byteBuffer.limit(byteBuffer.position() + length);
             } else {
                 length = byteBuffer.remaining();
             }

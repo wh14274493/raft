@@ -47,7 +47,7 @@ public class LogBufferTest {
     @Test
     public void testAppend() {
         byte[] content = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
-        int capacity = ThreadLocalRandom.current().nextInt(1000000);
+        int capacity = 30165;
         List<Log> logEntries = new ArrayList<>(capacity);
         IntStream.range(0, capacity)
                 .forEach(index -> logEntries.add(LogFactory.createEntry(1, 1, index + 1, content, content.length)));
@@ -71,7 +71,7 @@ public class LogBufferTest {
     public void loadLogsIntoList() {
         testAppend();
         long begin = System.nanoTime();
-        List<Log> res = new ArrayList<>();
+        List<Log> res = new ArrayList<>(30165);
         logBuffer.loadLogsIntoList(FileConstant.LOG_FILE_HEADER_SIZE, logBuffer.size(), res);
         log.info("load {} logs cost {} ns", res.size(), (System.nanoTime() - begin));
     }
@@ -90,7 +90,7 @@ public class LogBufferTest {
         File file = File.createTempFile("temp-", "logBuffer1");
         LogBuffer dest = new LogBuffer(file, new ServerProperties());
         long begin = System.nanoTime();
-        logBuffer.transferTo(FileConstant.LOG_FILE_HEADER_SIZE,dest);
+        logBuffer.transferTo(FileConstant.LOG_FILE_HEADER_SIZE, dest);
         log.info("transferTo all cost {} ns", (System.nanoTime() - begin));
     }
 
@@ -100,18 +100,6 @@ public class LogBufferTest {
         long begin = System.nanoTime();
         logBuffer.removeAfter(FileConstant.LOG_FILE_HEADER_SIZE);
         log.info("remove all cost {} ns", (System.nanoTime() - begin));
-        Assert.assertEquals(FileConstant.LOG_FILE_HEADER_SIZE,logBuffer.size());
-    }
-
-    @Test
-    public void close() {
-    }
-
-    @Test
-    public void size() {
-    }
-
-    @Test
-    public void isEmpty() {
+        Assert.assertEquals(FileConstant.LOG_FILE_HEADER_SIZE, logBuffer.size());
     }
 }

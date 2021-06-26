@@ -32,7 +32,7 @@ public class OpLog extends AbstractLog {
 
     @Override
     public String toString() {
-        return "OpLogEntry{metadata=" + metadata + '}';
+        return "OpLog{metadata=" + metadata + '}';
     }
 
 }

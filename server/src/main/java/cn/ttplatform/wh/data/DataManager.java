@@ -2,11 +2,7 @@ package cn.ttplatform.wh.data;
 
 import cn.ttplatform.wh.GlobalContext;
 import cn.ttplatform.wh.config.ServerProperties;
-import cn.ttplatform.wh.data.log.Log;
-import cn.ttplatform.wh.data.log.LogBuffer;
-import cn.ttplatform.wh.data.log.LogIndexBuffer;
-import cn.ttplatform.wh.data.log.LogIndexOperation;
-import cn.ttplatform.wh.data.log.LogOperation;
+import cn.ttplatform.wh.data.log.*;
 import cn.ttplatform.wh.data.snapshot.Snapshot;
 import cn.ttplatform.wh.data.snapshot.SnapshotBuilder;
 import cn.ttplatform.wh.data.tool.Bits;
@@ -17,19 +13,13 @@ import cn.ttplatform.wh.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.support.Pool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.IntStream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Wang Hao
@@ -80,17 +70,19 @@ public class DataManager {
         ByteBuffer[] buffers = logOperation.read();
         ByteBuffer destination = byteBufferPool.allocate(MAX_CHUNK_SIZE);
         try {
-            int position = 0;
+            int position = FileConstant.LOG_FILE_HEADER_SIZE;
+            int blockSize = buffers[0].capacity();
             int index = 0;
-            ByteBuffer source = buffers[index++];
-            source.position(0);
-            int count = 0;
             int fileSize = (int) logOperation.size();
             while (position < fileSize) {
-                while (destination.hasRemaining()) {
+                while (position < fileSize && destination.hasRemaining()) {
+                    ByteBuffer source = buffers[(position - FileConstant.LOG_FILE_HEADER_SIZE) / blockSize];
+                    source.position((position - FileConstant.LOG_FILE_HEADER_SIZE) % blockSize);
+                    // java.nio.DirectByteBuffer[pos=706036 lim=706036 cap=1048576]
+                    int count = 0;
                     while (count < Log.HEADER_BYTES) {
                         if (!source.hasRemaining()) {
-                            source = buffers[index++];
+                            source = buffers[++index];
                             source.position(0);
                         }
                         destination.put(source.get());
@@ -101,9 +93,7 @@ public class DataManager {
                     int cmdLength = Bits.getInt(destination);
                     destination.position(offset);
                     Bits.putLong(position, destination);
-                    position = source.capacity() * index + source.position() + cmdLength;
-                    source = buffers[position / source.capacity()];
-                    source.position(position & (source.capacity() - 1));
+                    position = position + Log.HEADER_BYTES + cmdLength;
                 }
                 logIndexOperation.append(destination);
                 destination.clear();
