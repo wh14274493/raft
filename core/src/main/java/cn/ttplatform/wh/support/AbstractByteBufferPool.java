@@ -25,7 +25,9 @@ public abstract class AbstractByteBufferPool implements Pool<ByteBuffer> {
         if (!pool.isEmpty()) {
             Entry<Integer, ByteBuffer> bufferEntry = pool.ceilingEntry(size);
             if (bufferEntry != null) {
-                return pool.remove(bufferEntry.getKey());
+                ByteBuffer byteBuffer = pool.remove(bufferEntry.getKey());
+                byteBuffer.limit(size);
+                return byteBuffer;
             }
         }
         return doAllocate(size);

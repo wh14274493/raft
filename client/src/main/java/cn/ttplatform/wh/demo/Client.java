@@ -117,7 +117,7 @@ public class Client {
 //        });
 
         log.info("start at {}", System.nanoTime());
-        IntStream.range(0, 50000).forEach(index -> {
+        IntStream.range(0, 5).forEach(index -> {
             GetCommand getCommand = GetCommand.builder().id(index+"").key(index + "wanghao").build();
             channel.write(getCommand);
         });

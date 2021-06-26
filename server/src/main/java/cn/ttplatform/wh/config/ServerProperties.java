@@ -2,12 +2,14 @@ package cn.ttplatform.wh.config;
 
 import cn.ttplatform.wh.exception.OperateFileException;
 import io.netty.channel.EventLoopGroup;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Properties;
 import java.util.UUID;
+
 import lombok.Data;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.helpers.Loader;
@@ -182,8 +184,10 @@ public class ServerProperties {
         readWriteFileStrategy = properties.getProperty("readWriteFileStrategy", "direct access");
         byteBufferPoolSize = Integer.parseInt(properties.getProperty("byteBufferPoolSize", "10"));
         byteBufferSizeLimit = Integer.parseInt(properties.getProperty("byteBufferSizeLimit", String.valueOf(1024 * 1024 * 10)));
-        logIndexCacheSize = Integer.parseInt(properties.getProperty("logIndexCacheSize", String.valueOf(100)));
-        blockFlushInterval = Long.parseLong(properties.getProperty("blockFlushInterval","1000"));
+        blockCacheSize = Integer.parseInt(properties.getProperty("blockCacheSize", "50"));
+        blockSize = Integer.parseInt(properties.getProperty("blockCacheSize", String.valueOf(1024 * 1024)));
+        logIndexCacheSize = Integer.parseInt(properties.getProperty("logIndexCacheSize", "100"));
+        blockFlushInterval = Long.parseLong(properties.getProperty("blockFlushInterval", "1000"));
     }
 
 }

@@ -6,6 +6,10 @@ package cn.ttplatform.wh.data.log;
  */
 public interface Log {
 
+    /**
+     * index(4 bytes) + term(4 bytes) + type(4 bytes) + commandLength(4 bytes) = 16
+     */
+    int HEADER_BYTES = 4+4+4+4;
     int NO_OP_TYPE = 0;
     int SET = 1;
     int OLD_NEW = 2;

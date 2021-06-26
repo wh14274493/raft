@@ -2,6 +2,7 @@ package cn.ttplatform.wh.support;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import lombok.Getter;
 
 /**
@@ -11,7 +12,7 @@ import lombok.Getter;
 public class LRU<K, V> {
 
     final int capacity;
-    protected int size;
+    protected int used;
     protected final Map<K, KVEntry<K, V>> cache;
     private final KVEntry<K, V> head;
     private KVEntry<K, V> tail;
@@ -24,7 +25,7 @@ public class LRU<K, V> {
         this.tail = head;
     }
 
-    public LRU(int capacity,Map<K,KVEntry<K, V>> cache){
+    public LRU(int capacity, Map<K, KVEntry<K, V>> cache) {
         this.cache = cache;
         this.capacity = capacity;
         // head is a Sentinel node
@@ -64,7 +65,7 @@ public class LRU<K, V> {
             tail.next = kvEntry;
             kvEntry.pre = tail;
             tail = tail.next;
-            size++;
+            used++;
         } else {
             kvEntry.value = value;
         }
@@ -73,7 +74,7 @@ public class LRU<K, V> {
 
     private KVEntry<K, V> removeFirst() {
         KVEntry<K, V> kvEntry = null;
-        if (size == capacity) {
+        if (used == capacity) {
             kvEntry = cache.remove(head.next.key);
             if (head.next == tail) {
                 head.next = null;
@@ -82,7 +83,7 @@ public class LRU<K, V> {
                 head.next = head.next.next;
                 head.next.pre = head;
             }
-            size--;
+            used--;
         }
         return kvEntry;
     }
@@ -91,7 +92,7 @@ public class LRU<K, V> {
         cache.clear();
         head.next.pre = null;
         head.next = null;
-        size = 0;
+        used = 0;
     }
 
     public KVEntry<K, V> remove(K key) {
@@ -111,6 +112,14 @@ public class LRU<K, V> {
         }
         kvEntry.pre = null;
         kvEntry.next = null;
+    }
+
+    @Override
+    public String toString() {
+        return "LRU{" +
+                "capacity=" + capacity +
+                ", used=" + used +
+                '}';
     }
 
     @Getter

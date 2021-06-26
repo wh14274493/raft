@@ -37,6 +37,11 @@ public class FileConstant {
     public static final String EMPTY_SNAPSHOT_FILE_NAME = "data-0-0.snapshot";
     public static final String EMPTY_LOG_FILE_NAME = "data-0-0.log";
     public static final String EMPTY_INDEX_FILE_NAME = "data-0-0.index";
+    /**
+     * Node state will be stored in {@code nodeStoreFile}
+     */
+    public static final String NODE_STATE_FILE_NAME = "node.state";
+    public static final int NODE_STATE_FILE_SIZE = 128;
 
     public static File newSnapshotFile(File parent, int lastIncludeIndex, int lastIncludeTerm) {
         return new File(parent, String.format(SNAPSHOT_GENERATING_FILE_NAME, lastIncludeTerm, lastIncludeIndex));
@@ -56,13 +61,13 @@ public class FileConstant {
             return new File(parent, EMPTY_SNAPSHOT_FILE_NAME);
         }
         Optional<File> fileOptional = Arrays.stream(files)
-            .filter(file -> SNAPSHOT_NAME_PATTERN.matcher(file.getName()).matches()).min((o1, o2) -> {
-                String o1Name = o1.getName();
-                String[] o1Pieces = o1Name.substring(0, o1Name.lastIndexOf('.')).split("-");
-                String o2Name = o2.getName();
-                String[] o2Pieces = o2Name.substring(0, o2Name.lastIndexOf('.')).split("-");
-                return Integer.parseInt(o2Pieces[2]) - Integer.parseInt(o1Pieces[2]);
-            });
+                .filter(file -> SNAPSHOT_NAME_PATTERN.matcher(file.getName()).matches()).min((o1, o2) -> {
+                    String o1Name = o1.getName();
+                    String[] o1Pieces = o1Name.substring(0, o1Name.lastIndexOf('.')).split("-");
+                    String o2Name = o2.getName();
+                    String[] o2Pieces = o2Name.substring(0, o2Name.lastIndexOf('.')).split("-");
+                    return Integer.parseInt(o2Pieces[2]) - Integer.parseInt(o1Pieces[2]);
+                });
         return fileOptional.orElse(new File(parent, EMPTY_SNAPSHOT_FILE_NAME));
     }
 

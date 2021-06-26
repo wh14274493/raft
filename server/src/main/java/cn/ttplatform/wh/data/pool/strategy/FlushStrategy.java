@@ -9,5 +9,5 @@ import cn.ttplatform.wh.data.pool.BlockCache.Block;
 public interface FlushStrategy {
 
     void flush(Block block);
-    void flush();
+    void synFlushAll();
 }

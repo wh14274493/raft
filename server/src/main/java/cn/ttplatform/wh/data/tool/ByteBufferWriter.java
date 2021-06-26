@@ -7,12 +7,14 @@ import static java.nio.file.StandardOpenOption.WRITE;
 import cn.ttplatform.wh.constant.ErrorMessage;
 import cn.ttplatform.wh.exception.OperateFileException;
 import cn.ttplatform.wh.support.Pool;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -25,7 +27,7 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
     private final Path path;
     private final FileChannel fileChannel;
     private final Pool<ByteBuffer> bufferPool;
-    ByteBuffer header;
+    private final ByteBuffer header;
     /**
      * Not safe in the case of multi-threaded operations
      */
@@ -38,6 +40,7 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
             // Requires that every update to the file's content be written synchronously to the underlying storage device.
             this.fileChannel = FileChannel.open(path, READ, WRITE, CREATE);
             log.info("open file[{}].", file);
+            this.header = ByteBuffer.allocateDirect(8);
             fileChannel.read(header, 0L);
             fileSize = Bits.getLong(header);
         } catch (IOException e) {
@@ -137,7 +140,7 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
         if (read != size) {
             log.warn("required {} bytes, but read {} bytes from file[index {}]", size, read, position);
             throw new OperateFileException(
-                String.format("required %d bytes, but read %d bytes from file[index = %d]", size, read, position));
+                    String.format("required %d bytes, but read %d bytes from file[index = %d]", size, read, position));
         }
         byteBuffer.flip();
     }

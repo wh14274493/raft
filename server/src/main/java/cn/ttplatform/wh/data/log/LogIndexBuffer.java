@@ -1,14 +1,17 @@
 package cn.ttplatform.wh.data.log;
 
 import cn.ttplatform.wh.GlobalContext;
+import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.data.FileConstant;
 import cn.ttplatform.wh.data.log.LogIndexFile.LogIndexCache;
 import cn.ttplatform.wh.data.pool.BlockCache;
 import cn.ttplatform.wh.exception.IncorrectLogIndexNumberException;
+
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Optional;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -24,12 +27,14 @@ public class LogIndexBuffer implements LogIndexOperation {
     private static final int ITEM_LENGTH = Integer.BYTES * 3 + Long.BYTES;
     private int minIndex;
     private int maxIndex;
-    BlockCache blockCache;
+    private final BlockCache blockCache;
     private final LogIndexCache logIndexCache;
 
     public LogIndexBuffer(File file, GlobalContext context) {
-        this.logIndexCache = new LogIndexCache(100);
+        ServerProperties properties = context.getProperties();
+        this.logIndexCache = new LogIndexCache(properties.getLogIndexCacheSize());
         this.blockCache = new BlockCache(context, file, FileConstant.LOG_INDEX_FILE_HEADER_SIZE);
+        initialize();
     }
 
     @Override
@@ -38,25 +43,24 @@ public class LogIndexBuffer implements LogIndexOperation {
             long position = 0L;
             LogIndex logIndex = loadLogIndex(position);
             this.minIndex = logIndex.getIndex();
-            logIndexCache.put(minIndex, logIndex);
             position = blockCache.getSize() - ITEM_LENGTH;
             logIndex = loadLogIndex(position);
             this.maxIndex = logIndex.getIndex();
-            logIndexCache.put(maxIndex, logIndex);
         }
         log.info("initialize minIndex = {}, maxIndex = {}.", minIndex, maxIndex);
     }
 
     private LogIndex loadLogIndex(long position) {
         int index = blockCache.getInt(position);
-        position += 4;
+        position += Integer.BYTES;
         int term = blockCache.getInt(position);
-        position += 4;
+        position += Integer.BYTES;
         int type = blockCache.getInt(position);
-        position += 4;
+        position += Integer.BYTES;
         long offset = blockCache.getLong(position);
-        this.minIndex = index;
-        return LogIndex.builder().index(index).term(term).type(type).offset(offset).build();
+        LogIndex logIndex = LogIndex.builder().index(index).term(term).type(type).offset(offset).build();
+        logIndexCache.put(index, logIndex);
+        return logIndex;
     }
 
     @Override
@@ -76,8 +80,11 @@ public class LogIndexBuffer implements LogIndexOperation {
 
     @Override
     public LogIndex getLogMetaData(int index) {
-        return Optional.ofNullable(logIndexCache.get(index))
-            .orElse(loadLogIndex((long) (index - minIndex) * ITEM_LENGTH));
+        LogIndex logIndex = logIndexCache.get(index);
+        if (logIndex == null) {
+            logIndex = loadLogIndex((long) (index - minIndex) * ITEM_LENGTH + FileConstant.LOG_INDEX_FILE_HEADER_SIZE);
+        }
+        return logIndex;
     }
 
     @Override
@@ -94,13 +101,13 @@ public class LogIndexBuffer implements LogIndexOperation {
         } else {
             if (index != maxIndex + 1) {
                 throw new IncorrectLogIndexNumberException(
-                    "index[" + index + "] is not correct, maxEntryIndex is " + maxIndex);
+                        "index[" + index + "] is not correct, maxEntryIndex is " + maxIndex);
             }
         }
         maxIndex = index;
         LogIndexBuffer.log.debug("update maxLogIndex = {}.", maxIndex);
         LogIndex logIndex = LogIndex.builder().index(index).term(log.getTerm()).offset(offset).type(log.getType())
-            .build();
+                .build();
         blockCache.appendInt(log.getIndex());
         blockCache.appendInt(log.getTerm());
         blockCache.appendInt(log.getType());
@@ -115,7 +122,7 @@ public class LogIndexBuffer implements LogIndexOperation {
         } else {
             if (logs.get(0).getIndex() != maxIndex + 1) {
                 throw new IllegalArgumentException(
-                    "index[" + logs.get(0).getIndex() + "] is not correct, maxEntryIndex is " + maxIndex);
+                        "index[" + logs.get(0).getIndex() + "] is not correct, maxEntryIndex is " + maxIndex);
             }
         }
         maxIndex = logs.get(logs.size() - 1).getIndex();
@@ -127,11 +134,11 @@ public class LogIndexBuffer implements LogIndexOperation {
             blockCache.appendInt(log.getType());
             blockCache.appendLong(offsets[i]);
             LogIndex logIndex = LogIndex.builder()
-                .index(log.getIndex())
-                .term(log.getTerm())
-                .type(log.getType())
-                .offset(offsets[i])
-                .build();
+                    .index(log.getIndex())
+                    .term(log.getTerm())
+                    .type(log.getType())
+                    .offset(offsets[i])
+                    .build();
             logIndexCache.put(logIndex.getIndex(), logIndex);
         }
     }
@@ -163,7 +170,7 @@ public class LogIndexBuffer implements LogIndexOperation {
 
     @Override
     public boolean isEmpty() {
-        return blockCache.getSize() == 0L;
+        return blockCache.getSize() <= FileConstant.LOG_INDEX_FILE_HEADER_SIZE;
     }
 
     @Override

@@ -17,6 +17,7 @@ import cn.ttplatform.wh.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.message.InstallSnapshotMessage;
 import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.support.Pool;
+
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.IntStream;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +37,9 @@ import org.slf4j.LoggerFactory;
  */
 public class DataManager {
 
+    /**
+     * Maximum number of bytes that can be read at a time. Must be a multiple of 20.
+     */
     public static final int MAX_CHUNK_SIZE = 20 * 1024 * 1024;
     private final Logger logger = LoggerFactory.getLogger(DataManager.class);
     private final TreeMap<Integer, Log> pending = new TreeMap<>();
@@ -83,7 +88,7 @@ public class DataManager {
             int fileSize = (int) logOperation.size();
             while (position < fileSize) {
                 while (destination.hasRemaining()) {
-                    while (count < 16) {
+                    while (count < Log.HEADER_BYTES) {
                         if (!source.hasRemaining()) {
                             source = buffers[index++];
                             source.position(0);
@@ -91,7 +96,7 @@ public class DataManager {
                         destination.put(source.get());
                         count++;
                     }
-                    int offset = destination.position() - 4;
+                    int offset = destination.position() - Integer.BYTES;
                     destination.position(offset);
                     int cmdLength = Bits.getInt(destination);
                     destination.position(offset);
@@ -139,9 +144,9 @@ public class DataManager {
             return log.getTerm();
         }
         return Optional.ofNullable(logIndexOperation.getLogMetaData(index))
-            .orElseThrow(
-                () -> new IncorrectLogIndexNumberException("not found log meta data for index[" + index + "]."))
-            .getTerm();
+                .orElseThrow(
+                        () -> new IncorrectLogIndexNumberException("not found log meta data for index[" + index + "]."))
+                .getTerm();
     }
 
     /**
@@ -162,7 +167,7 @@ public class DataManager {
         if (!pending.isEmpty() && log.getIndex() != pending.lastEntry().getKey() + 1) {
             // maybe received an expired message
             throw new IncorrectLogIndexNumberException(
-                "The index[" + log.getIndex() + "] number of the log is incorrect ");
+                    "The index[" + log.getIndex() + "] number of the log is incorrect ");
         }
         pending.put(log.getIndex(), log);
         nextIndex++;
@@ -186,7 +191,7 @@ public class DataManager {
                 if (!pending.isEmpty() && log.getIndex() != pending.lastEntry().getKey() + 1) {
                     // maybe received an expired message
                     throw new IncorrectLogIndexNumberException(
-                        "The index[" + log.getIndex() + "] number of the log is incorrect.");
+                            "The index[" + log.getIndex() + "] number of the log is incorrect.");
                 }
                 pending.put(log.getIndex(), log);
             }
@@ -238,11 +243,11 @@ public class DataManager {
             return null;
         }
         AppendLogEntriesMessage message = AppendLogEntriesMessage.builder()
-            .leaderCommitIndex(commitIndex)
-            .term(term)
-            .matched(endpoint.isMatched())
-            .leaderId(leaderId)
-            .build();
+                .leaderCommitIndex(commitIndex)
+                .term(term)
+                .matched(endpoint.isMatched())
+                .leaderId(leaderId)
+                .build();
         if (endpoint.isMatched()) {
             message.setLogEntries(range(endpointNextIndex, endpointNextIndex + size));
         }
@@ -260,12 +265,12 @@ public class DataManager {
 
     public Message createInstallSnapshotMessage(int term, long offset, int size) {
         return InstallSnapshotMessage.builder().term(term)
-            .offset(offset)
-            .lastIncludeIndex(snapshot.getLastIncludeIndex())
-            .lastIncludeTerm(snapshot.getLastIncludeTerm())
-            .chunk(snapshot.read(offset, size))
-            .done(offset + size >= snapshot.size())
-            .build();
+                .offset(offset)
+                .lastIncludeIndex(snapshot.getLastIncludeIndex())
+                .lastIncludeTerm(snapshot.getLastIncludeTerm())
+                .chunk(snapshot.read(offset, size))
+                .done(offset + size >= snapshot.size())
+                .build();
     }
 
     /**
@@ -278,7 +283,7 @@ public class DataManager {
     public boolean advanceCommitIndex(int newCommitIndex, int term) {
         if (newCommitIndex <= commitIndex) {
             logger
-                .debug("newCommitIndex[{}]<=commitIndex[{}], can not advance commitIndex", newCommitIndex, commitIndex);
+                    .debug("newCommitIndex[{}]<=commitIndex[{}], can not advance commitIndex", newCommitIndex, commitIndex);
             return false;
         }
         Log log = getLog(newCommitIndex);
@@ -338,7 +343,7 @@ public class DataManager {
         long expectedOffset = snapshotBuilder.getInstallOffset();
         if (offset != expectedOffset) {
             throw new IllegalArgumentException(
-                String.format("the offset[%d] is unmatched. expect %d", offset, expectedOffset));
+                    String.format("the offset[%d] is unmatched. expect %d", offset, expectedOffset));
         }
         if (!sourceId.equals(snapshotBuilder.getSnapshotSource())) {
             throw new IllegalArgumentException("the snapshotSource has changed, receive a message that offset!=0.");
@@ -393,7 +398,7 @@ public class DataManager {
             return pending.get(index);
         }
         return logOperation
-            .getLog(logIndexOperation.getEntryOffset(index), logIndexOperation.getEntryOffset(index + 1));
+                .getLog(logIndexOperation.getEntryOffset(index), logIndexOperation.getEntryOffset(index + 1));
     }
 
     /**

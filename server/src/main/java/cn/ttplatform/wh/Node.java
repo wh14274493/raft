@@ -4,6 +4,7 @@ import cn.ttplatform.wh.config.RunMode;
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.data.tool.ByteBufferWriter;
 import cn.ttplatform.wh.data.tool.ReadableAndWriteableFile;
+import cn.ttplatform.wh.exception.OperateFileException;
 import cn.ttplatform.wh.scheduler.SingleThreadScheduler;
 import cn.ttplatform.wh.group.Cluster;
 import cn.ttplatform.wh.data.log.Log;
@@ -13,11 +14,21 @@ import cn.ttplatform.wh.role.Leader;
 import cn.ttplatform.wh.role.Role;
 import cn.ttplatform.wh.role.RoleCache;
 import cn.ttplatform.wh.role.RoleType;
+
 import java.io.File;
+import java.io.IOException;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+
+import static cn.ttplatform.wh.data.FileConstant.NODE_STATE_FILE_NAME;
+import static cn.ttplatform.wh.data.FileConstant.NODE_STATE_FILE_SIZE;
+import static java.nio.file.StandardOpenOption.*;
+import static java.nio.file.StandardOpenOption.DSYNC;
 
 /**
  * @author : wang hao
@@ -82,11 +93,11 @@ public class Node {
         context.setScheduler(new SingleThreadScheduler(properties));
         context.setCluster(new Cluster(context));
         this.role = Follower.builder()
-            .scheduledFuture(context.electionTimeoutTask())
-            .term(nodeState.getCurrentTerm())
-            .voteTo(nodeState.getVoteTo())
-            .preVoteCounts(1)
-            .build();
+                .scheduledFuture(context.electionTimeoutTask())
+                .term(nodeState.getCurrentTerm())
+                .voteTo(nodeState.getVoteTo())
+                .preVoteCounts(1)
+                .build();
         this.receiver.listen();
     }
 
@@ -118,7 +129,7 @@ public class Node {
     }
 
     public void changeToFollower(int term, String leaderId, String voteTo, int oldVoteCounts, int newVoteCounts,
-        long lastHeartBeat) {
+                                 long lastHeartBeat) {
         int voteCounts = getVoteCounts(oldVoteCounts, newVoteCounts);
         Follower follower;
         if (role.getType() != RoleType.FOLLOWER) {
@@ -195,15 +206,26 @@ public class Node {
 
     class NodeState {
 
-        /**
-         * Node state will be stored in {@code nodeStoreFile}
-         */
-        public static final String NODE_STATE_FILE_NAME = "node.state";
 
-        private final ReadableAndWriteableFile file;
+        private final MappedByteBuffer mappedByteBuffer;
+        private int fileSize;
+        private final FileChannel fileChannel;
 
         public NodeState() {
-            this.file = new ByteBufferWriter(new File(properties.getBase(), NODE_STATE_FILE_NAME), context.getByteBufferPool());
+            try {
+                File stateFile = new File(properties.getBase(), NODE_STATE_FILE_NAME);
+                this.fileChannel = FileChannel.open(stateFile.toPath(), READ, WRITE, CREATE, DSYNC);
+                this.mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, NODE_STATE_FILE_SIZE);
+                this.fileSize = mappedByteBuffer.getInt();
+            } catch (IOException e) {
+                throw new OperateFileException("open file channel error.", e);
+            }
+
+        }
+
+        private void updateFileSize() {
+            mappedByteBuffer.position(0);
+            mappedByteBuffer.putInt(fileSize);
         }
 
         /**
@@ -212,7 +234,12 @@ public class Node {
          * @param term Current node's term
          */
         public void setCurrentTerm(int term) {
-            file.writeInt(0L, term);
+            mappedByteBuffer.position(Integer.BYTES);
+            mappedByteBuffer.putInt(term);
+            if (fileSize < Integer.BYTES * 2) {
+                fileSize = Integer.BYTES * 2;
+                updateFileSize();
+            }
         }
 
         /**
@@ -221,10 +248,14 @@ public class Node {
          * @return currentTerm
          */
         public int getCurrentTerm() {
-            if (file.isEmpty()) {
+            mappedByteBuffer.position(Integer.BYTES);
+            if (fileSize == 0) {
+                mappedByteBuffer.putInt(1);
+                fileSize = Integer.BYTES * 2;
+                updateFileSize();
                 return 1;
             }
-            return file.readInt(0L);
+            return mappedByteBuffer.getInt();
         }
 
         /**
@@ -235,10 +266,15 @@ public class Node {
          */
         public void setVoteTo(String voteTo) {
             if (voteTo == null || "".equals(voteTo)) {
-                file.truncate(Integer.BYTES);
+                fileSize = Integer.BYTES * 2;
+                updateFileSize();
                 return;
             }
-            file.write(Integer.BYTES, voteTo.getBytes(Charset.defaultCharset()));
+            byte[] voteToBytes = voteTo.getBytes(Charset.defaultCharset());
+            mappedByteBuffer.position(Integer.BYTES * 2);
+            mappedByteBuffer.put(voteToBytes);
+            fileSize = Math.max(fileSize, Integer.BYTES * 2 + voteToBytes.length);
+            updateFileSize();
         }
 
         /**
@@ -247,15 +283,24 @@ public class Node {
          * @return the node id that vote for
          */
         public String getVoteTo() {
-            long fileSize = file.size();
             if (fileSize <= Integer.BYTES) {
                 return null;
             }
-            return new String(file.readBytes(Integer.BYTES, (int) (fileSize - Integer.BYTES)), Charset.defaultCharset());
+            mappedByteBuffer.position(Integer.BYTES);
+            byte[] bytes = new byte[(int) (fileSize - Integer.BYTES)];
+            mappedByteBuffer.get(bytes);
+            return new String(bytes, Charset.defaultCharset());
         }
 
         public void close() {
-            file.close();
+            mappedByteBuffer.force();
+            try {
+                if (fileChannel.isOpen()) {
+                    fileChannel.close();
+                }
+            } catch (IOException e) {
+                throw new OperateFileException("close a file channel error");
+            }
         }
 
     }

@@ -1,15 +1,16 @@
 package cn.ttplatform.wh.data.log;
 
-import static cn.ttplatform.wh.data.DataManager.MAX_CHUNK_SIZE;
-
 import cn.ttplatform.wh.data.tool.Bits;
 import cn.ttplatform.wh.data.tool.ByteBufferWriter;
 import cn.ttplatform.wh.data.tool.ReadableAndWriteableFile;
 import cn.ttplatform.wh.support.Pool;
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
+
+import static cn.ttplatform.wh.data.DataManager.MAX_CHUNK_SIZE;
 
 /**
  * @author Wang Hao
@@ -18,10 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LogFile implements LogOperation {
 
-    /**
-     * index(4 bytes) + term(4 bytes) + type(4 bytes) + commandLength(4 bytes) = 16
-     */
-    public static final int LOG_ENTRY_HEADER_SIZE = 4 + 4 + 4 + 4;
     private final ReadableAndWriteableFile file;
     private final Pool<ByteBuffer> byteBufferPool;
 

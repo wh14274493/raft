@@ -21,10 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class LogIndexFile implements LogIndexOperation{
 
-    /**
-     * index(4 bytes) + term(4 bytes) + type(4 bytes) + offset(8 bytes) = 20
-     */
-    private static final int ITEM_LENGTH = Integer.BYTES * 3 + Long.BYTES;
+
     private final LogIndexCache logIndexCache;
     private final Pool<ByteBuffer> byteBufferPool;
     private final ReadableAndWriteableFile file;
@@ -43,14 +40,14 @@ public final class LogIndexFile implements LogIndexOperation{
     @Override
     public void initialize() {
         if (!isEmpty()) {
-            ByteBuffer byteBuffer = byteBufferPool.allocate(ITEM_LENGTH);
+            ByteBuffer byteBuffer = byteBufferPool.allocate(LogIndex.BYTES);
             try {
-                this.file.readBytes(0L, byteBuffer, ITEM_LENGTH);
+                this.file.readBytes(0L, byteBuffer, LogIndex.BYTES);
                 this.minIndex = Bits.getInt(byteBuffer);
                 logIndexCache.put(minIndex, LogIndex.builder().index(minIndex).term(Bits.getInt(byteBuffer))
                     .type(Bits.getInt(byteBuffer)).offset(Bits.getLong(byteBuffer)).build());
                 byteBuffer.clear();
-                this.file.readBytes(this.file.size() - ITEM_LENGTH, byteBuffer, ITEM_LENGTH);
+                this.file.readBytes(this.file.size() - LogIndex.BYTES, byteBuffer, LogIndex.BYTES);
                 this.maxIndex = Bits.getInt(byteBuffer);
                 logIndexCache.put(maxIndex, LogIndex.builder().index(maxIndex).term(Bits.getInt(byteBuffer))
                     .type(Bits.getInt(byteBuffer)).offset(Bits.getLong(byteBuffer)).build());
@@ -65,10 +62,10 @@ public final class LogIndexFile implements LogIndexOperation{
         if (index < minIndex || index > maxIndex) {
             return null;
         }
-        ByteBuffer byteBuffer = byteBufferPool.allocate(ITEM_LENGTH);
+        ByteBuffer byteBuffer = byteBufferPool.allocate(LogIndex.BYTES);
         try {
-            long position = (long) (index - minIndex) * ITEM_LENGTH;
-            this.file.readBytes(position, byteBuffer, ITEM_LENGTH);
+            long position = (long) (index - minIndex) * LogIndex.BYTES;
+            this.file.readBytes(position, byteBuffer, LogIndex.BYTES);
             return LogIndex.builder().index(Bits.getInt(byteBuffer)).term(Bits.getInt(byteBuffer)).type(Bits.getInt(byteBuffer))
                 .offset(Bits.getLong(byteBuffer)).build();
         } finally {
@@ -115,13 +112,13 @@ public final class LogIndexFile implements LogIndexOperation{
         maxIndex = index;
         LogIndexFile.log.debug("update maxLogIndex = {}.", maxIndex);
         LogIndex logIndex = LogIndex.builder().index(index).term(log.getTerm()).offset(offset).type(log.getType()).build();
-        ByteBuffer byteBuffer = byteBufferPool.allocate(ITEM_LENGTH);
+        ByteBuffer byteBuffer = byteBufferPool.allocate(LogIndex.BYTES);
         try {
             Bits.putInt(log.getIndex(), byteBuffer);
             Bits.putInt(log.getTerm(), byteBuffer);
             Bits.putInt(log.getType(), byteBuffer);
             Bits.putLong(logIndex.getOffset(), byteBuffer);
-            file.append(byteBuffer, ITEM_LENGTH);
+            file.append(byteBuffer, LogIndex.BYTES);
             logIndexCache.put(logIndex.getIndex(), logIndex);
         } finally {
             byteBufferPool.recycle(byteBuffer);
@@ -140,7 +137,7 @@ public final class LogIndexFile implements LogIndexOperation{
         }
         maxIndex = logs.get(logs.size() - 1).getIndex();
         log.debug("update maxLogIndex = {}.", maxIndex);
-        int contentLength = logs.size() * ITEM_LENGTH;
+        int contentLength = logs.size() * LogIndex.BYTES;
         ByteBuffer byteBuffer = byteBufferPool.allocate(contentLength);
         try {
             Log log;
@@ -177,7 +174,7 @@ public final class LogIndexFile implements LogIndexOperation{
             minIndex = 0;
             maxIndex = 0;
         } else if (index < maxIndex) {
-            long position = (long) (index - minIndex + 1) * ITEM_LENGTH;
+            long position = (long) (index - minIndex + 1) * LogIndex.BYTES;
             file.truncate(position);
             maxIndex = index;
             logIndexCache.removeAfter(index);
@@ -213,7 +210,7 @@ public final class LogIndexFile implements LogIndexOperation{
                     KVEntry<Integer, LogIndex> kvEntry = next.getValue();
                     remove(kvEntry);
                     iterator.remove();
-                    size--;
+                    used--;
                 }
             }
         }

@@ -2,10 +2,12 @@ package cn.ttplatform.wh.data.pool.strategy;
 
 import cn.ttplatform.wh.data.pool.BlockCache.Block;
 import cn.ttplatform.wh.support.NamedThreadFactory;
+
 import java.util.TreeSet;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -18,7 +20,6 @@ public class PriorityFlushStrategy implements FlushStrategy {
     private volatile boolean shutdown;
     private final ScheduledThreadPoolExecutor executor;
     private final TreeSet<Block> blocks;
-    private final ReentrantLock lock = new ReentrantLock();
 
     public PriorityFlushStrategy(long interval) {
         blocks = new TreeSet<>((o1, o2) -> (int) (o1.getStartOffset() - o2.getStartOffset()));
@@ -28,11 +29,8 @@ public class PriorityFlushStrategy implements FlushStrategy {
                 return;
             }
             Block block;
-            lock.lock();
-            try {
+            synchronized (blocks) {
                 block = blocks.pollFirst();
-            } finally {
-                lock.unlock();
             }
             if (block != null && block.dirty()) {
                 block.flush();
@@ -44,25 +42,19 @@ public class PriorityFlushStrategy implements FlushStrategy {
     @Override
     public void flush(Block block) {
         if (!shutdown) {
-            lock.lock();
-            try {
+            synchronized (blocks) {
                 blocks.add(block);
-            } finally {
-                lock.unlock();
             }
         }
     }
 
     @Override
-    public void flush() {
+    public void synFlushAll() {
         shutdown = true;
         while (!blocks.isEmpty()) {
             Block block;
-            lock.lock();
-            try {
+            synchronized (blocks) {
                 block = blocks.pollFirst();
-            } finally {
-                lock.unlock();
             }
             if (block != null && block.dirty()) {
                 block.flush();

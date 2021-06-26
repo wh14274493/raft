@@ -47,7 +47,7 @@ public class FIFOFlushStrategy implements FlushStrategy {
     }
 
     @Override
-    public void flush() {
+    public void synFlushAll() {
         shutdown = true;
         while (!queue.isEmpty()) {
             try {

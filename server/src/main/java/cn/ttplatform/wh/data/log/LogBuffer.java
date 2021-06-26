@@ -4,10 +4,12 @@ import cn.ttplatform.wh.GlobalContext;
 import cn.ttplatform.wh.data.FileConstant;
 import cn.ttplatform.wh.data.pool.BlockCache;
 import cn.ttplatform.wh.support.Pool;
+
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -17,8 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LogBuffer implements LogOperation {
 
-    BlockCache blockCache;
-    Pool<ByteBuffer> byteBufferPool;
+    private final BlockCache blockCache;
 
     public LogBuffer(File file, GlobalContext context) {
         this.blockCache = new BlockCache(context, file, FileConstant.LOG_FILE_HEADER_SIZE);
@@ -26,13 +27,14 @@ public class LogBuffer implements LogOperation {
 
     @Override
     public long append(Log log) {
+        long offset = blockCache.getSize();
         blockCache.appendInt(log.getIndex());
         blockCache.appendInt(log.getTerm());
         blockCache.appendInt(log.getType());
         byte[] command = log.getCommand();
         blockCache.appendInt(command.length);
         blockCache.appendBytes(command);
-        return 0;
+        return offset;
     }
 
     @Override
@@ -47,11 +49,7 @@ public class LogBuffer implements LogOperation {
 
     @Override
     public void append(ByteBuffer byteBuffer) {
-        try {
-            blockCache.appendBlock(byteBuffer);
-        } finally {
-            byteBufferPool.recycle(byteBuffer);
-        }
+        blockCache.appendBlock(byteBuffer);
     }
 
     @Override
@@ -105,7 +103,7 @@ public class LogBuffer implements LogOperation {
 
     @Override
     public boolean isEmpty() {
-        return blockCache.getSize() == 0L;
+        return blockCache.getSize() <= FileConstant.LOG_FILE_HEADER_SIZE;
     }
 
 
