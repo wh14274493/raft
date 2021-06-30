@@ -245,7 +245,7 @@ public class AsyncFileOperator {
     public AsyncFileOperator(ServerProperties properties, Pool<ByteBuffer> byteBufferPool, File file, int dataOffset) {
         this.byteBufferPool = byteBufferPool;
         try {
-            this.fileChannel = FileChannel.open(file.toPath(), READ, WRITE, CREATE, DSYNC);
+            this.fileChannel = FileChannel.open(file.toPath(), READ, WRITE, CREATE);
             this.blockSize = properties.getBlockSize();
             this.headerOperator = new FileHeaderOperator(dataOffset);
             this.bodyOperator = new FileBodyOperator(dataOffset, blockSize, properties.getBlockCacheSize(), properties.getBlockFlushInterval());
@@ -440,7 +440,7 @@ public class AsyncFileOperator {
                         fileChannel.write(byteBuffer, startOffset);
                         state = (byte) (state >>> 1 << 1);
                     }
-                    fileChannel.force(true);
+//                    fileChannel.force(true);
                 }
             } catch (IOException e) {
                 throw new OperateFileException(String.format("failed to write %d bytes into file at offset[%d].", byteBuffer.limit(), startOffset), e);
