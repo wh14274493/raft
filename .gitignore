@@ -3,7 +3,7 @@
 /target/
 /server/target/
 /server/src/main/resources/config/
-/server/src/main/resources/LOG/
+/server/src/main/resources/log/
 /client/target/
 /core/target/
 /server/src/main/resources/data/
