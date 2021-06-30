@@ -1,4 +1,4 @@
-package cn.ttplatform.wh.data.tool;
+package cn.ttplatform.wh.data.support;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.READ;
@@ -33,24 +33,28 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
      */
     private long fileSize;
 
-    public ByteBufferWriter(File file, Pool<ByteBuffer> bufferPool) {
+    public ByteBufferWriter(File file, Pool<ByteBuffer> bufferPool, int dataOffset) {
         try {
             this.path = file.toPath();
             this.bufferPool = bufferPool;
             // Requires that every update to the file's content be written synchronously to the underlying storage device.
             this.fileChannel = FileChannel.open(path, READ, WRITE, CREATE);
             log.info("open file[{}].", file);
-            this.header = ByteBuffer.allocateDirect(8);
+            this.header = ByteBuffer.allocateDirect(dataOffset);
             fileChannel.read(header, 0L);
             header.position(0);
             fileSize = Bits.getLong(header);
+            if (fileSize < dataOffset) {
+                fileSize = dataOffset;
+                updateFileSize();
+            }
         } catch (IOException e) {
             throw new OperateFileException("open file channel error.", e);
         }
     }
 
-    public void updateFileSize(long fileSize) {
-        header.clear();
+    public void updateFileSize() {
+        header.position(0);
         Bits.putLong(fileSize, header);
         try {
             fileChannel.write(header);
@@ -94,7 +98,7 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
         write(byteBuffer, position);
         if (position + chunk.length > fileSize) {
             fileSize = getActualSize();
-            updateFileSize(fileSize);
+            updateFileSize();
         }
     }
 
@@ -110,7 +114,7 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
         byteBuffer.put(chunk, 0, length);
         write(byteBuffer, fileSize);
         fileSize += length;
-        updateFileSize(fileSize);
+        updateFileSize();
     }
 
     @Override
@@ -118,7 +122,7 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
         chunk.limit(length);
         write(chunk, fileSize);
         fileSize += length;
-        updateFileSize(fileSize);
+        updateFileSize();
     }
 
     @Override
@@ -165,7 +169,7 @@ public class ByteBufferWriter implements ReadableAndWriteableFile {
             position = Math.max(0L, position);
             fileChannel.truncate(position);
             fileSize = position;
-            updateFileSize(fileSize);
+            updateFileSize();
         } catch (IOException e) {
             throw new OperateFileException(String.format("truncate a file[index=%d] error", position), e);
         }

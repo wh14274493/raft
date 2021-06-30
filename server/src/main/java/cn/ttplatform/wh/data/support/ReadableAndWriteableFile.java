@@ -1,4 +1,4 @@
-package cn.ttplatform.wh.data.tool;
+package cn.ttplatform.wh.data.support;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;

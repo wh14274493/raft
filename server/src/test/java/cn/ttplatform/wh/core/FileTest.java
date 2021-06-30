@@ -215,7 +215,7 @@ public class FileTest {
 
     @Test
     public void testByteBuffer() throws IOException {
-        int count = 4*1024*1024;
+        int count = 8;
         String property = System.getProperty("user.home");
         FileChannel fileChannel = FileChannel.open(File.createTempFile(property, "t2.txt").toPath(), READ, WRITE, CREATE);
         FileChannel fileChannel1 = FileChannel.open(File.createTempFile(property, "t1.txt").toPath(), READ, WRITE, CREATE);

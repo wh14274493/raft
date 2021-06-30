@@ -1,6 +1,5 @@
-package cn.ttplatform.wh.data.pool.strategy;
+package cn.ttplatform.wh.data.support;
 
-import cn.ttplatform.wh.data.pool.BlockCache.Block;
 import cn.ttplatform.wh.support.NamedThreadFactory;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,20 +16,26 @@ public class PriorityFlushStrategy implements FlushStrategy {
 
     private volatile boolean shutdown;
     private final ScheduledThreadPoolExecutor executor;
-    private final TreeSet<Block> blocks;
+    private final TreeSet<AsyncFileOperator.Block> blocks;
 
     public PriorityFlushStrategy(long interval) {
         blocks = new TreeSet<>((o1, o2) -> (int) (o1.getStartOffset() - o2.getStartOffset()));
         this.executor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("Priority-flush-"));
         executor.scheduleAtFixedRate(() -> {
             if (blocks.isEmpty()) {
+                log.debug("There are currently no tasks to be processed.");
                 return;
             }
-            Block block;
+            AsyncFileOperator.Block block;
+            log.debug("flush task begin.");
             synchronized (blocks) {
                 block = blocks.pollFirst();
             }
-            if (block != null && block.dirty()) {
+            if (block == null) {
+                log.debug("There are currently no tasks to be processed.");
+                return;
+            }
+            if (block.dirty()) {
                 block.flush();
                 log.info("async flush a dirty block[{}].", block);
             }
@@ -38,7 +43,7 @@ public class PriorityFlushStrategy implements FlushStrategy {
     }
 
     @Override
-    public void flush(Block block) {
+    public void flush(AsyncFileOperator.Block block) {
         if (!shutdown) {
             synchronized (blocks) {
                 blocks.add(block);
@@ -50,7 +55,7 @@ public class PriorityFlushStrategy implements FlushStrategy {
     public void synFlushAll() {
         shutdown = true;
         while (!blocks.isEmpty()) {
-            Block block;
+            AsyncFileOperator.Block block;
             synchronized (blocks) {
                 block = blocks.pollFirst();
             }
@@ -61,4 +66,5 @@ public class PriorityFlushStrategy implements FlushStrategy {
         }
         executor.shutdown();
     }
+
 }

@@ -9,7 +9,7 @@ public class LogFactory {
     private LogFactory() {
     }
 
-    public static Log createEntry(int type, int term, int index, byte[] command, int cmdLength) {
+    public static Log createEntry(int type, int term, int index, byte[] command) {
         switch (type) {
             case Log.NO_OP_TYPE:
                 return NoOpLog.builder().metadata(LogIndex.builder().type(type).term(term).index(index).build())
@@ -18,7 +18,7 @@ public class LogFactory {
             case Log.OLD_NEW:
             case Log.SET:
                 return OpLog.builder().metadata(LogIndex.builder().type(type).term(term).index(index).build())
-                    .command(command).commandLength(cmdLength).build();
+                    .command(command).build();
             default:
                 throw new IllegalArgumentException("unknown entry type [" + type + "]");
         }

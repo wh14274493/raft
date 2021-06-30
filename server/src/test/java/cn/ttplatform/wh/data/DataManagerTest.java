@@ -4,13 +4,15 @@ import cn.ttplatform.wh.GlobalContext;
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.data.log.Log;
 import cn.ttplatform.wh.data.log.LogFactory;
-import cn.ttplatform.wh.data.tool.DirectByteBufferPool;
+import cn.ttplatform.wh.support.DirectByteBufferPool;
 import cn.ttplatform.wh.group.Cluster;
 import cn.ttplatform.wh.group.Endpoint;
 import cn.ttplatform.wh.support.Message;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +29,7 @@ public class DataManagerTest {
     public void setUp() throws Exception {
         ServerProperties properties = new ServerProperties();
         GlobalContext context = GlobalContext.builder().properties(properties)
-            .byteBufferPool(new DirectByteBufferPool(10, 16 * 1024 * 1024)).build();
+                .byteBufferPool(new DirectByteBufferPool(10, 1024 * 1024, 16 * 1024 * 1024)).build();
         Cluster cluster = new Cluster(context);
         context.setCluster(cluster);
         dataManager = new DataManager(context);
@@ -50,14 +52,14 @@ public class DataManagerTest {
 
     @Test
     public void getTermOfLog() {
-        dataManager.pendingLog(LogFactory.createEntry(0, 1, 1, new byte[0], 0));
+        dataManager.pendingLog(LogFactory.createEntry(0, 1, 1, new byte[0]));
         Assert.assertEquals(1, dataManager.getTermOfLog(1));
     }
 
     @Test
     public void isNewerThan() {
-        dataManager.pendingLog(LogFactory.createEntry(0, 1, 1, new byte[0], 0));
-        dataManager.pendingLog(LogFactory.createEntry(0, 1, 2, new byte[0], 0));
+        dataManager.pendingLog(LogFactory.createEntry(0, 1, 1, new byte[0]));
+        dataManager.pendingLog(LogFactory.createEntry(0, 1, 2, new byte[0]));
         Assert.assertTrue(dataManager.isNewerThan(1, 1));
     }
 
@@ -65,7 +67,7 @@ public class DataManagerTest {
         int count = 10000;
         List<Log> logs = new ArrayList<>(count);
         IntStream.range(0, count).forEach(index -> {
-            logs.add(LogFactory.createEntry(0, 1, index, new byte[0], 0));
+            logs.add(LogFactory.createEntry(0, 1, index, new byte[0]));
         });
         dataManager.pendingLogs(0, logs);
     }
@@ -113,7 +115,7 @@ public class DataManagerTest {
     @Test
     public void range() {
         pendingLogs();
-        dataManager.range(1,5000);
+        dataManager.range(1, 5000);
     }
 
 }

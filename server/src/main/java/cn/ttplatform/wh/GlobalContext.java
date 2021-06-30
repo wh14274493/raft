@@ -26,8 +26,8 @@ import cn.ttplatform.wh.data.DataManager;
 import cn.ttplatform.wh.data.log.Log;
 import cn.ttplatform.wh.data.log.LogFactory;
 import cn.ttplatform.wh.data.snapshot.GenerateSnapshotTask;
-import cn.ttplatform.wh.data.tool.DirectByteBufferPool;
-import cn.ttplatform.wh.data.tool.HeapByteBufferPool;
+import cn.ttplatform.wh.support.DirectByteBufferPool;
+import cn.ttplatform.wh.support.HeapByteBufferPool;
 import cn.ttplatform.wh.group.Cluster;
 import cn.ttplatform.wh.group.Endpoint;
 import cn.ttplatform.wh.handler.ClusterChangeCommandHandler;
@@ -126,11 +126,11 @@ public class GlobalContext {
         if (ReadWriteFileStrategy.DIRECT.equals(properties.getReadWriteFileStrategy())) {
             logger.debug("use DirectBufferAllocator");
             this.byteBufferPool = new DirectByteBufferPool(properties.getByteBufferPoolSize(),
-                    properties.getByteBufferSizeLimit());
+                    properties.getBlockSize(), properties.getByteBufferSizeLimit());
         } else {
             logger.debug("use BufferAllocator");
             this.byteBufferPool = new HeapByteBufferPool(properties.getByteBufferPoolSize(),
-                    properties.getByteBufferSizeLimit());
+                    properties.getBlockSize(), properties.getByteBufferSizeLimit());
         }
         this.distributor = buildDistributor();
         this.factoryManager = buildFactoryManager();
@@ -454,7 +454,7 @@ public class GlobalContext {
     }
 
     public int pendingLog(int type, byte[] cmd) {
-        return dataManager.pendingLog(LogFactory.createEntry(type, node.getTerm(), 0, cmd, cmd.length));
+        return dataManager.pendingLog(LogFactory.createEntry(type, node.getTerm(), 0, cmd));
     }
 
     public void addPendingCommand(int index, SetCommand cmd) {

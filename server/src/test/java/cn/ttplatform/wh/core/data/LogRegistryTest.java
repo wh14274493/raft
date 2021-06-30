@@ -5,21 +5,22 @@ import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.data.DataManager;
 import cn.ttplatform.wh.data.log.Log;
 import cn.ttplatform.wh.data.log.LogFactory;
-import cn.ttplatform.wh.data.tool.DirectByteBufferPool;
+import cn.ttplatform.wh.support.DirectByteBufferPool;
 import cn.ttplatform.wh.group.Endpoint;
 import cn.ttplatform.wh.group.EndpointMetaData;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Message;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * @author Wang Hao
@@ -35,7 +36,7 @@ public class LogRegistryTest {
         String property = System.getProperty("user.home");
         GlobalContext context = GlobalContext.builder()
             .properties(new ServerProperties())
-            .byteBufferPool(new DirectByteBufferPool(10, 10 * 1024 * 1024))
+            .byteBufferPool(new DirectByteBufferPool(10, 1024 * 1024,10 * 1024 * 1024))
             .linkedBufferPool(new FixedSizeLinkedBufferPool(10))
             .build();
         fileLog = new DataManager(context);
@@ -85,7 +86,7 @@ public class LogRegistryTest {
         int capacity = ThreadLocalRandom.current().nextInt(900000, 1000000);
         List<Log> logEntries = new ArrayList<>(capacity);
         IntStream.range(0, capacity)
-            .forEach(index -> logEntries.add(LogFactory.createEntry(1, 1, index + 1, content, content.length)));
+            .forEach(index -> logEntries.add(LogFactory.createEntry(1, 1, index + 1, content)));
         long begin = System.nanoTime();
         fileLog.pendingLogs(0, logEntries);
         log.info("pending {} logs cost {} ns.", capacity, System.nanoTime() - begin);
@@ -103,7 +104,7 @@ public class LogRegistryTest {
     public void pendingEntry() {
         byte[] content = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
         long begin = System.nanoTime();
-        fileLog.pendingLog(LogFactory.createEntry(1, 1, 1, content, content.length));
+        fileLog.pendingLog(LogFactory.createEntry(1, 1, 1, content));
         log.info("pending 1 logs cost {} ns.", System.nanoTime() - begin);
         Assert.assertEquals(1, fileLog.getIndexOfLastLog());
     }

@@ -4,15 +4,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import cn.ttplatform.wh.data.tool.ByteBufferWriter;
-import cn.ttplatform.wh.data.tool.DirectByteBufferPool;
+import cn.ttplatform.wh.data.support.ByteBufferWriter;
+import cn.ttplatform.wh.support.DirectByteBufferPool;
 import cn.ttplatform.wh.support.Pool;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
+
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Before;
@@ -29,10 +31,10 @@ public class ByteBufferWriterTest {
 
     @Before
     public void setUp() throws IOException {
-        Pool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 10 * 1024 * 1024);
+        Pool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 1024 * 1024, 10 * 1024 * 1024);
         String property = System.getProperty("user.home");
-        File file = File.createTempFile(property,"log.index");
-        byteBufferWriter = new ByteBufferWriter(file, bufferPool);
+        File file = File.createTempFile(property, "log.index");
+        byteBufferWriter = new ByteBufferWriter(file, bufferPool, 8);
     }
 
     @After

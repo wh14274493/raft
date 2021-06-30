@@ -5,7 +5,8 @@ import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.data.log.*;
 import cn.ttplatform.wh.data.snapshot.Snapshot;
 import cn.ttplatform.wh.data.snapshot.SnapshotBuilder;
-import cn.ttplatform.wh.data.tool.Bits;
+import cn.ttplatform.wh.data.support.Bits;
+import cn.ttplatform.wh.support.FixedSizeDirectByteBufferPool;
 import cn.ttplatform.wh.exception.IncorrectLogIndexNumberException;
 import cn.ttplatform.wh.group.Cluster;
 import cn.ttplatform.wh.group.Endpoint;
@@ -34,6 +35,7 @@ public class DataManager {
     private final Logger logger = LoggerFactory.getLogger(DataManager.class);
     private final TreeMap<Integer, Log> pending = new TreeMap<>();
     private final Pool<ByteBuffer> byteBufferPool;
+    private final Pool<ByteBuffer> fixedByteBufferPool;
     private final SnapshotBuilder snapshotBuilder;
     private final GlobalContext context;
     private final File base;
@@ -51,9 +53,12 @@ public class DataManager {
         File latestSnapshotFile = FileConstant.getLatestSnapshotFile(base);
         this.snapshot = new Snapshot(latestSnapshotFile, byteBufferPool);
         String path = latestSnapshotFile.getPath();
-        this.logOperation = new LogBuffer(FileConstant.getMatchedLogFile(path), properties);
+        this.fixedByteBufferPool = new FixedSizeDirectByteBufferPool(properties.getBlockCacheSize(), properties.getBlockSize());
+        this.logOperation = new AsyncLogFile(FileConstant.getMatchedLogFile(path), properties, fixedByteBufferPool);
+//        this.logOperation = new SyncLogFile(FileConstant.getMatchedLogFile(path), byteBufferPool);
         File latestLogIndexFile = FileConstant.getMatchedLogIndexFile(path);
-        this.logIndexOperation = new LogIndexBuffer(latestLogIndexFile, properties);
+        this.logIndexOperation = new AsyncLogIndexFile(latestLogIndexFile, properties, fixedByteBufferPool, snapshot.getLastIncludeIndex());
+//        this.logIndexOperation = new SyncLogIndexFile(latestLogIndexFile, byteBufferPool, snapshot.getLastIncludeIndex());
         if (!logOperation.isEmpty() && logIndexOperation.isEmpty()) {
             // means that the index file is wrong or missing.
             rebuildIndexFile();
@@ -72,17 +77,17 @@ public class DataManager {
         try {
             int position = FileConstant.LOG_FILE_HEADER_SIZE;
             int blockSize = buffers[0].capacity();
-            int index = 0;
             int fileSize = (int) logOperation.size();
             while (position < fileSize) {
                 while (position < fileSize && destination.hasRemaining()) {
-                    ByteBuffer source = buffers[(position - FileConstant.LOG_FILE_HEADER_SIZE) / blockSize];
+                    int relativePosition = position - FileConstant.LOG_FILE_HEADER_SIZE;
+                    int cur = relativePosition / blockSize;
+                    ByteBuffer source = buffers[cur];
                     source.position((position - FileConstant.LOG_FILE_HEADER_SIZE) % blockSize);
-                    // java.nio.DirectByteBuffer[pos=706036 lim=706036 cap=1048576]
                     int count = 0;
                     while (count < Log.HEADER_BYTES) {
-                        if (!source.hasRemaining()) {
-                            source = buffers[++index];
+                        if (!source.hasRemaining() && cur < buffers.length - 1) {
+                            source = buffers[++cur];
                             source.position(0);
                         }
                         destination.put(source.get());
@@ -95,6 +100,7 @@ public class DataManager {
                     Bits.putLong(position, destination);
                     position = position + Log.HEADER_BYTES + cmdLength;
                 }
+                destination.limit(destination.position());
                 logIndexOperation.append(destination);
                 destination.clear();
             }
@@ -102,7 +108,7 @@ public class DataManager {
             logger.info("rebuild index file success.");
         } finally {
             byteBufferPool.recycle(destination);
-            Arrays.stream(buffers).forEach(byteBufferPool::recycle);
+            Arrays.stream(buffers).forEach(fixedByteBufferPool::recycle);
         }
     }
 
@@ -272,8 +278,7 @@ public class DataManager {
      */
     public boolean advanceCommitIndex(int newCommitIndex, int term) {
         if (newCommitIndex <= commitIndex) {
-            logger
-                    .debug("newCommitIndex[{}]<=commitIndex[{}], can not advance commitIndex", newCommitIndex, commitIndex);
+            logger.debug("newCommitIndex[{}]<=commitIndex[{}], can not advance commitIndex", newCommitIndex, commitIndex);
             return false;
         }
         Log log = getLog(newCommitIndex);
@@ -354,13 +359,17 @@ public class DataManager {
             long offset = logIndexOperation.getLogOffset(lastIncludeIndex + 1);
             try {
                 LogOperation oldLogOperation = this.logOperation;
-                this.logOperation = new LogBuffer(newLogFile, context.getProperties());
+                this.logOperation = new AsyncLogFile(newLogFile, context.getProperties(), fixedByteBufferPool);
+//                this.logOperation = new SyncLogFile(newLogFile, byteBufferPool);
                 if (offset != -1L) {
                     // means that lastIncludeIndex == lastLogIndex
                     oldLogOperation.transferTo(offset, this.logOperation);
                 }
-                this.logIndexOperation = new LogIndexBuffer(newLogIndexFile, context.getProperties());
-                rebuildIndexFile();
+                this.logIndexOperation = new AsyncLogIndexFile(newLogIndexFile, context.getProperties(), fixedByteBufferPool, snapshot.getLastIncludeIndex());
+//                this.logIndexOperation = new SyncLogIndexFile(newLogIndexFile, byteBufferPool, snapshot.getLastIncludeIndex());
+                if (!logOperation.isEmpty() && logIndexOperation.isEmpty()) {
+                    rebuildIndexFile();
+                }
             } finally {
                 context.getStateMachine().stopGenerating();
             }
@@ -429,7 +438,7 @@ public class DataManager {
     }
 
     public ByteBuffer getSnapshotData() {
-        return snapshot.readAll();
+        return snapshot.read();
     }
 
     public boolean isEmpty() {

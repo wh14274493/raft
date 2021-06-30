@@ -37,7 +37,7 @@ public class FixedSizeLinkedBufferPool implements Pool<LinkedBuffer> {
         buffer.clear();
         try {
             if (bufferQueue.offer(buffer, 100L, TimeUnit.MILLISECONDS)) {
-                log.debug("offer LinkedBuffer in 100ms.");
+                log.trace("offer LinkedBuffer in 100ms.");
             }
         } catch (InterruptedException e) {
             log.warn("offer LinkedBuffer timeout.");

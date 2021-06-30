@@ -1,12 +1,12 @@
-package cn.ttplatform.wh.data.pool.strategy;
+package cn.ttplatform.wh.data.support;
 
-import cn.ttplatform.wh.data.pool.BlockCache.Block;
 import cn.ttplatform.wh.support.NamedThreadFactory;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Wang Hao
@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FIFOFlushStrategy implements FlushStrategy {
 
-    private final BlockingQueue<Block> queue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<AsyncFileOperator.Block> queue = new LinkedBlockingQueue<>();
     private final ScheduledThreadPoolExecutor executor;
     private volatile boolean shutdown;
 
@@ -26,7 +26,7 @@ public class FIFOFlushStrategy implements FlushStrategy {
                 return;
             }
             try {
-                Block block = queue.poll(100L, TimeUnit.MILLISECONDS);
+                AsyncFileOperator.Block block = queue.poll(interval / 2, TimeUnit.MILLISECONDS);
                 if (block != null && block.dirty()) {
                     block.flush();
                     log.info("flush a dirty block[{}].", block);
@@ -40,7 +40,7 @@ public class FIFOFlushStrategy implements FlushStrategy {
     }
 
     @Override
-    public void flush(Block block) {
+    public void flush(AsyncFileOperator.Block block) {
         if (!shutdown) {
             queue.offer(block);
         }
@@ -51,7 +51,7 @@ public class FIFOFlushStrategy implements FlushStrategy {
         shutdown = true;
         while (!queue.isEmpty()) {
             try {
-                Block block = queue.poll(100L, TimeUnit.MILLISECONDS);
+                AsyncFileOperator.Block block = queue.poll(100L, TimeUnit.MILLISECONDS);
                 if (block != null && block.dirty()) {
                     block.flush();
                     log.info("flush a dirty block[{}].", block);

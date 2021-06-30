@@ -12,11 +12,13 @@ public abstract class AbstractByteBufferPool implements Pool<ByteBuffer> {
 
     protected final int bufferSizeLimit;
     protected final int poolSize;
+    protected final int defaultChunkSize;
     protected final TreeMap<Integer, ByteBuffer> pool;
 
-    protected AbstractByteBufferPool(int poolSize, int bufferSizeLimit) {
+    protected AbstractByteBufferPool(int poolSize, int defaultChunkSize, int bufferSizeLimit) {
         this.bufferSizeLimit = bufferSizeLimit;
         this.poolSize = poolSize;
+        this.defaultChunkSize = defaultChunkSize;
         this.pool = new TreeMap<>();
     }
 
@@ -33,6 +35,15 @@ public abstract class AbstractByteBufferPool implements Pool<ByteBuffer> {
         return doAllocate(size);
     }
 
+    @Override
+    public ByteBuffer allocate() {
+        ByteBuffer byteBuffer = pool.remove(defaultChunkSize);
+        if (byteBuffer != null) {
+            return byteBuffer;
+        }
+        return doAllocate(defaultChunkSize);
+    }
+
     /**
      * Reallocate a new chunk of memory
      *
@@ -40,4 +51,14 @@ public abstract class AbstractByteBufferPool implements Pool<ByteBuffer> {
      * @return a new buffer
      */
     public abstract ByteBuffer doAllocate(int size);
+
+    @Override
+    public void recycle(ByteBuffer buffer) {
+        if (buffer != null) {
+            buffer.clear();
+            if (pool.size() < poolSize && buffer.capacity() <= bufferSizeLimit) {
+                pool.put(buffer.capacity(), buffer);
+            }
+        }
+    }
 }

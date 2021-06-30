@@ -1,9 +1,9 @@
 package cn.ttplatform.wh.support;
 
+import lombok.Getter;
+
 import java.util.HashMap;
 import java.util.Map;
-
-import lombok.Getter;
 
 /**
  * @author Wang Hao

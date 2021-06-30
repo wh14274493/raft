@@ -18,16 +18,10 @@ import lombok.experimental.SuperBuilder;
 public class OpLog extends AbstractLog {
 
     private byte[] command;
-    private int commandLength;
 
     @Override
     public byte[] getCommand() {
         return command;
-    }
-
-    @Override
-    public int getCommandLength() {
-        return commandLength;
     }
 
     @Override

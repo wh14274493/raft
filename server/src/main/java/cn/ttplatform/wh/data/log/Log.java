@@ -40,8 +40,6 @@ public interface Log {
 
     byte[] getCommand();
 
-    int getCommandLength();
-
     LogIndex getMetadata();
 
 }

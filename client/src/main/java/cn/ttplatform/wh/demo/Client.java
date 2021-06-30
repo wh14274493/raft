@@ -113,12 +113,12 @@ public class Client {
         String id = UUID.randomUUID().toString();
         log.info("start at {}", System.nanoTime());
         IntStream.range(0, 100000).forEach(index -> {
-            channel.write(SetCommand.builder().id(id + index).entry(new Entry(index + "1wanghao11", v)).build());
+            channel.write(SetCommand.builder().id(id + index).entry(new Entry("test"+index, v)).build());
         });
 
 //        log.info("start at {}", System.nanoTime());
 //        IntStream.range(0, 100000).forEach(index -> {
-//            GetCommand getCommand = GetCommand.builder().id(index+"").key(index + "1wanghao11").build();
+//            GetCommand getCommand = GetCommand.builder().id(index+"").key("test"+index).build();
 //            channel.write(getCommand);
 //        });
 

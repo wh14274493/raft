@@ -1,6 +1,5 @@
-package cn.ttplatform.wh.data.tool;
+package cn.ttplatform.wh.support;
 
-import cn.ttplatform.wh.support.AbstractFixedSizeByteBufferPool;
 import java.nio.ByteBuffer;
 
 /**
@@ -9,7 +8,7 @@ import java.nio.ByteBuffer;
  */
 public class FixedSizeDirectByteBufferPool extends AbstractFixedSizeByteBufferPool {
 
-    protected FixedSizeDirectByteBufferPool(int poolSize, int chunkSize) {
+    public FixedSizeDirectByteBufferPool(int poolSize, int chunkSize) {
         super(poolSize, chunkSize);
     }
 

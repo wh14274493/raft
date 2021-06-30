@@ -12,13 +12,13 @@ public interface LogOperation {
     /**
      * index(4 bytes) + term(4 bytes) + type(4 bytes) + commandLength(4 bytes) = 16
      */
-    int LOG_ENTRY_HEADER_SIZE = 4 + 4 + 4 + 4;
+    int LOG_HEADER_SIZE = 4 + 4 + 4 + 4;
 
     long append(Log log);
 
     long[] append(List<Log> logs);
 
-    void append(ByteBuffer byteBuffer);
+    void append(ByteBuffer byteBuffer,int length);
 
     /**
      * read a byte array from file start to end, then transfer to LogEntry

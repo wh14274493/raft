@@ -1,15 +1,18 @@
 package cn.ttplatform.wh.data.snapshot;
 
 import cn.ttplatform.wh.data.FileConstant;
-import cn.ttplatform.wh.data.tool.ByteBufferWriter;
-import cn.ttplatform.wh.data.tool.ReadableAndWriteableFile;
+import cn.ttplatform.wh.data.support.SyncFileOperator;
 import cn.ttplatform.wh.exception.OperateFileException;
 import cn.ttplatform.wh.support.Pool;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+
 import lombok.extern.slf4j.Slf4j;
+
+import static cn.ttplatform.wh.data.snapshot.Snapshot.SnapshotHeader.*;
 
 /**
  * @author Wang Hao
@@ -20,9 +23,9 @@ public class SnapshotBuilder {
 
     private File file;
     private String snapshotSource;
+    private SyncFileOperator fileOperator;
     private int lastIncludeIndex;
     private int lastIncludeTerm;
-    private ReadableAndWriteableFile generatingFile;
     private final File parent;
     private final Pool<ByteBuffer> byteBufferPool;
 
@@ -42,15 +45,11 @@ public class SnapshotBuilder {
         } catch (IOException e) {
             throw new OperateFileException("delete or create file error.", e);
         }
-        this.generatingFile = new ByteBufferWriter(file, byteBufferPool);
+        this.fileOperator = new SyncFileOperator(file, byteBufferPool, Snapshot.SnapshotHeader.BYTES);
     }
 
     public long getInstallOffset() {
-        return generatingFile.size();
-    }
-
-    public void resetInstallOffset() {
-        generatingFile.clear();
+        return fileOperator.size();
     }
 
     public void append(byte[] chunk) {
@@ -58,11 +57,17 @@ public class SnapshotBuilder {
             log.debug("chunk size is 0.");
             return;
         }
-        generatingFile.append(chunk, chunk.length);
+        fileOperator.append(chunk, chunk.length);
     }
 
     public void append(ByteBuffer chunk, int length) {
-        generatingFile.append(chunk, length);
+        fileOperator.append(chunk, length);
+    }
+
+    public void writeHeader(long size, int lastIncludeIndex, int lastIncludeTerm) {
+        fileOperator.writeHeader(FILE_SIZE_FIELD_POSITION,size);
+        fileOperator.writeHeader(LAST_INCLUDE_INDEX_FIELD_POSITION,lastIncludeIndex);
+        fileOperator.writeHeader(LAST_INCLUDE_TERM_FIELD_POSITION,lastIncludeTerm);
     }
 
     public File getFile() {
@@ -74,6 +79,8 @@ public class SnapshotBuilder {
     }
 
     public void complete() {
-        generatingFile.close();
+        fileOperator.writeHeader(LAST_INCLUDE_INDEX_FIELD_POSITION, lastIncludeIndex);
+        fileOperator.writeHeader(LAST_INCLUDE_TERM_FIELD_POSITION, lastIncludeTerm);
+        fileOperator.close();
     }
 }

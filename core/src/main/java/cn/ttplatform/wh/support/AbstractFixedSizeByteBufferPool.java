@@ -1,8 +1,10 @@
 package cn.ttplatform.wh.support;
 
 import java.nio.ByteBuffer;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Set;
 
 /**
  * @author Wang Hao
@@ -10,20 +12,24 @@ import java.util.Queue;
  */
 public abstract class AbstractFixedSizeByteBufferPool implements Pool<ByteBuffer> {
 
-    protected final int poolSize;
+    private final int poolSize;
     protected final int chunkSize;
-    protected final Queue<ByteBuffer> queue;
+    private final Queue<ByteBuffer> queue;
+    private final Set<ByteBuffer> set;
 
     protected AbstractFixedSizeByteBufferPool(int poolSize, int chunkSize) {
         this.poolSize = poolSize;
         this.chunkSize = chunkSize;
         this.queue = new LinkedList<>();
+        this.set = new HashSet<>((int) (poolSize / 0.75f + 1));
     }
 
     @Override
     public ByteBuffer allocate() {
         if (!queue.isEmpty()) {
-            return queue.poll();
+            ByteBuffer poll = queue.poll();
+            set.remove(poll);
+            return poll;
         }
         return doAllocate();
     }
@@ -37,7 +43,7 @@ public abstract class AbstractFixedSizeByteBufferPool implements Pool<ByteBuffer
 
     @Override
     public void recycle(ByteBuffer buffer) {
-        if (queue.size() < poolSize) {
+        if (queue.size() < poolSize && !set.contains(buffer)) {
             queue.offer(buffer);
         }
     }
