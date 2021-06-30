@@ -21,7 +21,7 @@ public class ClientDuplexChannelHandler extends ChannelDuplexHandler {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         Channel channel = ctx.channel();
-        channel.eventLoop().scheduleAtFixedRate(channel::flush, 10, 50, TimeUnit.MILLISECONDS);
+        channel.eventLoop().scheduleAtFixedRate(channel::flush, 10, 20, TimeUnit.MILLISECONDS);
     }
 
     @Override

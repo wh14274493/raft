@@ -1,5 +1,6 @@
 package cn.ttplatform.wh.data.support;
 
+import cn.ttplatform.wh.data.log.SyncLogFile;
 import cn.ttplatform.wh.exception.OperateFileException;
 import cn.ttplatform.wh.support.Pool;
 import lombok.extern.slf4j.Slf4j;
@@ -159,7 +160,7 @@ public class SyncFileOperator {
         try {
             this.bufferPool = bufferPool;
             // Requires that every update to the file's content be written synchronously to the underlying storage device.
-            this.fileChannel = FileChannel.open(file.toPath(), READ, WRITE, CREATE, DSYNC);
+            this.fileChannel = FileChannel.open(file.toPath(), READ, WRITE, CREATE);
             this.headerOperator = new FileHeaderOperator(dataOffset);
             this.bodyOperator = new FileBodyOperator(dataOffset);
             this.fileSize = fileChannel.size();

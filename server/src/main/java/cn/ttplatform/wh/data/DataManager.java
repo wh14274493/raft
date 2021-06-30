@@ -359,14 +359,14 @@ public class DataManager {
             long offset = logIndexOperation.getLogOffset(lastIncludeIndex + 1);
             try {
                 LogOperation oldLogOperation = this.logOperation;
-                this.logOperation = new AsyncLogFile(newLogFile, context.getProperties(), fixedByteBufferPool);
-//                this.logOperation = new SyncLogFile(newLogFile, byteBufferPool);
+//                this.logOperation = new AsyncLogFile(newLogFile, context.getProperties(), fixedByteBufferPool);
+                this.logOperation = new SyncLogFile(newLogFile, byteBufferPool);
                 if (offset != -1L) {
                     // means that lastIncludeIndex == lastLogIndex
                     oldLogOperation.transferTo(offset, this.logOperation);
                 }
-                this.logIndexOperation = new AsyncLogIndexFile(newLogIndexFile, context.getProperties(), fixedByteBufferPool, snapshot.getLastIncludeIndex());
-//                this.logIndexOperation = new SyncLogIndexFile(newLogIndexFile, byteBufferPool, snapshot.getLastIncludeIndex());
+//                this.logIndexOperation = new AsyncLogIndexFile(newLogIndexFile, context.getProperties(), fixedByteBufferPool, snapshot.getLastIncludeIndex());
+                this.logIndexOperation = new SyncLogIndexFile(newLogIndexFile, byteBufferPool, snapshot.getLastIncludeIndex());
                 if (!logOperation.isEmpty() && logIndexOperation.isEmpty()) {
                     rebuildIndexFile();
                 }

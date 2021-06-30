@@ -310,3 +310,102 @@ java.io.IOException: 远程主机强迫关闭了一个现有的连接。
 [2021-06-30 14:09:09,081] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 266751218628200, count = 80000, msg = SetResultCommand{id='62cee175-591f-4a61-a1f5-b966cd01774f79999', result=true}
 [2021-06-30 14:09:09,178] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 266751315271899, count = 90000, msg = SetResultCommand{id='62cee175-591f-4a61-a1f5-b966cd01774f89999', result=true}
 [2021-06-30 14:09:09,275] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 266751412870500, count = 100000, msg = SetResultCommand{id='62cee175-591f-4a61-a1f5-b966cd01774f99999', result=true}
+[2021-06-30 16:02:09,138] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:114)]: start at 273531432074400
+[2021-06-30 16:02:09,834] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 273532130032400, count = 10000, msg = SetResultCommand{id='9dd5d6c9-5cd8-40bd-9fe7-414343514dcb9999', result=true}
+[2021-06-30 16:02:10,002] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 273532298304700, count = 20000, msg = SetResultCommand{id='9dd5d6c9-5cd8-40bd-9fe7-414343514dcb19999', result=true}
+[2021-06-30 16:02:10,128] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 273532424268200, count = 30000, msg = SetResultCommand{id='9dd5d6c9-5cd8-40bd-9fe7-414343514dcb29999', result=true}
+[2021-06-30 16:02:10,231] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 273532526114000, count = 40000, msg = SetResultCommand{id='9dd5d6c9-5cd8-40bd-9fe7-414343514dcb39999', result=true}
+[2021-06-30 16:02:10,331] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 273532626738700, count = 50000, msg = SetResultCommand{id='9dd5d6c9-5cd8-40bd-9fe7-414343514dcb49999', result=true}
+[2021-06-30 16:04:12,530] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 273654825145600
+[2021-06-30 16:04:12,997] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 273655292692000, count = 10000, msg = SetResultCommand{id='8513265a-5370-4fbd-a515-97bff93484a09999', result=true}
+[2021-06-30 16:04:13,109] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 273655405532000, count = 20000, msg = SetResultCommand{id='8513265a-5370-4fbd-a515-97bff93484a019999', result=true}
+[2021-06-30 16:04:13,201] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 273655496460900, count = 30000, msg = SetResultCommand{id='8513265a-5370-4fbd-a515-97bff93484a029999', result=true}
+[2021-06-30 16:04:13,297] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 273655592983600, count = 40000, msg = SetResultCommand{id='8513265a-5370-4fbd-a515-97bff93484a039999', result=true}
+[2021-06-30 16:04:13,396] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 273655691345100, count = 50000, msg = SetResultCommand{id='8513265a-5370-4fbd-a515-97bff93484a049999', result=true}
+[2021-06-30 16:04:51,943] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 273694237572400
+[2021-06-30 16:04:52,386] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 273694681427299, count = 10000, msg = SetResultCommand{id='14809d82-fd89-4805-a384-3f008d63eaf99999', result=true}
+[2021-06-30 16:04:52,483] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 273694778388499, count = 20000, msg = SetResultCommand{id='14809d82-fd89-4805-a384-3f008d63eaf919999', result=true}
+[2021-06-30 16:04:52,583] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 273694878237100, count = 30000, msg = SetResultCommand{id='14809d82-fd89-4805-a384-3f008d63eaf929999', result=true}
+[2021-06-30 16:04:52,681] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 273694976350600, count = 40000, msg = SetResultCommand{id='14809d82-fd89-4805-a384-3f008d63eaf939999', result=true}
+[2021-06-30 16:04:52,779] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 273695074823700, count = 50000, msg = SetResultCommand{id='14809d82-fd89-4805-a384-3f008d63eaf949999', result=true}
+[2021-06-30 16:19:10,525] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 274552819934399
+[2021-06-30 16:19:12,822] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 274555118349100, count = 10000, msg = SetResultCommand{id='ab572726-1809-49d5-9e77-dc64bbaac9e09999', result=true}
+[2021-06-30 16:19:14,622] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 274556918226299, count = 20000, msg = SetResultCommand{id='ab572726-1809-49d5-9e77-dc64bbaac9e019999', result=true}
+[2021-06-30 16:19:16,422] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 274558718225900, count = 30000, msg = SetResultCommand{id='ab572726-1809-49d5-9e77-dc64bbaac9e029999', result=true}
+[2021-06-30 16:19:18,238] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 274560534654700, count = 40000, msg = SetResultCommand{id='ab572726-1809-49d5-9e77-dc64bbaac9e039999', result=true}
+[2021-06-30 16:19:20,051] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 274562347450300, count = 50000, msg = SetResultCommand{id='ab572726-1809-49d5-9e77-dc64bbaac9e049999', result=true}
+[2021-06-30 16:22:24,873] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 274747168095099
+[2021-06-30 16:22:27,135] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 274749430793599, count = 10000, msg = SetResultCommand{id='53d0392a-c6f3-4760-b99c-c3f895c61bee9999', result=true}
+[2021-06-30 16:22:28,943] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 274751238170200, count = 20000, msg = SetResultCommand{id='53d0392a-c6f3-4760-b99c-c3f895c61bee19999', result=true}
+[2021-06-30 16:22:30,744] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 274753039446000, count = 30000, msg = SetResultCommand{id='53d0392a-c6f3-4760-b99c-c3f895c61bee29999', result=true}
+[2021-06-30 16:22:32,547] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 274754842835400, count = 40000, msg = SetResultCommand{id='53d0392a-c6f3-4760-b99c-c3f895c61bee39999', result=true}
+[2021-06-30 16:22:34,354] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 274756650334800, count = 50000, msg = SetResultCommand{id='53d0392a-c6f3-4760-b99c-c3f895c61bee49999', result=true}
+[2021-06-30 16:25:41,124] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 274943418973700
+[2021-06-30 16:27:56,207] [nioEventLoopGroup-2-1] [WARN ] [io.netty.channel.DefaultChannelPipeline.onUnhandledInboundException(DefaultChannelPipeline.java:1152)]: An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+java.io.IOException: 远程主机强迫关闭了一个现有的连接。
+	at sun.nio.ch.SocketDispatcher.read0(Native Method)
+	at sun.nio.ch.SocketDispatcher.read(SocketDispatcher.java:43)
+	at sun.nio.ch.IOUtil.readIntoNativeBuffer(IOUtil.java:223)
+	at sun.nio.ch.IOUtil.read(IOUtil.java:192)
+	at sun.nio.ch.SocketChannelImpl.read(SocketChannelImpl.java:378)
+	at io.netty.buffer.PooledByteBuf.setBytes(PooledByteBuf.java:253)
+	at io.netty.buffer.AbstractByteBuf.writeBytes(AbstractByteBuf.java:1133)
+	at io.netty.channel.socket.nio.NioSocketChannel.doReadBytes(NioSocketChannel.java:350)
+	at io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:148)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:714)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:650)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:576)
+	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:493)
+	at io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:989)
+	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.lang.Thread.run(Thread.java:748)
+[2021-06-30 16:27:56,210] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-30 16:28:25,574] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 275107868847100
+[2021-06-30 16:29:40,591] [nioEventLoopGroup-2-1] [WARN ] [io.netty.channel.DefaultChannelPipeline.onUnhandledInboundException(DefaultChannelPipeline.java:1152)]: An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+java.io.IOException: 远程主机强迫关闭了一个现有的连接。
+	at sun.nio.ch.SocketDispatcher.read0(Native Method)
+	at sun.nio.ch.SocketDispatcher.read(SocketDispatcher.java:43)
+	at sun.nio.ch.IOUtil.readIntoNativeBuffer(IOUtil.java:223)
+	at sun.nio.ch.IOUtil.read(IOUtil.java:192)
+	at sun.nio.ch.SocketChannelImpl.read(SocketChannelImpl.java:378)
+	at io.netty.buffer.PooledByteBuf.setBytes(PooledByteBuf.java:253)
+	at io.netty.buffer.AbstractByteBuf.writeBytes(AbstractByteBuf.java:1133)
+	at io.netty.channel.socket.nio.NioSocketChannel.doReadBytes(NioSocketChannel.java:350)
+	at io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:148)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:714)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:650)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:576)
+	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:493)
+	at io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:989)
+	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.lang.Thread.run(Thread.java:748)
+[2021-06-30 16:29:40,593] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-30 16:29:55,003] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 275197297141500
+[2021-06-30 16:30:08,075] [nioEventLoopGroup-2-1] [WARN ] [io.netty.channel.DefaultChannelPipeline.onUnhandledInboundException(DefaultChannelPipeline.java:1152)]: An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+java.io.IOException: 远程主机强迫关闭了一个现有的连接。
+	at sun.nio.ch.SocketDispatcher.read0(Native Method)
+	at sun.nio.ch.SocketDispatcher.read(SocketDispatcher.java:43)
+	at sun.nio.ch.IOUtil.readIntoNativeBuffer(IOUtil.java:223)
+	at sun.nio.ch.IOUtil.read(IOUtil.java:192)
+	at sun.nio.ch.SocketChannelImpl.read(SocketChannelImpl.java:378)
+	at io.netty.buffer.PooledByteBuf.setBytes(PooledByteBuf.java:253)
+	at io.netty.buffer.AbstractByteBuf.writeBytes(AbstractByteBuf.java:1133)
+	at io.netty.channel.socket.nio.NioSocketChannel.doReadBytes(NioSocketChannel.java:350)
+	at io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:148)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:714)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:650)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:576)
+	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:493)
+	at io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:989)
+	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.lang.Thread.run(Thread.java:748)
+[2021-06-30 16:30:08,078] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-06-30 16:31:09,264] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 275271559236300
+[2021-06-30 16:31:10,054] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 275272350116800, count = 10000, msg = SetResultCommand{id='2b0aa9ee-4296-44aa-a0cc-ba0c921423269999', result=true}
+[2021-06-30 16:31:10,335] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 275272630828700, count = 20000, msg = SetResultCommand{id='2b0aa9ee-4296-44aa-a0cc-ba0c9214232619999', result=true}
+[2021-06-30 16:31:10,598] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 275272892958600, count = 30000, msg = SetResultCommand{id='2b0aa9ee-4296-44aa-a0cc-ba0c9214232629999', result=true}
+[2021-06-30 16:31:10,858] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 275273153496400, count = 40000, msg = SetResultCommand{id='2b0aa9ee-4296-44aa-a0cc-ba0c9214232639999', result=true}
+[2021-06-30 16:31:11,121] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelRead(ClientDuplexChannelHandler.java:48)]: time = 275273416740600, count = 50000, msg = SetResultCommand{id='2b0aa9ee-4296-44aa-a0cc-ba0c9214232649999', result=true}

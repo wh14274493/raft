@@ -29,6 +29,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.protostuff.LinkedBuffer;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +39,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -64,17 +66,17 @@ public class Client {
         factoryManager.register(new SetResultCommandFactory(bufferPool));
         factoryManager.register(new GetResultCommandFactory(bufferPool));
         bootstrap = new Bootstrap()
-            .group(new NioEventLoopGroup(1))
-            .channel(NioSocketChannel.class)
-            .option(ChannelOption.TCP_NODELAY, Boolean.TRUE)
-            .handler(new ChannelInitializer<SocketChannel>() {
-                @Override
-                protected void initChannel(SocketChannel ch) throws Exception {
-                    ChannelPipeline pipeline = ch.pipeline();
-                    pipeline.addLast(new DistributableCodec(factoryManager));
-                    pipeline.addLast(new ClientDuplexChannelHandler());
-                }
-            });
+                .group(new NioEventLoopGroup(1))
+                .channel(NioSocketChannel.class)
+                .option(ChannelOption.TCP_NODELAY, Boolean.TRUE)
+                .handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) throws Exception {
+                        ChannelPipeline pipeline = ch.pipeline();
+                        pipeline.addLast(new DistributableCodec(factoryManager));
+                        pipeline.addLast(new ClientDuplexChannelHandler());
+                    }
+                });
     }
 
     public void send(Command command) throws InterruptedException {
@@ -109,12 +111,10 @@ public class Client {
         while (value.length() < 256) {
             value.append(UUID.randomUUID());
         }
-        String v = value.substring(0, 256);
+        String v = value.substring(0, 150);
         String id = UUID.randomUUID().toString();
         log.info("start at {}", System.nanoTime());
-        IntStream.range(0, 100000).forEach(index -> {
-            channel.write(SetCommand.builder().id(id + index).entry(new Entry("test"+index, v)).build());
-        });
+        IntStream.range(0, 50000).forEach(index -> channel.write(SetCommand.builder().id(id + index).entry(new Entry("test" + index, v + index)).build()));
 
 //        log.info("start at {}", System.nanoTime());
 //        IntStream.range(0, 100000).forEach(index -> {
@@ -149,8 +149,8 @@ public class Client {
 //        newConfig.add("D,127.0.0.1,9999");
 //        newConfig.add("E,127.0.0.1,5555");
         return ClusterChangeCommand.builder().newConfig(newConfig)
-            .id(UUID.randomUUID().toString())
-            .build();
+                .id(UUID.randomUUID().toString())
+                .build();
     }
 
     private static SetCommand setCommand(String key, String value) {
@@ -175,9 +175,9 @@ public class Client {
         String finalS = s;
         String keyPrefix = UUID.randomUUID().toString();
         IntStream.range(0, 10000).forEach(index -> channel.writeAndFlush(
-            SetCommand.builder().id(UUID.randomUUID().toString()).entry(new Entry("wanghao" + index, finalS)).build()));
+                SetCommand.builder().id(UUID.randomUUID().toString()).entry(new Entry("wanghao" + index, finalS)).build()));
         IntStream.range(0, 1000).forEach(index -> channel
-            .writeAndFlush(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao" + index).build()));
+                .writeAndFlush(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao" + index).build()));
     }
 
     public static void create1000Connections(Client client) throws InterruptedException {
@@ -191,8 +191,8 @@ public class Client {
         });
         log.info("start at {}", System.nanoTime());
         channels
-            .forEach(
-                channel -> channel.writeAndFlush(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao1").build()));
+                .forEach(
+                        channel -> channel.writeAndFlush(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao1").build()));
         TimeUnit.MILLISECONDS.sleep(10);
     }
 }
