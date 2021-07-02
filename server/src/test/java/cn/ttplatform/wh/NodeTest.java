@@ -1,4 +1,4 @@
-package cn.ttplatform.wh.core;
+package cn.ttplatform.wh;
 
 import cn.ttplatform.wh.Node;
 import org.junit.Before;

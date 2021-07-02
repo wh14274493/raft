@@ -3,12 +3,7 @@ package cn.ttplatform.wh.data.snapshot;
 import cn.ttplatform.wh.GlobalContext;
 import cn.ttplatform.wh.StateMachine;
 import cn.ttplatform.wh.data.DataManager;
-import cn.ttplatform.wh.data.support.Bits;
 import cn.ttplatform.wh.exception.OperateFileException;
-import cn.ttplatform.wh.support.Pool;
-
-import java.nio.ByteBuffer;
-
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -25,7 +20,9 @@ public class GenerateSnapshotTask implements Runnable {
     public GenerateSnapshotTask(GlobalContext context, int lastIncludeIndex) {
         this.context = context;
         this.lastIncludeIndex = lastIncludeIndex;
-        this.snapshotBuilder = new SnapshotBuilder(context.getProperties().getBase(), context.getByteBufferPool());
+        DataManager dataManager = context.getDataManager();
+        this.snapshotBuilder = new SnapshotBuilder(context.getProperties().getBase(), context.getByteBufferPool(),
+                dataManager.getSnapshotFileMetadataRegion(), dataManager.getGeneratingSnapshotFileMetadataRegion());
     }
 
     @Override
@@ -38,8 +35,6 @@ public class GenerateSnapshotTask implements Runnable {
             DataManager dataManager = context.getDataManager();
             int lastIncludeTerm = dataManager.getTermOfLog(lastIncludeIndex);
             snapshotBuilder.setBaseInfo(lastIncludeIndex, lastIncludeTerm, context.getNode().getSelfId());
-            long size = snapshotData.length + Snapshot.SnapshotHeader.BYTES;
-            snapshotBuilder.writeHeader(size, lastIncludeIndex, lastIncludeTerm);
             snapshotBuilder.append(snapshotData);
             dataManager.completeBuildingSnapshot(snapshotBuilder, lastIncludeTerm, lastIncludeIndex);
             log.info("generate snapshot that contains {} bytes lastIncludeIndex is {} and lastIncludeTerm is {}",

@@ -43,8 +43,11 @@ public abstract class AbstractFixedSizeByteBufferPool implements Pool<ByteBuffer
 
     @Override
     public void recycle(ByteBuffer buffer) {
-        if (queue.size() < poolSize && !set.contains(buffer)) {
-            queue.offer(buffer);
+        if (buffer != null) {
+            buffer.clear();
+            if (queue.size() < poolSize && !set.contains(buffer)) {
+                queue.offer(buffer);
+            }
         }
     }
 }

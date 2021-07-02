@@ -2,6 +2,7 @@ package cn.ttplatform.wh.data.log;
 
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.data.FileConstant;
+import cn.ttplatform.wh.data.support.LogFileMetadataRegion;
 import cn.ttplatform.wh.support.DirectByteBufferPool;
 import cn.ttplatform.wh.support.Pool;
 import lombok.extern.slf4j.Slf4j;
@@ -26,12 +27,17 @@ public class AsyncLogFileTest {
 
     AsyncLogFile asyncLogFile;
     Pool<ByteBuffer> bufferPool;
+    LogFileMetadataRegion logFileMetadataRegion;
+    LogFileMetadataRegion generatingLogFileMetadataRegion;
 
     @Before
     public void setUp() throws Exception {
         bufferPool = new DirectByteBufferPool(10, 1024 * 1024, 10 * 1024 * 1024);
         File file = File.createTempFile("AsyncLogFile-", ".txt");
-        this.asyncLogFile = new AsyncLogFile(file, new ServerProperties(), bufferPool);
+        File metaFile = File.createTempFile("AsyncLogMetaFile-", ".txt");
+        this.logFileMetadataRegion = FileConstant.getLogFileMetadataRegion(metaFile);
+        this.generatingLogFileMetadataRegion = FileConstant.getGeneratingLogFileMetadataRegion(metaFile);
+        this.asyncLogFile = new AsyncLogFile(file, new ServerProperties(), bufferPool, logFileMetadataRegion);
     }
 
     @After
@@ -45,7 +51,7 @@ public class AsyncLogFileTest {
         long begin = System.nanoTime();
         asyncLogFile.append(LogFactory.createEntry(1, 1, 1, content));
         log.info("append 1 log cost {} ns", System.nanoTime() - begin);
-        Assert.assertEquals(Log.HEADER_BYTES + content.length + FileConstant.LOG_FILE_HEADER_SIZE, asyncLogFile.size());
+        Assert.assertEquals(Log.HEADER_BYTES + content.length, asyncLogFile.size());
     }
 
     @Test
@@ -58,7 +64,7 @@ public class AsyncLogFileTest {
         long begin = System.nanoTime();
         long[] append = asyncLogFile.append(logEntries);
         log.info("append {} logs cost {} ns", capacity, System.nanoTime() - begin);
-        assertEquals((long) capacity * (Log.HEADER_BYTES + content.length) + FileConstant.LOG_FILE_HEADER_SIZE, asyncLogFile.size());
+        assertEquals((long) capacity * (Log.HEADER_BYTES + content.length), asyncLogFile.size());
     }
 
     @Test
@@ -66,7 +72,7 @@ public class AsyncLogFileTest {
         byte[] content = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
         asyncLogFile.append(LogFactory.createEntry(1, 1, 1, content));
         long begin = System.nanoTime();
-        Log log = asyncLogFile.getLog(FileConstant.LOG_FILE_HEADER_SIZE, asyncLogFile.size());
+        Log log = asyncLogFile.getLog(0, asyncLogFile.size());
         LogIndex logIndex = log.getMetadata();
         AsyncLogFileTest.log.info("load 1 log cost {} ns", (System.nanoTime() - begin));
         assertEquals(1, logIndex.getIndex());
@@ -80,7 +86,7 @@ public class AsyncLogFileTest {
         testAppend();
         long begin = System.nanoTime();
         List<Log> res = new ArrayList<>(100000);
-        asyncLogFile.loadLogsIntoList(FileConstant.LOG_FILE_HEADER_SIZE, asyncLogFile.size(), res);
+        asyncLogFile.loadLogsIntoList(0, asyncLogFile.size(), res);
         log.info("load {} logs cost {} ns", res.size(), (System.nanoTime() - begin));
         Assert.assertEquals(100000, res.size());
     }
@@ -95,17 +101,17 @@ public class AsyncLogFileTest {
             count += byteBuffer.limit();
         }
         log.info("load {} bytes cost {} ns", count, (System.nanoTime() - begin));
-        Assert.assertEquals(count + FileConstant.LOG_FILE_HEADER_SIZE, asyncLogFile.size());
+        Assert.assertEquals(count, asyncLogFile.size());
     }
 
     @Test
     public void transferTo() throws IOException {
         testAppend();
         File file = File.createTempFile("AsyncLogFileDest-", ".txt");
-        AsyncLogFile dest = new AsyncLogFile(file, new ServerProperties(), bufferPool);
+        AsyncLogFile dest = new AsyncLogFile(file, new ServerProperties(), bufferPool, generatingLogFileMetadataRegion);
         long begin = System.nanoTime();
-        asyncLogFile.transferTo(FileConstant.LOG_FILE_HEADER_SIZE, dest);
-        log.info("transferTo {} bytes cost {} ns", asyncLogFile.size() - FileConstant.LOG_FILE_HEADER_SIZE, (System.nanoTime() - begin));
+        asyncLogFile.transferTo(0, dest);
+        log.info("transferTo {} bytes cost {} ns", asyncLogFile.size(), (System.nanoTime() - begin));
         Assert.assertEquals(asyncLogFile.size(), dest.size());
     }
 
@@ -114,8 +120,8 @@ public class AsyncLogFileTest {
         testAppend();
         long size = asyncLogFile.size();
         long begin = System.nanoTime();
-        asyncLogFile.removeAfter(FileConstant.LOG_FILE_HEADER_SIZE);
-        log.info("remove {} bytes cost cost {} ns", size - FileConstant.LOG_FILE_HEADER_SIZE, (System.nanoTime() - begin));
-        Assert.assertEquals(FileConstant.LOG_FILE_HEADER_SIZE, asyncLogFile.size());
+        asyncLogFile.removeAfter(0);
+        log.info("remove {} bytes cost cost {} ns", size, (System.nanoTime() - begin));
+        Assert.assertEquals(0, asyncLogFile.size());
     }
 }

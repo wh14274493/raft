@@ -1,5 +1,7 @@
 package cn.ttplatform.wh.data.log;
 
+import cn.ttplatform.wh.data.support.LogFileMetadataRegion;
+
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -34,6 +36,8 @@ public interface LogOperation {
     ByteBuffer[] read();
 
     void transferTo(long offset, LogOperation dst);
+
+    void exchangeLogFileMetadataRegion(LogFileMetadataRegion logFileMetadataRegion);
 
     void removeAfter(long offset);
 

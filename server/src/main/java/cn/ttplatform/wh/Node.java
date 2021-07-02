@@ -2,31 +2,23 @@ package cn.ttplatform.wh;
 
 import cn.ttplatform.wh.config.RunMode;
 import cn.ttplatform.wh.config.ServerProperties;
-import cn.ttplatform.wh.exception.OperateFileException;
-import cn.ttplatform.wh.scheduler.SingleThreadScheduler;
-import cn.ttplatform.wh.group.Cluster;
 import cn.ttplatform.wh.data.log.Log;
-import cn.ttplatform.wh.role.Candidate;
-import cn.ttplatform.wh.role.Follower;
-import cn.ttplatform.wh.role.Leader;
-import cn.ttplatform.wh.role.Role;
-import cn.ttplatform.wh.role.RoleCache;
-import cn.ttplatform.wh.role.RoleType;
+import cn.ttplatform.wh.exception.OperateFileException;
+import cn.ttplatform.wh.group.Cluster;
+import cn.ttplatform.wh.role.*;
+import cn.ttplatform.wh.scheduler.SingleThreadScheduler;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
-
-import static cn.ttplatform.wh.data.FileConstant.NODE_STATE_FILE_NAME;
-import static cn.ttplatform.wh.data.FileConstant.NODE_STATE_FILE_SIZE;
+import static cn.ttplatform.wh.data.FileConstant.*;
 import static java.nio.file.StandardOpenOption.*;
-import static java.nio.file.StandardOpenOption.DSYNC;
 
 /**
  * @author : wang hao
@@ -126,8 +118,7 @@ public class Node {
         }
     }
 
-    public void changeToFollower(int term, String leaderId, String voteTo, int oldVoteCounts, int newVoteCounts,
-                                 long lastHeartBeat) {
+    public void changeToFollower(int term, String leaderId, String voteTo, int oldVoteCounts, int newVoteCounts, long lastHeartBeat) {
         int voteCounts = getVoteCounts(oldVoteCounts, newVoteCounts);
         Follower follower;
         if (role.getType() != RoleType.FOLLOWER) {
@@ -204,17 +195,23 @@ public class Node {
 
     class NodeState {
 
-
+        private static final int SIZE_POSITION = 0;
+        private static final int TERM_POSITION = 4;
+        private static final int VOTE_TO_POSITION = 8;
         private final MappedByteBuffer mappedByteBuffer;
-        private int fileSize;
         private final FileChannel fileChannel;
+        private int spaceSize;
 
         public NodeState() {
             try {
-                File stateFile = new File(properties.getBase(), NODE_STATE_FILE_NAME);
+                File stateFile = new File(properties.getBase(), METADATA_FILE_NAME);
                 this.fileChannel = FileChannel.open(stateFile.toPath(), READ, WRITE, CREATE, DSYNC);
-                this.mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, NODE_STATE_FILE_SIZE);
-                this.fileSize = mappedByteBuffer.getInt();
+                this.mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_WRITE, NODE_STATE_SPACE_POSITION, NODE_STATE_SPACE_SIZE);
+                this.spaceSize = mappedByteBuffer.getInt();
+                if (spaceSize < VOTE_TO_POSITION) {
+                    spaceSize = VOTE_TO_POSITION;
+                    updateFileSize();
+                }
             } catch (IOException e) {
                 throw new OperateFileException("open file channel error.", e);
             }
@@ -222,8 +219,8 @@ public class Node {
         }
 
         private void updateFileSize() {
-            mappedByteBuffer.position(0);
-            mappedByteBuffer.putInt(fileSize);
+            mappedByteBuffer.position(SIZE_POSITION);
+            mappedByteBuffer.putInt(spaceSize);
         }
 
         /**
@@ -232,12 +229,8 @@ public class Node {
          * @param term Current node's term
          */
         public void setCurrentTerm(int term) {
-            mappedByteBuffer.position(Integer.BYTES);
+            mappedByteBuffer.position(TERM_POSITION);
             mappedByteBuffer.putInt(term);
-            if (fileSize < Integer.BYTES * 2) {
-                fileSize = Integer.BYTES * 2;
-                updateFileSize();
-            }
         }
 
         /**
@@ -246,13 +239,7 @@ public class Node {
          * @return currentTerm
          */
         public int getCurrentTerm() {
-            mappedByteBuffer.position(Integer.BYTES);
-            if (fileSize == 0) {
-                mappedByteBuffer.putInt(1);
-                fileSize = Integer.BYTES * 2;
-                updateFileSize();
-                return 1;
-            }
+            mappedByteBuffer.position(TERM_POSITION);
             return mappedByteBuffer.getInt();
         }
 
@@ -264,14 +251,15 @@ public class Node {
          */
         public void setVoteTo(String voteTo) {
             if (voteTo == null || "".equals(voteTo)) {
-                fileSize = Integer.BYTES * 2;
-                updateFileSize();
                 return;
             }
-            byte[] voteToBytes = voteTo.getBytes(Charset.defaultCharset());
-            mappedByteBuffer.position(Integer.BYTES * 2);
+            byte[] voteToBytes = voteTo.getBytes(StandardCharsets.UTF_8);
+            if (voteToBytes.length > NODE_STATE_SPACE_SIZE - VOTE_TO_POSITION) {
+                throw new IllegalArgumentException("the length of node id can not be greater than 120 bytes.");
+            }
+            mappedByteBuffer.position(VOTE_TO_POSITION);
             mappedByteBuffer.put(voteToBytes);
-            fileSize = Math.max(fileSize, Integer.BYTES * 2 + voteToBytes.length);
+            spaceSize = Math.max(spaceSize, VOTE_TO_POSITION + voteToBytes.length);
             updateFileSize();
         }
 
@@ -281,13 +269,13 @@ public class Node {
          * @return the node id that vote for
          */
         public String getVoteTo() {
-            if (fileSize <= Integer.BYTES) {
+            if (spaceSize <= VOTE_TO_POSITION) {
                 return null;
             }
-            mappedByteBuffer.position(Integer.BYTES);
-            byte[] bytes = new byte[(int) (fileSize - Integer.BYTES)];
-            mappedByteBuffer.get(bytes);
-            return new String(bytes, Charset.defaultCharset());
+            mappedByteBuffer.position(VOTE_TO_POSITION);
+            byte[] voteToBytes = new byte[spaceSize - VOTE_TO_POSITION];
+            mappedByteBuffer.get(voteToBytes);
+            return new String(voteToBytes, StandardCharsets.UTF_8);
         }
 
         public void close() {

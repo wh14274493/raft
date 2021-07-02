@@ -6,12 +6,15 @@ import cn.ttplatform.wh.data.log.*;
 import cn.ttplatform.wh.data.snapshot.Snapshot;
 import cn.ttplatform.wh.data.snapshot.SnapshotBuilder;
 import cn.ttplatform.wh.data.support.Bits;
-import cn.ttplatform.wh.support.FixedSizeDirectByteBufferPool;
+import cn.ttplatform.wh.data.support.LogFileMetadataRegion;
+import cn.ttplatform.wh.data.support.LogIndexFileMetadataRegion;
+import cn.ttplatform.wh.data.support.SnapshotFileMetadataRegion;
 import cn.ttplatform.wh.exception.IncorrectLogIndexNumberException;
 import cn.ttplatform.wh.group.Cluster;
 import cn.ttplatform.wh.group.Endpoint;
 import cn.ttplatform.wh.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.message.InstallSnapshotMessage;
+import cn.ttplatform.wh.support.FixedSizeDirectByteBufferPool;
 import cn.ttplatform.wh.support.Message;
 import cn.ttplatform.wh.support.Pool;
 import org.slf4j.Logger;
@@ -20,7 +23,10 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.IntStream;
+
+import static cn.ttplatform.wh.data.FileConstant.*;
 
 /**
  * @author Wang Hao
@@ -36,34 +42,56 @@ public class DataManager {
     private final TreeMap<Integer, Log> pending = new TreeMap<>();
     private final Pool<ByteBuffer> byteBufferPool;
     private final Pool<ByteBuffer> fixedByteBufferPool;
-    private final SnapshotBuilder snapshotBuilder;
     private final GlobalContext context;
     private final File base;
+
     private LogOperation logOperation;
+    private final LogFileMetadataRegion logFileMetadataRegion;
+    private final LogFileMetadataRegion generatingLogFileMetadataRegion;
+
     private Snapshot snapshot;
+    private final SnapshotFileMetadataRegion snapshotFileMetadataRegion;
+
+    private final SnapshotBuilder snapshotBuilder;
+    private final SnapshotFileMetadataRegion generatingSnapshotFileMetadataRegion;
+
     private LogIndexOperation logIndexOperation;
+    private final LogIndexFileMetadataRegion logIndexFileMetadataRegion;
+    private final LogIndexFileMetadataRegion generatingLogIndexFileMetadataRegion;
+
     private int commitIndex;
     private int nextIndex;
 
     public DataManager(GlobalContext context) {
         this.context = context;
         ServerProperties properties = context.getProperties();
-        this.base = properties.getBase();
+
         this.byteBufferPool = context.getByteBufferPool();
-        File latestSnapshotFile = FileConstant.getLatestSnapshotFile(base);
-        this.snapshot = new Snapshot(latestSnapshotFile, byteBufferPool);
-        String path = latestSnapshotFile.getPath();
         this.fixedByteBufferPool = new FixedSizeDirectByteBufferPool(properties.getBlockCacheSize(), properties.getBlockSize());
-        this.logOperation = new AsyncLogFile(FileConstant.getMatchedLogFile(path), properties, fixedByteBufferPool);
-//        this.logOperation = new SyncLogFile(FileConstant.getMatchedLogFile(path), byteBufferPool);
+
+        this.base = properties.getBase();
+        File metaFile = new File(base, METADATA_FILE_NAME);
+        this.logFileMetadataRegion = FileConstant.getLogFileMetadataRegion(metaFile);
+        this.generatingLogFileMetadataRegion = FileConstant.getGeneratingLogFileMetadataRegion(metaFile);
+        this.snapshotFileMetadataRegion = FileConstant.getSnapshotFileMetadataRegion(metaFile);
+        this.generatingSnapshotFileMetadataRegion = FileConstant.getGeneratingSnapshotFileMetadataRegion(metaFile);
+        this.logIndexFileMetadataRegion = FileConstant.getLogIndexFileMetadataRegion(metaFile);
+        this.generatingLogIndexFileMetadataRegion = FileConstant.getGeneratingLogIndexFileMetadataRegion(metaFile);
+
+        File latestSnapshotFile = FileConstant.getLatestSnapshotFile(base);
+        this.snapshot = new Snapshot(latestSnapshotFile, snapshotFileMetadataRegion, byteBufferPool);
+
+        String path = latestSnapshotFile.getPath();
+        this.logOperation = new AsyncLogFile(FileConstant.getMatchedLogFile(path), properties, fixedByteBufferPool, logFileMetadataRegion);
+//        this.logOperation = new SyncLogFile(FileConstant.getMatchedLogFile(path), byteBufferPool, logFileMetadataRegion);
         File latestLogIndexFile = FileConstant.getMatchedLogIndexFile(path);
-        this.logIndexOperation = new AsyncLogIndexFile(latestLogIndexFile, properties, fixedByteBufferPool, snapshot.getLastIncludeIndex());
-//        this.logIndexOperation = new SyncLogIndexFile(latestLogIndexFile, byteBufferPool, snapshot.getLastIncludeIndex());
+        this.logIndexOperation = new AsyncLogIndexFile(latestLogIndexFile, properties, fixedByteBufferPool, snapshot.getLastIncludeIndex(), logIndexFileMetadataRegion);
+//        this.logIndexOperation = new SyncLogIndexFile(latestLogIndexFile, logIndexFileMetadataRegion, byteBufferPool, snapshot.getLastIncludeIndex());
         if (!logOperation.isEmpty() && logIndexOperation.isEmpty()) {
             // means that the index file is wrong or missing.
             rebuildIndexFile();
         }
-        this.snapshotBuilder = new SnapshotBuilder(base, byteBufferPool);
+        this.snapshotBuilder = new SnapshotBuilder(base, byteBufferPool, snapshotFileMetadataRegion, generatingSnapshotFileMetadataRegion);
         this.commitIndex = logIndexOperation.getMaxIndex();
         this.nextIndex = commitIndex + 1;
     }
@@ -75,22 +103,21 @@ public class DataManager {
         ByteBuffer[] buffers = logOperation.read();
         ByteBuffer destination = byteBufferPool.allocate(MAX_CHUNK_SIZE);
         try {
-            int position = FileConstant.LOG_FILE_HEADER_SIZE;
+            int position = 0;
             int blockSize = buffers[0].capacity();
             int fileSize = (int) logOperation.size();
             while (position < fileSize) {
                 while (position < fileSize && destination.hasRemaining()) {
-                    int relativePosition = position - FileConstant.LOG_FILE_HEADER_SIZE;
-                    int cur = relativePosition / blockSize;
+                    int cur = position / blockSize;
                     ByteBuffer source = buffers[cur];
-                    source.position((position - FileConstant.LOG_FILE_HEADER_SIZE) % blockSize);
+                    source.position(position % blockSize);
                     int count = 0;
                     while (count < Log.HEADER_BYTES) {
                         if (!source.hasRemaining() && cur < buffers.length - 1) {
                             source = buffers[++cur];
                             source.position(0);
                         }
-                        destination.put(source.get());
+                        destination.put(source. get());
                         count++;
                     }
                     int offset = destination.position() - Integer.BYTES;
@@ -110,6 +137,14 @@ public class DataManager {
             byteBufferPool.recycle(destination);
             Arrays.stream(buffers).forEach(fixedByteBufferPool::recycle);
         }
+    }
+
+    public SnapshotFileMetadataRegion getSnapshotFileMetadataRegion() {
+        return snapshotFileMetadataRegion;
+    }
+
+    public SnapshotFileMetadataRegion getGeneratingSnapshotFileMetadataRegion() {
+        return generatingSnapshotFileMetadataRegion;
     }
 
     public int getNextIndex() {
@@ -353,20 +388,25 @@ public class DataManager {
     public void completeBuildingSnapshot(SnapshotBuilder snapshotBuilder, int lastIncludeTerm, int lastIncludeIndex) {
         context.getExecutor().execute(() -> {
             snapshotBuilder.complete();
-            this.snapshot = new Snapshot(snapshotBuilder.getFile(), byteBufferPool);
+            snapshot = new Snapshot(snapshotBuilder.getFile(), snapshotFileMetadataRegion, byteBufferPool);
             File newLogFile = FileConstant.newLogFile(base, lastIncludeIndex, lastIncludeTerm);
             File newLogIndexFile = FileConstant.newLogIndexFile(base, lastIncludeIndex, lastIncludeTerm);
             long offset = logIndexOperation.getLogOffset(lastIncludeIndex + 1);
             try {
                 LogOperation oldLogOperation = this.logOperation;
-//                this.logOperation = new AsyncLogFile(newLogFile, context.getProperties(), fixedByteBufferPool);
-                this.logOperation = new SyncLogFile(newLogFile, byteBufferPool);
+                logOperation = new AsyncLogFile(newLogFile, context.getProperties(), fixedByteBufferPool, generatingLogFileMetadataRegion);
+//                logOperation = new SyncLogFile(newLogFile, byteBufferPool, generatingLogFileMetadataRegion);
                 if (offset != -1L) {
                     // means that lastIncludeIndex == lastLogIndex
-                    oldLogOperation.transferTo(offset, this.logOperation);
+                    oldLogOperation.transferTo(offset, logOperation);
                 }
-//                this.logIndexOperation = new AsyncLogIndexFile(newLogIndexFile, context.getProperties(), fixedByteBufferPool, snapshot.getLastIncludeIndex());
-                this.logIndexOperation = new SyncLogIndexFile(newLogIndexFile, byteBufferPool, snapshot.getLastIncludeIndex());
+                logOperation.exchangeLogFileMetadataRegion(logFileMetadataRegion);
+                ThreadPoolExecutor subTaskExecutor = context.getSubTaskExecutor();
+                subTaskExecutor.execute(oldLogOperation::close);
+                subTaskExecutor.execute(logIndexOperation::close);
+                logIndexOperation = new AsyncLogIndexFile(newLogIndexFile, context.getProperties(), fixedByteBufferPool, snapshot.getLastIncludeIndex(), generatingLogIndexFileMetadataRegion);
+//                logIndexOperation = new SyncLogIndexFile(newLogIndexFile, generatingLogIndexFileMetadataRegion, byteBufferPool, snapshot.getLastIncludeIndex());
+                logIndexOperation.exchangeLogFileMetadataRegion(logIndexFileMetadataRegion);
                 if (!logOperation.isEmpty() && logIndexOperation.isEmpty()) {
                     rebuildIndexFile();
                 }

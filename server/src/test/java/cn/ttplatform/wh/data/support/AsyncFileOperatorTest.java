@@ -21,12 +21,15 @@ public class AsyncFileOperatorTest {
 
     AsyncFileOperator fileOperator;
     Pool<ByteBuffer> bufferPool;
+    LogFileMetadataRegion logFileMetadataRegion;
 
     @Before
     public void setUp() throws Exception {
         bufferPool = new DirectByteBufferPool(10, 1024 * 1024, 10 * 1024 * 1024);
         File file = File.createTempFile("AsyncFileOperatorTest-", ".txt");
-        fileOperator = new AsyncFileOperator(new ServerProperties(), bufferPool, file, 8);
+        File metaFile = File.createTempFile("AsyncLogMetaFile-", ".txt");
+        this.logFileMetadataRegion = new LogFileMetadataRegion(metaFile);
+        fileOperator = new AsyncFileOperator(new ServerProperties(), bufferPool, file, logFileMetadataRegion);
     }
 
     @After
@@ -35,13 +38,13 @@ public class AsyncFileOperatorTest {
     }
 
     @Test
-    public void read() {
+    public void readBytes() {
         int cap = 10 * 1024 * 1024;
         byte[] bytes = new byte[cap];
         fileOperator.appendBytes(bytes);
-        Assert.assertEquals(cap + 8, fileOperator.getSize());
+        Assert.assertEquals(cap, fileOperator.getSize());
         long begin = System.nanoTime();
-        ByteBuffer[] read = fileOperator.read(8);
+        ByteBuffer[] read = fileOperator.readBytes(0);
         int count = 0;
         for (ByteBuffer byteBuffer : read) {
             count += byteBuffer.limit();
@@ -57,7 +60,7 @@ public class AsyncFileOperatorTest {
         long begin = System.nanoTime();
         fileOperator.appendBlock(byteBuffer);
         log.info("append {} bytes cost {} ns.", cap, System.nanoTime() - begin);
-        Assert.assertEquals(cap + 8, fileOperator.getSize());
+        Assert.assertEquals(cap, fileOperator.getSize());
     }
 
     @Test
@@ -67,7 +70,7 @@ public class AsyncFileOperatorTest {
         long begin = System.nanoTime();
         fileOperator.appendBytes(byteBuffer);
         log.info("append {} bytes cost {} ns.", cap, System.nanoTime() - begin);
-        Assert.assertEquals(cap + 8, fileOperator.getSize());
+        Assert.assertEquals(cap, fileOperator.getSize());
     }
 
 
@@ -76,7 +79,7 @@ public class AsyncFileOperatorTest {
         long begin = System.nanoTime();
         fileOperator.appendInt(1);
         log.info("append {} bytes cost {} ns.", Integer.BYTES, System.nanoTime() - begin);
-        Assert.assertEquals(Integer.BYTES + 8, fileOperator.getSize());
+        Assert.assertEquals(Integer.BYTES, fileOperator.getSize());
     }
 
     @Test
@@ -84,14 +87,14 @@ public class AsyncFileOperatorTest {
         long begin = System.nanoTime();
         fileOperator.appendLong(1L);
         log.info("append {} bytes cost {} ns.", Long.BYTES, System.nanoTime() - begin);
-        Assert.assertEquals(Long.BYTES + 8, fileOperator.getSize());
+        Assert.assertEquals(Long.BYTES, fileOperator.getSize());
     }
 
     @Test
     public void getInt() {
         appendInt();
         long begin = System.nanoTime();
-        fileOperator.getInt(8L);
+        fileOperator.getInt(0);
         log.info("read {} bytes cost {} ns.", Integer.BYTES, System.nanoTime() - begin);
     }
 
@@ -99,17 +102,28 @@ public class AsyncFileOperatorTest {
     public void getLong() {
         appendLong();
         long begin = System.nanoTime();
-        fileOperator.getLong(8L);
+        fileOperator.getLong(0);
         log.info("read {} bytes cost {} ns.", Long.BYTES, System.nanoTime() - begin);
     }
 
+    @Test
+    public void get() {
+        appendBytes();
+        int count =  10;
+        byte[] bytes = new byte[count];
+        bytes[bytes.length - 1] = 1;
+        long begin = System.nanoTime();
+        fileOperator.get(5, bytes);
+        log.info("get {} bytes cost {} ns.", count, System.nanoTime() - begin);
+        Assert.assertEquals(0, bytes[bytes.length - 1]);
+    }
 
     @Test
     public void removeAfter() {
         appendBytes();
         long begin = System.nanoTime();
-        fileOperator.truncate(8L);
+        fileOperator.truncate(0);
         log.info("removeAfter cost {} ns.", System.nanoTime() - begin);
-        Assert.assertEquals(8, fileOperator.getSize());
+        Assert.assertEquals(0, fileOperator.getSize());
     }
 }

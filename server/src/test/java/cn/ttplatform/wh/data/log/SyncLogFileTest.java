@@ -1,9 +1,9 @@
-package cn.ttplatform.wh.core.data.log;
+package cn.ttplatform.wh.data.log;
 
-import cn.ttplatform.wh.data.FileConstant;
 import cn.ttplatform.wh.data.log.Log;
 import cn.ttplatform.wh.data.log.LogFactory;
 import cn.ttplatform.wh.data.log.SyncLogFile;
+import cn.ttplatform.wh.data.support.LogFileMetadataRegion;
 import cn.ttplatform.wh.support.DirectByteBufferPool;
 import cn.ttplatform.wh.support.Pool;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +36,9 @@ public class SyncLogFileTest {
     public void setUp() throws IOException {
         Pool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 1024 * 1024, 10 * 1024 * 1024);
         File file = File.createTempFile("SyncLogFile-", ".txt");
-        syncLogFile = new SyncLogFile(file, bufferPool);
+        File metaFile = File.createTempFile("SyncLogMetaFile-", ".txt");
+        LogFileMetadataRegion logFileMetadataRegion = new LogFileMetadataRegion(metaFile);
+        syncLogFile = new SyncLogFile(file, bufferPool, logFileMetadataRegion);
     }
 
     @After
@@ -50,7 +52,7 @@ public class SyncLogFileTest {
         long begin = System.nanoTime();
         syncLogFile.append(LogFactory.createEntry(1, 1, 1, content));
         log.info("append 1 log cost {} ns", (System.nanoTime() - begin));
-        Assert.assertEquals(Log.HEADER_BYTES + content.length + FileConstant.LOG_FILE_HEADER_SIZE, syncLogFile.size());
+        Assert.assertEquals(Log.HEADER_BYTES + content.length, syncLogFile.size());
     }
 
     @Test
@@ -70,7 +72,7 @@ public class SyncLogFileTest {
         byte[] content = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
         syncLogFile.append(LogFactory.createEntry(1, 1, 1, content));
         long begin = System.nanoTime();
-        Log entry = syncLogFile.getLog(FileConstant.LOG_FILE_HEADER_SIZE, syncLogFile.size());
+        Log entry = syncLogFile.getLog(0, syncLogFile.size());
         log.info("load 1 log cost {} ns", (System.nanoTime() - begin));
         assertEquals(1, entry.getIndex());
     }
@@ -80,7 +82,7 @@ public class SyncLogFileTest {
         testAppend();
         long begin = System.nanoTime();
         List<Log> res = new ArrayList<>();
-        syncLogFile.loadLogsIntoList(FileConstant.LOG_FILE_HEADER_SIZE, syncLogFile.size(), res);
+        syncLogFile.loadLogsIntoList(0, syncLogFile.size(), res);
         log.info("load {} Logs cost {} ns", res.size(), (System.nanoTime() - begin));
         Assert.assertEquals(100000, res.size());
     }
@@ -95,22 +97,24 @@ public class SyncLogFileTest {
             count += byteBuffer.limit();
         }
         log.info("load {} bytes cost {} ns", count, (System.nanoTime() - begin));
-        Assert.assertEquals(count+FileConstant.LOG_FILE_HEADER_SIZE, syncLogFile.size());
+        Assert.assertEquals(count, syncLogFile.size());
     }
 
     @Test
     public void transferTo() throws IOException {
         Pool<ByteBuffer> bufferPool = new DirectByteBufferPool(10, 1024 * 1024, 10 * 1024 * 1024);
         File file = File.createTempFile("SyncLogFileDest-", ".txt");
-        SyncLogFile dest = new SyncLogFile(file, bufferPool);
-        syncLogFile.transferTo(FileConstant.LOG_FILE_HEADER_SIZE, dest);
+        File metafile = File.createTempFile("SyncLogMetaFileDest-", ".txt");
+        LogFileMetadataRegion logFileMetadataRegion = new LogFileMetadataRegion(metafile);
+        SyncLogFile dest = new SyncLogFile(file, bufferPool, logFileMetadataRegion);
+        syncLogFile.transferTo(0, dest);
         Assert.assertEquals(syncLogFile.size(), dest.size());
     }
 
     @Test
     public void removeAfter() {
-        syncLogFile.removeAfter(FileConstant.LOG_FILE_HEADER_SIZE);
-        Assert.assertEquals(FileConstant.LOG_FILE_HEADER_SIZE, syncLogFile.size());
+        syncLogFile.removeAfter(0);
+        Assert.assertEquals(0, syncLogFile.size());
     }
 
 }

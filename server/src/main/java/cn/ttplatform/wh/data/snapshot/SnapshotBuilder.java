@@ -1,18 +1,16 @@
 package cn.ttplatform.wh.data.snapshot;
 
 import cn.ttplatform.wh.data.FileConstant;
+import cn.ttplatform.wh.data.support.SnapshotFileMetadataRegion;
 import cn.ttplatform.wh.data.support.SyncFileOperator;
 import cn.ttplatform.wh.exception.OperateFileException;
 import cn.ttplatform.wh.support.Pool;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
-
-import lombok.extern.slf4j.Slf4j;
-
-import static cn.ttplatform.wh.data.snapshot.Snapshot.SnapshotHeader.*;
 
 /**
  * @author Wang Hao
@@ -28,8 +26,13 @@ public class SnapshotBuilder {
     private int lastIncludeTerm;
     private final File parent;
     private final Pool<ByteBuffer> byteBufferPool;
+    private final SnapshotFileMetadataRegion snapshotFileMetadataRegion;
+    private final SnapshotFileMetadataRegion generatingSnapshotFileMetadataRegion;
 
-    public SnapshotBuilder(File parent, Pool<ByteBuffer> byteBufferPool) {
+    public SnapshotBuilder(File parent, Pool<ByteBuffer> byteBufferPool, SnapshotFileMetadataRegion snapshotFileMetadataRegion,
+                           SnapshotFileMetadataRegion generatingSnapshotFileMetadataRegion) {
+        this.snapshotFileMetadataRegion = snapshotFileMetadataRegion;
+        this.generatingSnapshotFileMetadataRegion = generatingSnapshotFileMetadataRegion;
         this.byteBufferPool = byteBufferPool;
         this.parent = parent;
     }
@@ -43,9 +46,10 @@ public class SnapshotBuilder {
             Files.deleteIfExists(file.toPath());
             Files.createFile(file.toPath());
         } catch (IOException e) {
-            throw new OperateFileException("delete or create file error.", e);
+            throw new OperateFileException("failed to delete or create file.", e);
         }
-        this.fileOperator = new SyncFileOperator(file, byteBufferPool, Snapshot.SnapshotHeader.BYTES);
+        generatingSnapshotFileMetadataRegion.clear();
+        this.fileOperator = new SyncFileOperator(file, byteBufferPool, generatingSnapshotFileMetadataRegion);
     }
 
     public long getInstallOffset() {
@@ -64,12 +68,6 @@ public class SnapshotBuilder {
         fileOperator.append(chunk, length);
     }
 
-    public void writeHeader(long size, int lastIncludeIndex, int lastIncludeTerm) {
-        fileOperator.writeHeader(FILE_SIZE_FIELD_POSITION,size);
-        fileOperator.writeHeader(LAST_INCLUDE_INDEX_FIELD_POSITION,lastIncludeIndex);
-        fileOperator.writeHeader(LAST_INCLUDE_TERM_FIELD_POSITION,lastIncludeTerm);
-    }
-
     public File getFile() {
         return file;
     }
@@ -79,8 +77,9 @@ public class SnapshotBuilder {
     }
 
     public void complete() {
-        fileOperator.writeHeader(LAST_INCLUDE_INDEX_FIELD_POSITION, lastIncludeIndex);
-        fileOperator.writeHeader(LAST_INCLUDE_TERM_FIELD_POSITION, lastIncludeTerm);
+        snapshotFileMetadataRegion.recordFileSize(generatingSnapshotFileMetadataRegion.getFileSize());
+        snapshotFileMetadataRegion.recordLastIncludeIndex(lastIncludeIndex);
+        snapshotFileMetadataRegion.recordLastIncludeTerm(lastIncludeTerm);
         fileOperator.close();
     }
 }

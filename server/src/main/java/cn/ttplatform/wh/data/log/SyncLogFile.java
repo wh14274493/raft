@@ -1,6 +1,7 @@
 package cn.ttplatform.wh.data.log;
 
 import cn.ttplatform.wh.data.support.Bits;
+import cn.ttplatform.wh.data.support.LogFileMetadataRegion;
 import cn.ttplatform.wh.data.support.SyncFileOperator;
 import cn.ttplatform.wh.support.Pool;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +11,6 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import static cn.ttplatform.wh.data.DataManager.MAX_CHUNK_SIZE;
-import static cn.ttplatform.wh.data.FileConstant.LOG_FILE_HEADER_SIZE;
 
 /**
  * @author Wang Hao
@@ -21,9 +21,11 @@ public class SyncLogFile implements LogOperation {
 
     private final SyncFileOperator fileOperator;
     private final Pool<ByteBuffer> byteBufferPool;
+    private LogFileMetadataRegion logFileMetadataRegion;
 
-    public SyncLogFile(File file, Pool<ByteBuffer> byteBufferPool) {
-        this.fileOperator = new SyncFileOperator(file, byteBufferPool, LOG_FILE_HEADER_SIZE);
+    public SyncLogFile(File file, Pool<ByteBuffer> byteBufferPool, LogFileMetadataRegion logFileMetadataRegion) {
+        this.logFileMetadataRegion = logFileMetadataRegion;
+        this.fileOperator = new SyncFileOperator(file, byteBufferPool, logFileMetadataRegion);
         this.byteBufferPool = byteBufferPool;
     }
 
@@ -149,7 +151,7 @@ public class SyncLogFile implements LogOperation {
 
     @Override
     public ByteBuffer[] read() {
-        int position = LOG_FILE_HEADER_SIZE;
+        int position = 0;
         int fileSize = (int) fileOperator.size();
         int size = fileSize % MAX_CHUNK_SIZE == 0 ? fileSize / MAX_CHUNK_SIZE : fileSize / MAX_CHUNK_SIZE + 1;
         ByteBuffer[] buffers = new ByteBuffer[size];
@@ -178,9 +180,17 @@ public class SyncLogFile implements LogOperation {
     }
 
     @Override
+    public void exchangeLogFileMetadataRegion(LogFileMetadataRegion logFileMetadataRegion) {
+        logFileMetadataRegion.write(this.logFileMetadataRegion.read());
+        this.logFileMetadataRegion.clear();
+        this.logFileMetadataRegion = logFileMetadataRegion;
+        fileOperator.changeFileHeaderOperator(logFileMetadataRegion);
+    }
+
+    @Override
     public void removeAfter(long offset) {
-        if (offset <= LOG_FILE_HEADER_SIZE) {
-            fileOperator.truncate(LOG_FILE_HEADER_SIZE);
+        if (offset <= 0) {
+            fileOperator.truncate(0);
         }
         fileOperator.truncate(offset);
     }

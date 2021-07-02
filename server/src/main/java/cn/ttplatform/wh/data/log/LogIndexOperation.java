@@ -1,5 +1,7 @@
 package cn.ttplatform.wh.data.log;
 
+import cn.ttplatform.wh.data.support.LogIndexFileMetadataRegion;
+
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -28,6 +30,8 @@ public interface LogIndexOperation {
     void append(ByteBuffer byteBuffer);
 
     void removeAfter(int index);
+
+    void exchangeLogFileMetadataRegion(LogIndexFileMetadataRegion logIndexFileMetadataRegion);
 
     boolean isEmpty();
 

@@ -1,4 +1,4 @@
-package cn.ttplatform.wh.core;
+package cn.ttplatform.wh;
 
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -6,6 +6,7 @@ import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
 
 import cn.ttplatform.wh.exception.OperateFileException;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -17,6 +18,7 @@ import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.Path;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
+
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Assert;
@@ -30,8 +32,6 @@ import org.junit.Test;
 @Slf4j
 public class FileTest {
 
-    Path path1;
-    Path path2;
     FileChannel readChannel;
     FileChannel writeChannel;
     FileChannel appendChannel;
@@ -39,14 +39,11 @@ public class FileTest {
 
     @Before
     public void setup() throws URISyntaxException, IOException {
-        String property = System.getProperty("user.home");
-        File file1 = File.createTempFile(property, "test1.txt");
-        File file2 = File.createTempFile(property, "test2.txt");
+        File file1 = File.createTempFile("test1-", ".txt");
+        File file2 = File.createTempFile("test2-", ".txt");
+        Path path2 = file2.toPath();
 
-        path1 = file1.toPath();
-        path2 = file2.toPath();
-
-        randomAccessFile = new RandomAccessFile(path1.toFile(), "rw");
+        randomAccessFile = new RandomAccessFile(file1, "rw");
         readChannel = FileChannel.open(path2, READ);
         appendChannel = FileChannel.open(path2, WRITE, APPEND);
         writeChannel = FileChannel.open(path2, WRITE);
@@ -57,6 +54,7 @@ public class FileTest {
         readChannel.close();
         writeChannel.close();
         randomAccessFile.close();
+        appendChannel.close();
     }
 
     @Test
@@ -120,7 +118,7 @@ public class FileTest {
 
     @Test
     public void testWrite() throws IOException {
-        int count = 4*1024*1024;
+        int count = 4 * 1024 * 1024;
         byte[] content = new byte[count];
         IntStream.range(0, count).forEach(index -> content[index] = 'a');
 
@@ -272,4 +270,19 @@ public class FileTest {
         fileChannel1.write(byteBuffer);
         log.info("DirectByteBuffer {} bytes cost {} ns.", count, System.nanoTime() - begin);
     }
+
+//    @Test
+//    public void testTruncate() throws IOException {
+//        File file = File.createTempFile("test3-", ".txt");
+//        FileChannel fileChannel = FileChannel.open(file.toPath(), READ, WRITE, CREATE);
+//        MappedByteBuffer map = fileChannel.map(MapMode.READ_WRITE, 0, 8);
+//        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(8);
+//        for (int index = 0; index < 8; index++) {
+//            map.put((byte) 1);
+//            byteBuffer.put((byte) 1);
+//        }
+//        byteBuffer.position(0);
+//        fileChannel.write(byteBuffer, 8);
+//        fileChannel.truncate(9);
+//    }
 }

@@ -26,7 +26,7 @@ public class CoreChannelInitializer extends ChannelInitializer<SocketChannel> {
         int readIdleTimeout = context.getProperties().getReadIdleTimeout();
         int writeIdleTimeout = context.getProperties().getWriteIdleTimeout();
         int allIdleTimeout = context.getProperties().getAllIdleTimeout();
-//        pipeline.addLast(new IdleStateHandler(readIdleTimeout, writeIdleTimeout, allIdleTimeout));
+        pipeline.addLast(new IdleStateHandler(readIdleTimeout, writeIdleTimeout, allIdleTimeout));
         pipeline.addLast(new DistributableCodec(context.getFactoryManager()));
         pipeline.addLast(new CoreDuplexChannelHandler(context));
     }

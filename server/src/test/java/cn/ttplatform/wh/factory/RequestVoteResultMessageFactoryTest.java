@@ -1,8 +1,8 @@
-package cn.ttplatform.wh.core.connector.message.factory;
+package cn.ttplatform.wh.factory;
 
-import cn.ttplatform.wh.message.factory.PreVoteResultMessageFactory;
+import cn.ttplatform.wh.message.factory.RequestVoteResultMessageFactory;
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.message.PreVoteResultMessage;
+import cn.ttplatform.wh.message.RequestVoteResultMessage;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Pool;
 import io.netty.buffer.ByteBuf;
@@ -17,28 +17,28 @@ import org.junit.Test;
 
 /**
  * @author Wang Hao
- * @date 2021/5/11 23:00
+ * @date 2021/5/11 23:03
  */
 @Slf4j
-public class PreVoteResultMessageFactoryTest {
+public class RequestVoteResultMessageFactoryTest {
 
-    PreVoteResultMessageFactory factory;
+    RequestVoteResultMessageFactory factory;
 
     @Before
     public void setUp() throws Exception {
         Pool<LinkedBuffer> pool = new FixedSizeLinkedBufferPool(10);
-        factory = new PreVoteResultMessageFactory(pool);
+        factory = new RequestVoteResultMessageFactory(pool);
     }
 
     @Test
     public void getFactoryType() {
-        Assert.assertEquals(DistributableType.PRE_VOTE_RESULT, factory.getFactoryType());
+        Assert.assertEquals(DistributableType.REQUEST_VOTE_RESULT, factory.getFactoryType());
     }
 
     @Test
     public void create() {
-        PreVoteResultMessage message = PreVoteResultMessage.builder()
-            .term(0).isVoted(true).sourceId("A").build();
+        RequestVoteResultMessage message = RequestVoteResultMessage.builder()
+            .term(0).sourceId("A").isVoted(true).build();
         byte[] bytes = factory.getBytes(message);
         long begin = System.nanoTime();
         IntStream.range(0, 10000).forEach(index -> factory.create(bytes, bytes.length));
@@ -47,8 +47,8 @@ public class PreVoteResultMessageFactoryTest {
 
     @Test
     public void testCreate() {
-        PreVoteResultMessage message = PreVoteResultMessage.builder()
-            .term(0).isVoted(true).sourceId("A").build();
+        RequestVoteResultMessage message = RequestVoteResultMessage.builder()
+            .term(0).sourceId("A").isVoted(true).build();
         byte[] bytes = factory.getBytes(message);
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bytes.length);
         byteBuffer.put(bytes);
@@ -63,8 +63,8 @@ public class PreVoteResultMessageFactoryTest {
 
     @Test
     public void getBytes() {
-        PreVoteResultMessage message = PreVoteResultMessage.builder()
-            .term(0).isVoted(true).sourceId("A").build();
+        RequestVoteResultMessage message = RequestVoteResultMessage.builder()
+            .term(0).sourceId("A").isVoted(true).build();
         long begin = System.nanoTime();
         IntStream.range(0, 10000).forEach(index -> factory.getBytes(message));
         log.info("serialize 10000 times cost {} ns.", System.nanoTime() - begin);
@@ -72,8 +72,8 @@ public class PreVoteResultMessageFactoryTest {
 
     @Test
     public void testGetBytes() {
-        PreVoteResultMessage message = PreVoteResultMessage.builder()
-            .term(0).isVoted(true).sourceId("A").build();
+        RequestVoteResultMessage message = RequestVoteResultMessage.builder()
+            .term(0).sourceId("A").isVoted(true).build();
         UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
         ByteBuf byteBuf = allocator.directBuffer();
         long begin = System.nanoTime();

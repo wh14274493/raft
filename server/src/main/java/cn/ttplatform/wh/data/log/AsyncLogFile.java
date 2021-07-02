@@ -1,8 +1,8 @@
 package cn.ttplatform.wh.data.log;
 
 import cn.ttplatform.wh.config.ServerProperties;
-import cn.ttplatform.wh.data.FileConstant;
 import cn.ttplatform.wh.data.support.AsyncFileOperator;
+import cn.ttplatform.wh.data.support.LogFileMetadataRegion;
 import cn.ttplatform.wh.support.Pool;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,9 +19,11 @@ import java.util.List;
 public class AsyncLogFile implements LogOperation {
 
     private final AsyncFileOperator fileOperator;
+    private LogFileMetadataRegion logFileMetadataRegion;
 
-    public AsyncLogFile(File file, ServerProperties properties, Pool<ByteBuffer> byteBufferPool) {
-        this.fileOperator = new AsyncFileOperator(properties, byteBufferPool, file, FileConstant.LOG_FILE_HEADER_SIZE);
+    public AsyncLogFile(File file, ServerProperties properties, Pool<ByteBuffer> byteBufferPool, LogFileMetadataRegion logFileMetadataRegion) {
+        this.logFileMetadataRegion = logFileMetadataRegion;
+        this.fileOperator = new AsyncFileOperator(properties, byteBufferPool, file, logFileMetadataRegion);
     }
 
     @Override
@@ -98,13 +100,21 @@ public class AsyncLogFile implements LogOperation {
 
     @Override
     public ByteBuffer[] read() {
-        return fileOperator.read(FileConstant.LOG_FILE_HEADER_SIZE);
+        return fileOperator.readBytes(0L);
     }
 
     @Override
     public void transferTo(long offset, LogOperation logOperation) {
-        ByteBuffer[] buffers = fileOperator.read(offset);
+        ByteBuffer[] buffers = fileOperator.readBytes(offset);
         Arrays.stream(buffers).forEach(buffer -> logOperation.append(buffer, buffer.limit()));
+    }
+
+    @Override
+    public void exchangeLogFileMetadataRegion(LogFileMetadataRegion logFileMetadataRegion) {
+        logFileMetadataRegion.write(this.logFileMetadataRegion.read());
+        this.logFileMetadataRegion.clear();
+        this.logFileMetadataRegion = logFileMetadataRegion;
+        fileOperator.changeFileHeaderOperator(logFileMetadataRegion);
     }
 
     @Override

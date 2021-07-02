@@ -1,14 +1,15 @@
-package cn.ttplatform.wh.core.connector.message.factory;
+package cn.ttplatform.wh.factory;
 
-import cn.ttplatform.wh.message.factory.RequestVoteResultMessageFactory;
+import cn.ttplatform.wh.message.factory.AppendLogEntriesMessageFactory;
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.message.RequestVoteResultMessage;
+import cn.ttplatform.wh.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Pool;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.protostuff.LinkedBuffer;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
@@ -17,29 +18,31 @@ import org.junit.Test;
 
 /**
  * @author Wang Hao
- * @date 2021/5/11 23:03
+ * @date 2021/5/11 10:59
  */
 @Slf4j
-public class RequestVoteResultMessageFactoryTest {
+public class AppendLogEntriesMessageFactoryTest {
 
-    RequestVoteResultMessageFactory factory;
+    AppendLogEntriesMessageFactory factory;
 
     @Before
     public void setUp() throws Exception {
         Pool<LinkedBuffer> pool = new FixedSizeLinkedBufferPool(10);
-        factory = new RequestVoteResultMessageFactory(pool);
+        factory = new AppendLogEntriesMessageFactory(pool);
     }
 
     @Test
     public void getFactoryType() {
-        Assert.assertEquals(DistributableType.REQUEST_VOTE_RESULT, factory.getFactoryType());
+        Assert.assertEquals(DistributableType.APPEND_LOG_ENTRIES, factory.getFactoryType());
     }
 
     @Test
     public void create() {
-        RequestVoteResultMessage message = RequestVoteResultMessage.builder()
-            .term(0).sourceId("A").isVoted(true).build();
-        byte[] bytes = factory.getBytes(message);
+        AppendLogEntriesMessage appendLogEntriesMessage = AppendLogEntriesMessage.builder().matched(true).preLogTerm(1)
+            .preLogIndex(1)
+            .leaderCommitIndex(1).sourceId("A")
+            .leaderId("A").term(1).logEntries(Collections.emptyList()).build();
+        byte[] bytes = factory.getBytes(appendLogEntriesMessage);
         long begin = System.nanoTime();
         IntStream.range(0, 10000).forEach(index -> factory.create(bytes, bytes.length));
         log.info("deserialize 10000 times cost {} ns.", System.nanoTime() - begin);
@@ -47,9 +50,11 @@ public class RequestVoteResultMessageFactoryTest {
 
     @Test
     public void testCreate() {
-        RequestVoteResultMessage message = RequestVoteResultMessage.builder()
-            .term(0).sourceId("A").isVoted(true).build();
-        byte[] bytes = factory.getBytes(message);
+        AppendLogEntriesMessage appendLogEntriesMessage = AppendLogEntriesMessage.builder().matched(true).preLogTerm(1)
+            .preLogIndex(1)
+            .leaderCommitIndex(1).sourceId("A")
+            .leaderId("A").term(1).logEntries(Collections.emptyList()).build();
+        byte[] bytes = factory.getBytes(appendLogEntriesMessage);
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bytes.length);
         byteBuffer.put(bytes);
         byteBuffer.flip();
@@ -63,24 +68,29 @@ public class RequestVoteResultMessageFactoryTest {
 
     @Test
     public void getBytes() {
-        RequestVoteResultMessage message = RequestVoteResultMessage.builder()
-            .term(0).sourceId("A").isVoted(true).build();
+        AppendLogEntriesMessage appendLogEntriesMessage = AppendLogEntriesMessage.builder().matched(true).preLogTerm(1)
+            .preLogIndex(1)
+            .leaderCommitIndex(1).sourceId("A")
+            .leaderId("A").term(1).logEntries(Collections.emptyList()).build();
         long begin = System.nanoTime();
-        IntStream.range(0, 10000).forEach(index -> factory.getBytes(message));
+        IntStream.range(0, 10000).forEach(index -> factory.getBytes(appendLogEntriesMessage));
         log.info("serialize 10000 times cost {} ns.", System.nanoTime() - begin);
     }
 
     @Test
     public void testGetBytes() {
-        RequestVoteResultMessage message = RequestVoteResultMessage.builder()
-            .term(0).sourceId("A").isVoted(true).build();
+        AppendLogEntriesMessage appendLogEntriesMessage = AppendLogEntriesMessage.builder().matched(true).preLogTerm(1)
+            .preLogIndex(1)
+            .leaderCommitIndex(1).sourceId("A")
+            .leaderId("A").term(1).logEntries(Collections.emptyList()).build();
         UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
         ByteBuf byteBuf = allocator.directBuffer();
         long begin = System.nanoTime();
         IntStream.range(0, 10000).forEach(index -> {
-            factory.getBytes(message, byteBuf);
+            factory.getBytes(appendLogEntriesMessage,  byteBuf);
             byteBuf.clear();
         });
         log.info("serialize 10000 times cost {} ns.", System.nanoTime() - begin);
+
     }
 }

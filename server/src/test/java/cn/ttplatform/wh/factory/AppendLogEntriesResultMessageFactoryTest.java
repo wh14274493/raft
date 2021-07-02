@@ -1,8 +1,8 @@
-package cn.ttplatform.wh.core.connector.message.factory;
+package cn.ttplatform.wh.factory;
 
-import cn.ttplatform.wh.message.factory.InstallSnapshotMessageFactory;
+import cn.ttplatform.wh.message.factory.AppendLogEntriesResultMessageFactory;
 import cn.ttplatform.wh.constant.DistributableType;
-import cn.ttplatform.wh.message.InstallSnapshotMessage;
+import cn.ttplatform.wh.message.AppendLogEntriesResultMessage;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
 import cn.ttplatform.wh.support.Pool;
 import io.netty.buffer.ByteBuf;
@@ -17,28 +17,28 @@ import org.junit.Test;
 
 /**
  * @author Wang Hao
- * @date 2021/5/11 22:50
+ * @date 2021/5/11 11:08
  */
 @Slf4j
-public class InstallSnapshotMessageFactoryTest {
+public class AppendLogEntriesResultMessageFactoryTest {
 
-    InstallSnapshotMessageFactory factory;
+    AppendLogEntriesResultMessageFactory factory;
 
     @Before
     public void setUp() throws Exception {
         Pool<LinkedBuffer> pool = new FixedSizeLinkedBufferPool(10);
-        factory = new InstallSnapshotMessageFactory(pool);
+        factory = new AppendLogEntriesResultMessageFactory(pool);
     }
 
     @Test
     public void getFactoryType() {
-        Assert.assertEquals(DistributableType.INSTALL_SNAPSHOT, factory.getFactoryType());
+        Assert.assertEquals(DistributableType.APPEND_LOG_ENTRIES_RESULT, factory.getFactoryType());
     }
 
     @Test
     public void create() {
-        InstallSnapshotMessage message = InstallSnapshotMessage.builder()
-            .term(0).lastIncludeTerm(0).lastIncludeIndex(0).chunk(new byte[0]).offset(0).sourceId("A").build();
+        AppendLogEntriesResultMessage message = AppendLogEntriesResultMessage.builder().lastLogIndex(1).sourceId("A")
+            .success(true).term(1).build();
         byte[] bytes = factory.getBytes(message);
         long begin = System.nanoTime();
         IntStream.range(0, 10000).forEach(index -> factory.create(bytes, bytes.length));
@@ -47,8 +47,8 @@ public class InstallSnapshotMessageFactoryTest {
 
     @Test
     public void testCreate() {
-        InstallSnapshotMessage message = InstallSnapshotMessage.builder()
-            .term(0).lastIncludeTerm(0).lastIncludeIndex(0).chunk(new byte[0]).offset(0).sourceId("A").build();
+        AppendLogEntriesResultMessage message = AppendLogEntriesResultMessage.builder().lastLogIndex(1).sourceId("A")
+            .success(true).term(1).build();
         byte[] bytes = factory.getBytes(message);
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bytes.length);
         byteBuffer.put(bytes);
@@ -63,8 +63,8 @@ public class InstallSnapshotMessageFactoryTest {
 
     @Test
     public void getBytes() {
-        InstallSnapshotMessage message = InstallSnapshotMessage.builder()
-            .term(0).lastIncludeTerm(0).lastIncludeIndex(0).chunk(new byte[0]).offset(0).sourceId("A").build();
+        AppendLogEntriesResultMessage message = AppendLogEntriesResultMessage.builder().lastLogIndex(1).sourceId("A")
+            .success(true).term(1).build();
         long begin = System.nanoTime();
         IntStream.range(0, 10000).forEach(index -> factory.getBytes(message));
         log.info("serialize 10000 times cost {} ns.", System.nanoTime() - begin);
@@ -72,13 +72,13 @@ public class InstallSnapshotMessageFactoryTest {
 
     @Test
     public void testGetBytes() {
-        InstallSnapshotMessage message = InstallSnapshotMessage.builder()
-            .term(0).lastIncludeTerm(0).lastIncludeIndex(0).chunk(new byte[0]).offset(0).sourceId("A").build();
+        AppendLogEntriesResultMessage message = AppendLogEntriesResultMessage.builder().lastLogIndex(1).sourceId("A")
+            .success(true).term(1).build();
         UnpooledByteBufAllocator allocator = new UnpooledByteBufAllocator(true);
         ByteBuf byteBuf = allocator.directBuffer();
         long begin = System.nanoTime();
         IntStream.range(0, 10000).forEach(index -> {
-            factory.getBytes(message, byteBuf);
+            factory.getBytes(message,  byteBuf);
             byteBuf.clear();
         });
         log.info("serialize 10000 times cost {} ns.", System.nanoTime() - begin);

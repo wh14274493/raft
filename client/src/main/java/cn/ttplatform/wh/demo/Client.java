@@ -114,7 +114,8 @@ public class Client {
         String v = value.substring(0, 150);
         String id = UUID.randomUUID().toString();
         log.info("start at {}", System.nanoTime());
-        IntStream.range(0, 150000).forEach(index -> channel.write(SetCommand.builder().id(id + index).entry(new Entry("test" + index, v + index)).build()));
+        //284354  141942
+        IntStream.range(0, 100000).forEach(index -> channel.write(SetCommand.builder().id(id + index).entry(new Entry("test" + index, v + index)).build()));
 
 //        log.info("start at {}", System.nanoTime());
 //        IntStream.range(0, 100000).forEach(index -> {

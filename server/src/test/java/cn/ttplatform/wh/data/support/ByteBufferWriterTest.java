@@ -1,4 +1,4 @@
-package cn.ttplatform.wh.core.data.tool;
+package cn.ttplatform.wh.data.support;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

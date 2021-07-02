@@ -1,15 +1,13 @@
 package cn.ttplatform.wh.data.snapshot;
 
+import cn.ttplatform.wh.data.support.SnapshotFileMetadataRegion;
 import cn.ttplatform.wh.data.support.SyncFileOperator;
-import cn.ttplatform.wh.exception.SnapshotParseException;
 import cn.ttplatform.wh.support.Pool;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.nio.ByteBuffer;
-
-import static cn.ttplatform.wh.data.snapshot.Snapshot.SnapshotHeader.*;
 
 /**
  * @author Wang Hao
@@ -23,23 +21,21 @@ public class Snapshot {
     private final SyncFileOperator fileOperator;
     private SnapshotHeader snapshotHeader;
     private final Pool<ByteBuffer> byteBufferPool;
+    private final SnapshotFileMetadataRegion snapshotFileMetadataRegion;
 
-    public Snapshot(File file, Pool<ByteBuffer> byteBufferPool) {
-        this.fileOperator = new SyncFileOperator(file, byteBufferPool, SnapshotHeader.BYTES);
+    public Snapshot(File file, SnapshotFileMetadataRegion snapshotFileMetadataRegion, Pool<ByteBuffer> byteBufferPool) {
+        this.snapshotFileMetadataRegion = snapshotFileMetadataRegion;
+        this.fileOperator = new SyncFileOperator(file, byteBufferPool, snapshotFileMetadataRegion);
         this.byteBufferPool = byteBufferPool;
         initialize();
     }
 
     public void initialize() {
         if (!fileOperator.isEmpty()) {
-            long fileSize = fileOperator.readLongFromHeader(FILE_SIZE_FIELD_POSITION);
-            if (fileSize > fileOperator.size()) {
-                throw new SnapshotParseException("read an incomplete log snapshot file.");
-            }
             snapshotHeader = SnapshotHeader.builder()
-                    .fileSize(fileSize)
-                    .lastIncludeIndex(fileOperator.readIntFromHeader(LAST_INCLUDE_INDEX_FIELD_POSITION))
-                    .lastIncludeTerm(fileOperator.readIntFromHeader(LAST_INCLUDE_TERM_FIELD_POSITION))
+                    .fileSize(snapshotFileMetadataRegion.getFileSize())
+                    .lastIncludeIndex(snapshotFileMetadataRegion.getLastIncludeIndex())
+                    .lastIncludeTerm(snapshotFileMetadataRegion.getLastIncludeTerm())
                     .build();
         } else {
             snapshotHeader = new SnapshotHeader();
@@ -68,8 +64,9 @@ public class Snapshot {
     }
 
     public ByteBuffer read() {
-        ByteBuffer byteBuffer = byteBufferPool.allocate(snapshotHeader.getContentLength());
-        fileOperator.readBytes(SnapshotHeader.BYTES, byteBuffer, snapshotHeader.getContentLength());
+        int fileSize = (int) snapshotHeader.getFileSize();
+        ByteBuffer byteBuffer = byteBufferPool.allocate(fileSize);
+        fileOperator.readBytes(0, byteBuffer, fileSize);
         return byteBuffer;
     }
 
@@ -88,35 +85,6 @@ public class Snapshot {
 
     public void close() {
         fileOperator.close();
-    }
-
-    @Getter
-    @Builder
-    @AllArgsConstructor
-    @NoArgsConstructor
-    static class SnapshotHeader {
-
-        /**
-         * fileSize(8 bytes) + lastIncludeIndex(4 bytes) + lastIncludeTerm(4 bytes) = 16
-         */
-        public static final int BYTES = 8 + 4 + 4;
-        public static final long FILE_SIZE_FIELD_POSITION = 0L;
-        public static final long LAST_INCLUDE_INDEX_FIELD_POSITION = 8L;
-        public static final long LAST_INCLUDE_TERM_FIELD_POSITION = 12L;
-        private long fileSize;
-        private int lastIncludeIndex;
-        private int lastIncludeTerm;
-
-        public void reset() {
-            lastIncludeIndex = 0;
-            lastIncludeTerm = 0;
-            fileSize = BYTES;
-        }
-
-        public int getContentLength() {
-            return (int) (fileSize - BYTES);
-        }
-
     }
 
 }

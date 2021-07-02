@@ -105,7 +105,7 @@ public class GlobalContext {
     private final Pool<ByteBuffer> byteBufferPool;
     private final CommonDistributor distributor;
     private final DistributableFactoryRegistry factoryManager;
-    private final ThreadPoolExecutor snapshotGenerateExecutor;
+    private final ThreadPoolExecutor subTaskExecutor;
     private final ThreadPoolExecutor executor;
     private final NioEventLoopGroup boss;
     private final NioEventLoopGroup worker;
@@ -141,13 +141,13 @@ public class GlobalContext {
                 TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(),
                 new NamedThreadFactory("core-"));
-        this.snapshotGenerateExecutor = new ThreadPoolExecutor(
+        this.subTaskExecutor = new ThreadPoolExecutor(
                 0,
                 1,
-                60L,
+                30L,
                 TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(1),
-                new NamedThreadFactory("snapshotTask-"),
+                new ArrayBlockingQueue<>(2),
+                new NamedThreadFactory("subTask-"),
                 (r, e) -> logger.error("There is currently an executing task, reject this operation."));
         this.boss = new NioEventLoopGroup(properties.getBossThreads());
         this.worker = new NioEventLoopGroup(properties.getWorkerThreads());
@@ -321,7 +321,7 @@ public class GlobalContext {
         if (dataManager.shouldGenerateSnapshot(properties.getSnapshotGenerateThreshold())) {
             boolean result = stateMachine.startGenerating();
             if (result) {
-                snapshotGenerateExecutor.execute(new GenerateSnapshotTask(this, stateMachine.getApplied()));
+                subTaskExecutor.execute(new GenerateSnapshotTask(this, stateMachine.getApplied()));
             } else {
                 // Perhaps the threshold for log snapshot generation should be appropriately increased
                 logger.debug("There is currently an executing task, reject this operation.");
@@ -462,7 +462,7 @@ public class GlobalContext {
     }
 
     public void close() {
-        snapshotGenerateExecutor.shutdownNow();
+        subTaskExecutor.shutdownNow();
         dataManager.close();
         if (executor != null) {
             executor.shutdown();

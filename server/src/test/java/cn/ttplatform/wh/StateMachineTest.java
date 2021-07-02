@@ -1,4 +1,4 @@
-package cn.ttplatform.wh.core;
+package cn.ttplatform.wh;
 
 import cn.ttplatform.wh.StateMachine;
 import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;

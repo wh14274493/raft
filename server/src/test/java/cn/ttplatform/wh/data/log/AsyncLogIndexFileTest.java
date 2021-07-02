@@ -2,6 +2,7 @@ package cn.ttplatform.wh.data.log;
 
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.data.FileConstant;
+import cn.ttplatform.wh.data.support.LogIndexFileMetadataRegion;
 import cn.ttplatform.wh.support.DirectByteBufferPool;
 import cn.ttplatform.wh.support.Pool;
 import lombok.extern.slf4j.Slf4j;
@@ -28,9 +29,10 @@ public class AsyncLogIndexFileTest {
     @Before
     public void setUp() throws Exception {
         bufferPool = new DirectByteBufferPool(10, 1024 * 1024, 10 * 1024 * 1024);
-        File file = File.createTempFile("temp-", "logIndexBuffer");
-//        File file = new File("D:\\workspace\\java\\raft\\server\\src\\test\\resources\\log.index");
-        asyncLogIndexFile = new AsyncLogIndexFile(file, new ServerProperties(), bufferPool, 0);
+        File file = File.createTempFile("AsyncLogIndexFileTest-", ".txt");
+        File metaFile = File.createTempFile("AsyncLogIndexMetaFileTest-", ".txt");
+        LogIndexFileMetadataRegion logIndexFileMetadataRegion = new LogIndexFileMetadataRegion(metaFile);
+        asyncLogIndexFile = new AsyncLogIndexFile(file, new ServerProperties(), bufferPool, 0, logIndexFileMetadataRegion);
     }
 
     @After
@@ -40,31 +42,31 @@ public class AsyncLogIndexFileTest {
 
     @Test
     public void getLastLogMetaData() {
-        asyncLogIndexFile.append(LogFactory.createEntry(1, 1, 1, new byte[0]), FileConstant.LOG_INDEX_FILE_HEADER_SIZE);
+        asyncLogIndexFile.append(LogFactory.createEntry(1, 1, 1, new byte[0]), 0);
         LogIndex lastEntryIndex = asyncLogIndexFile.getLastLogMetaData();
         assertEquals(1, asyncLogIndexFile.getMinIndex());
         assertEquals(1, asyncLogIndexFile.getMaxIndex());
         assertEquals(1, lastEntryIndex.getIndex());
         assertEquals(1, lastEntryIndex.getTerm());
         assertEquals(1, lastEntryIndex.getType());
-        assertEquals(FileConstant.LOG_INDEX_FILE_HEADER_SIZE, lastEntryIndex.getOffset());
+        assertEquals(0, lastEntryIndex.getOffset());
     }
 
     @Test
     public void getLogMetaData() {
-        asyncLogIndexFile.append(LogFactory.createEntry(1, 1, 1, new byte[0]), FileConstant.LOG_INDEX_FILE_HEADER_SIZE);
+        asyncLogIndexFile.append(LogFactory.createEntry(1, 1, 1, new byte[0]), 0);
         LogIndex entryMetaData = asyncLogIndexFile.getLogMetaData(1);
         assertEquals(1, entryMetaData.getIndex());
-        assertEquals(FileConstant.LOG_INDEX_FILE_HEADER_SIZE, entryMetaData.getOffset());
+        assertEquals(0, entryMetaData.getOffset());
         entryMetaData = asyncLogIndexFile.getLogMetaData(2);
         assertNull(entryMetaData);
     }
 
     @Test
     public void getEntryOffset() {
-        asyncLogIndexFile.append(LogFactory.createEntry(1, 1, 1, new byte[0]), FileConstant.LOG_INDEX_FILE_HEADER_SIZE);
+        asyncLogIndexFile.append(LogFactory.createEntry(1, 1, 1, new byte[0]),0);
         long entryOffset = asyncLogIndexFile.getLogOffset(1);
-        assertEquals(FileConstant.LOG_INDEX_FILE_HEADER_SIZE, entryOffset);
+        assertEquals(0, entryOffset);
         entryOffset = asyncLogIndexFile.getLogOffset(2);
         assertEquals(-1, entryOffset);
     }

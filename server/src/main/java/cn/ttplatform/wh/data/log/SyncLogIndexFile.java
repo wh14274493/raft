@@ -1,6 +1,7 @@
 package cn.ttplatform.wh.data.log;
 
 import cn.ttplatform.wh.data.support.Bits;
+import cn.ttplatform.wh.data.support.LogIndexFileMetadataRegion;
 import cn.ttplatform.wh.data.support.SyncFileOperator;
 import cn.ttplatform.wh.exception.IncorrectLogIndexNumberException;
 import cn.ttplatform.wh.support.LRU;
@@ -14,8 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static cn.ttplatform.wh.data.FileConstant.LOG_INDEX_FILE_HEADER_SIZE;
-
 /**
  * @author Wang Hao
  * @date 2020/7/1 下午10:13
@@ -26,11 +25,13 @@ public final class SyncLogIndexFile implements LogIndexOperation {
     private final LogIndexCache logIndexCache;
     private final Pool<ByteBuffer> byteBufferPool;
     private final SyncFileOperator fileOperator;
+    private LogIndexFileMetadataRegion logIndexFileMetadataRegion;
     private int minIndex;
     private int maxIndex;
 
-    public SyncLogIndexFile(File file, Pool<ByteBuffer> byteBufferPool, int lastIncludeIndex) {
-        this.fileOperator = new SyncFileOperator(file, byteBufferPool, LOG_INDEX_FILE_HEADER_SIZE);
+    public SyncLogIndexFile(File file, LogIndexFileMetadataRegion logIndexFileMetadataRegion, Pool<ByteBuffer> byteBufferPool, int lastIncludeIndex) {
+        this.logIndexFileMetadataRegion = logIndexFileMetadataRegion;
+        this.fileOperator = new SyncFileOperator(file, byteBufferPool, logIndexFileMetadataRegion);
         this.logIndexCache = new LogIndexCache(100);
         this.byteBufferPool = byteBufferPool;
         this.minIndex = lastIncludeIndex;
@@ -43,7 +44,7 @@ public final class SyncLogIndexFile implements LogIndexOperation {
         if (!isEmpty()) {
             ByteBuffer byteBuffer = byteBufferPool.allocate(LogIndex.BYTES);
             try {
-                this.fileOperator.readBytes(LOG_INDEX_FILE_HEADER_SIZE, byteBuffer, LogIndex.BYTES);
+                this.fileOperator.readBytes(0, byteBuffer, LogIndex.BYTES);
                 this.minIndex = Bits.getInt(byteBuffer);
                 logIndexCache.put(minIndex, LogIndex.builder().index(minIndex).term(Bits.getInt(byteBuffer))
                         .type(Bits.getInt(byteBuffer)).offset(Bits.getLong(byteBuffer)).build());
@@ -65,7 +66,7 @@ public final class SyncLogIndexFile implements LogIndexOperation {
         }
         ByteBuffer byteBuffer = byteBufferPool.allocate(LogIndex.BYTES);
         try {
-            long position = (long) (index - minIndex) * LogIndex.BYTES + LOG_INDEX_FILE_HEADER_SIZE;
+            long position = (long) (index - minIndex) * LogIndex.BYTES;
             fileOperator.readBytes(position, byteBuffer, LogIndex.BYTES);
             return LogIndex.builder().index(Bits.getInt(byteBuffer)).term(Bits.getInt(byteBuffer)).type(Bits.getInt(byteBuffer))
                     .offset(Bits.getLong(byteBuffer)).build();
@@ -164,16 +165,24 @@ public final class SyncLogIndexFile implements LogIndexOperation {
     @Override
     public void removeAfter(int index) {
         if (index < minIndex) {
-            fileOperator.truncate(LOG_INDEX_FILE_HEADER_SIZE);
+            fileOperator.truncate(0);
             logIndexCache.clear();
             minIndex = 0;
             maxIndex = 0;
         } else if (index < maxIndex) {
-            long position = (long) (index - minIndex + 1) * LogIndex.BYTES + LOG_INDEX_FILE_HEADER_SIZE;
+            long position = (long) (index - minIndex + 1) * LogIndex.BYTES;
             fileOperator.truncate(position);
             logIndexCache.removeAfter(index);
             maxIndex = index;
         }
+    }
+
+    @Override
+    public void exchangeLogFileMetadataRegion(LogIndexFileMetadataRegion logIndexFileMetadataRegion) {
+        logIndexFileMetadataRegion.write(this.logIndexFileMetadataRegion.read());
+        this.logIndexFileMetadataRegion.clear();
+        this.logIndexFileMetadataRegion = logIndexFileMetadataRegion;
+        fileOperator.changeFileHeaderOperator(logIndexFileMetadataRegion);
     }
 
     @Override

@@ -18,9 +18,9 @@ public class PriorityFlushStrategy implements FlushStrategy {
     private final ScheduledThreadPoolExecutor executor;
     private final TreeSet<AsyncFileOperator.Block> blocks;
 
-    public PriorityFlushStrategy(long interval) {
+    public PriorityFlushStrategy(String prefix, long interval) {
         blocks = new TreeSet<>((o1, o2) -> (int) (o1.getStartOffset() - o2.getStartOffset()));
-        this.executor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("Priority-flush-"));
+        this.executor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory(prefix + "-flush-"));
         executor.scheduleAtFixedRate(() -> {
             if (blocks.isEmpty()) {
                 log.debug("There are currently no tasks to be processed.");
@@ -37,7 +37,6 @@ public class PriorityFlushStrategy implements FlushStrategy {
             }
             if (block.dirty()) {
                 block.flush();
-                log.info("async flush a dirty block[{}].", block);
             }
         }, interval, interval, TimeUnit.MILLISECONDS);
     }
@@ -61,7 +60,6 @@ public class PriorityFlushStrategy implements FlushStrategy {
             }
             if (block != null && block.dirty()) {
                 block.flush();
-                log.info("sync flush a dirty block[{}].", block);
             }
         }
         executor.shutdown();
