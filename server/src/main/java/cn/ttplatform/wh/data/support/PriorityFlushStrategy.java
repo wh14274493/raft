@@ -23,16 +23,13 @@ public class PriorityFlushStrategy implements FlushStrategy {
         this.executor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory(prefix + "-flush-"));
         executor.scheduleAtFixedRate(() -> {
             if (blocks.isEmpty()) {
-                log.debug("There are currently no tasks to be processed.");
                 return;
             }
             AsyncFileOperator.Block block;
-            log.debug("flush task begin.");
             synchronized (blocks) {
                 block = blocks.pollFirst();
             }
             if (block == null) {
-                log.debug("There are currently no tasks to be processed.");
                 return;
             }
             if (block.dirty()) {

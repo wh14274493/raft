@@ -2,8 +2,9 @@ package cn.ttplatform.wh.data.log;
 
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.data.FileConstant;
-import cn.ttplatform.wh.data.support.LogFileMetadataRegion;
+import cn.ttplatform.wh.data.index.LogIndex;
 import cn.ttplatform.wh.support.DirectByteBufferPool;
+import cn.ttplatform.wh.support.HeapByteBufferPool;
 import cn.ttplatform.wh.support.Pool;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
@@ -32,7 +33,7 @@ public class AsyncLogFileTest {
 
     @Before
     public void setUp() throws Exception {
-        bufferPool = new DirectByteBufferPool(10, 1024 * 1024, 10 * 1024 * 1024);
+        bufferPool = new HeapByteBufferPool(10, 1024 * 1024, 10 * 1024 * 1024);
         File file = File.createTempFile("AsyncLogFile-", ".txt");
         File metaFile = File.createTempFile("AsyncLogMetaFile-", ".txt");
         this.logFileMetadataRegion = FileConstant.getLogFileMetadataRegion(metaFile);
@@ -59,8 +60,7 @@ public class AsyncLogFileTest {
         byte[] content = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
         int capacity = 100000;
         List<Log> logEntries = new ArrayList<>(capacity);
-        IntStream.range(0, capacity)
-                .forEach(index -> logEntries.add(LogFactory.createEntry(1, 1, index + 1, content)));
+        IntStream.range(0, capacity).forEach(index -> logEntries.add(LogFactory.createEntry(1, 1, index + 1, content)));
         long begin = System.nanoTime();
         long[] append = asyncLogFile.append(logEntries);
         log.info("append {} logs cost {} ns", capacity, System.nanoTime() - begin);

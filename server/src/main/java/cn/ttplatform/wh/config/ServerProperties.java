@@ -123,13 +123,23 @@ public class ServerProperties {
      */
     private int byteBufferSizeLimit;
 
-    private int blockCacheSize;
+    private boolean synLogFlush;
 
+    /**
+     * only used when synLogFlush is false
+     */
+    private int blockCacheSize;
+    /**
+     * only used when synLogFlush is false
+     */
     private int blockSize;
+    /**
+     * only used when synLogFlush is false
+     */
+    private long blockFlushInterval;
 
     private int logIndexCacheSize;
 
-    private long blockFlushInterval;
 
     public ServerProperties(String configPath) {
         Properties properties = new Properties();
@@ -172,7 +182,7 @@ public class ServerProperties {
         maxElectionTimeout = Integer.parseInt(properties.getProperty("maxElectionTimeout", "4000"));
         logReplicationDelay = Long.parseLong(properties.getProperty("logReplicationDelay", "1000"));
         logReplicationInterval = Long.parseLong(properties.getProperty("logReplicationInterval", "1000"));
-        retryTimeout = Long.parseLong(properties.getProperty("retryTimeout", "800"));
+        retryTimeout = Long.parseLong(properties.getProperty("retryTimeout", "900"));
         base = new File(properties.getProperty("basePath", System.getProperty("user.home")));
         snapshotGenerateThreshold = Integer.parseInt(properties.getProperty("snapshotGenerateThreshold", String.valueOf(1024 * 1024 * 10)));
         maxTransferLogs = Integer.parseInt(properties.getProperty("maxTransferLogs", "10000"));
@@ -184,10 +194,11 @@ public class ServerProperties {
         readWriteFileStrategy = properties.getProperty("readWriteFileStrategy", "direct access");
         byteBufferPoolSize = Integer.parseInt(properties.getProperty("byteBufferPoolSize", "10"));
         byteBufferSizeLimit = Integer.parseInt(properties.getProperty("byteBufferSizeLimit", String.valueOf(1024 * 1024 * 10)));
+        synLogFlush = Boolean.parseBoolean(properties.getProperty("synLogFlush", "false"));
         blockCacheSize = Integer.parseInt(properties.getProperty("blockCacheSize", "50"));
         blockSize = Integer.parseInt(properties.getProperty("blockCacheSize", String.valueOf(1024 * 1024)));
-        logIndexCacheSize = Integer.parseInt(properties.getProperty("logIndexCacheSize", "100"));
         blockFlushInterval = Long.parseLong(properties.getProperty("blockFlushInterval", "1000"));
+        logIndexCacheSize = Integer.parseInt(properties.getProperty("logIndexCacheSize", "100"));
     }
 
 }

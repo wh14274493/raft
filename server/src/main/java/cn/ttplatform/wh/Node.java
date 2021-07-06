@@ -199,28 +199,32 @@ public class Node {
         private static final int TERM_POSITION = 4;
         private static final int VOTE_TO_POSITION = 8;
         private final MappedByteBuffer mappedByteBuffer;
-        private final FileChannel fileChannel;
         private int spaceSize;
+        private int term;
+        private String voteTo;
 
         public NodeState() {
-            try {
-                File stateFile = new File(properties.getBase(), METADATA_FILE_NAME);
-                this.fileChannel = FileChannel.open(stateFile.toPath(), READ, WRITE, CREATE, DSYNC);
+            File stateFile = new File(properties.getBase(), METADATA_FILE_NAME);
+            try (FileChannel fileChannel = FileChannel.open(stateFile.toPath(), READ, WRITE, CREATE, DSYNC)) {
                 this.mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_WRITE, NODE_STATE_SPACE_POSITION, NODE_STATE_SPACE_SIZE);
                 this.spaceSize = mappedByteBuffer.getInt();
                 if (spaceSize < VOTE_TO_POSITION) {
-                    spaceSize = VOTE_TO_POSITION;
-                    updateFileSize();
+                    updateSpaceSize(VOTE_TO_POSITION - spaceSize);
                 }
+                this.term = mappedByteBuffer.getInt(TERM_POSITION);
+                this.voteTo = getVoteTo();
             } catch (IOException e) {
-                throw new OperateFileException("open file channel error.", e);
+                throw new OperateFileException(String.format("failed to map a memory region[%d,%d].", 0, NODE_STATE_SPACE_SIZE - 1), e);
             }
 
         }
 
-        private void updateFileSize() {
-            mappedByteBuffer.position(SIZE_POSITION);
-            mappedByteBuffer.putInt(spaceSize);
+        private void updateSpaceSize(int increment) {
+            if (increment == 0) {
+                return;
+            }
+            spaceSize += increment;
+            mappedByteBuffer.putInt(SIZE_POSITION, spaceSize);
         }
 
         /**
@@ -229,8 +233,8 @@ public class Node {
          * @param term Current node's term
          */
         public void setCurrentTerm(int term) {
-            mappedByteBuffer.position(TERM_POSITION);
-            mappedByteBuffer.putInt(term);
+            mappedByteBuffer.putInt(TERM_POSITION, term);
+            this.term = term;
         }
 
         /**
@@ -239,8 +243,11 @@ public class Node {
          * @return currentTerm
          */
         public int getCurrentTerm() {
-            mappedByteBuffer.position(TERM_POSITION);
-            return mappedByteBuffer.getInt();
+            if (term != 0) {
+                return term;
+            }
+            term = mappedByteBuffer.getInt(TERM_POSITION);
+            return term;
         }
 
         /**
@@ -259,8 +266,9 @@ public class Node {
             }
             mappedByteBuffer.position(VOTE_TO_POSITION);
             mappedByteBuffer.put(voteToBytes);
-            spaceSize = Math.max(spaceSize, VOTE_TO_POSITION + voteToBytes.length);
-            updateFileSize();
+            int newSpaceSize = Math.max(spaceSize, VOTE_TO_POSITION + voteToBytes.length);
+            updateSpaceSize(newSpaceSize - spaceSize);
+            this.voteTo = voteTo;
         }
 
         /**
@@ -269,25 +277,18 @@ public class Node {
          * @return the node id that vote for
          */
         public String getVoteTo() {
-            if (spaceSize <= VOTE_TO_POSITION) {
-                return null;
+            if (voteTo != null) {
+                return voteTo;
             }
-            mappedByteBuffer.position(VOTE_TO_POSITION);
             byte[] voteToBytes = new byte[spaceSize - VOTE_TO_POSITION];
+            mappedByteBuffer.position(VOTE_TO_POSITION);
             mappedByteBuffer.get(voteToBytes);
-            return new String(voteToBytes, StandardCharsets.UTF_8);
+            voteTo = new String(voteToBytes, StandardCharsets.UTF_8);
+            return voteTo;
         }
 
         public void close() {
             mappedByteBuffer.force();
-            try {
-                if (fileChannel.isOpen()) {
-                    fileChannel.close();
-                }
-            } catch (IOException e) {
-                throw new OperateFileException("close a file channel error");
-            }
         }
-
     }
 }

@@ -72,16 +72,6 @@ public class MetadataRegion {
         return region.getLong((int) position);
     }
 
-    public ByteBuffer read() {
-        return region;
-    }
-
-    public void write(ByteBuffer byteBuffer) {
-        byteBuffer.position(0);
-        region.position(0);
-        region.put(byteBuffer);
-    }
-
     public void force() {
         region.force();
     }

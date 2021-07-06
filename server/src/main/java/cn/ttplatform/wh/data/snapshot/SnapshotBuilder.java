@@ -1,7 +1,6 @@
 package cn.ttplatform.wh.data.snapshot;
 
 import cn.ttplatform.wh.data.FileConstant;
-import cn.ttplatform.wh.data.support.SnapshotFileMetadataRegion;
 import cn.ttplatform.wh.data.support.SyncFileOperator;
 import cn.ttplatform.wh.exception.OperateFileException;
 import cn.ttplatform.wh.support.Pool;
@@ -49,11 +48,11 @@ public class SnapshotBuilder {
             throw new OperateFileException("failed to delete or create file.", e);
         }
         generatingSnapshotFileMetadataRegion.clear();
-        this.fileOperator = new SyncFileOperator(file, byteBufferPool, generatingSnapshotFileMetadataRegion);
+        this.fileOperator = new SyncFileOperator(file, byteBufferPool);
     }
 
     public long getInstallOffset() {
-        return fileOperator.size();
+        return generatingSnapshotFileMetadataRegion.getFileSize();
     }
 
     public void append(byte[] chunk) {
@@ -61,11 +60,9 @@ public class SnapshotBuilder {
             log.debug("chunk size is 0.");
             return;
         }
-        fileOperator.append(chunk, chunk.length);
-    }
-
-    public void append(ByteBuffer chunk, int length) {
-        fileOperator.append(chunk, length);
+        long fileSize = generatingSnapshotFileMetadataRegion.getFileSize();
+        fileOperator.append(fileSize, chunk, chunk.length);
+        generatingSnapshotFileMetadataRegion.recordFileSize(fileSize + chunk.length);
     }
 
     public File getFile() {

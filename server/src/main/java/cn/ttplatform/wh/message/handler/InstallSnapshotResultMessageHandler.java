@@ -57,13 +57,11 @@ public class InstallSnapshotResultMessageHandler extends AbstractDistributableHa
             } else {
                 long snapshotOffset = message.getOffset();
                 endpoint.setSnapshotOffset(snapshotOffset);
-                installSnapshotMessage = context.getDataManager().createInstallSnapshotMessage(currentTerm, snapshotOffset,
-                    context.getProperties().getMaxTransferSize());
+                installSnapshotMessage = context.getDataManager().createInstallSnapshotMessage(currentTerm, snapshotOffset, context.getProperties().getMaxTransferSize());
             }
         } else {
             endpoint.setSnapshotOffset(0L);
-            installSnapshotMessage = context.getDataManager()
-                .createInstallSnapshotMessage(currentTerm, 0L, context.getProperties().getMaxTransferSize());
+            installSnapshotMessage = context.getDataManager().createInstallSnapshotMessage(currentTerm, 0L, context.getProperties().getMaxTransferSize());
         }
 
         context.sendMessage(installSnapshotMessage, endpoint);

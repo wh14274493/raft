@@ -201,7 +201,7 @@ public class Cluster {
         }
         for (Entry<String, Endpoint> entry : newConfigMap.entrySet()) {
             if (!selfId.equals(entry.getKey()) && entry.getValue().getMatchIndex() < logSynCompleteState) {
-                log.info("log syn is uncompleted, entry is {}, logSynCompleteState is {}.", entry, logSynCompleteState);
+                log.info("log syn is uncompleted, node is {}, logSynCompleteState is {}.", entry, logSynCompleteState);
                 return false;
             }
         }
@@ -214,7 +214,7 @@ public class Cluster {
             throw new UnsupportedOperationException(String.format(ErrorMessage.NOT_SYNCING_PHASE, phase));
         }
         boolean res = newConfigMap.containsKey(nodeId) && !endpointMap.containsKey(nodeId);
-        log.info("{} is syncing node, return {}", nodeId, res);
+        log.info("{} is syncing node", nodeId);
         return res;
     }
 

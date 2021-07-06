@@ -13,10 +13,12 @@ import io.netty.channel.ChannelPromise;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -89,7 +91,7 @@ public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
             }
             log.info("current role is not a leader, redirect request to node[id={}]", leaderId);
             ctx.channel().writeAndFlush(RedirectCommand.builder().id(command.getId()).leader(leaderId)
-                .endpointMetaData(context.getCluster().getAllEndpointMetaData().toString()).build());
+                    .endpointMetaData(context.getCluster().getAllEndpointMetaData().toString()).build());
             return false;
         }
         return true;
@@ -115,8 +117,8 @@ public class CoreDuplexChannelHandler extends ChannelDuplexHandler {
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {
-            ctx.channel().close();
             log.info("fire IdleStateEvent[{}].", evt);
+            ctx.channel().close();
         } else {
             log.info("fire Event[{}].", evt);
             super.userEventTriggered(ctx, evt);

@@ -1,7 +1,6 @@
 package cn.ttplatform.wh.data.log;
 
 import cn.ttplatform.wh.data.support.Bits;
-import cn.ttplatform.wh.data.support.LogFileMetadataRegion;
 import cn.ttplatform.wh.data.support.SyncFileOperator;
 import cn.ttplatform.wh.support.Pool;
 import lombok.extern.slf4j.Slf4j;
@@ -25,13 +24,13 @@ public class SyncLogFile implements LogOperation {
 
     public SyncLogFile(File file, Pool<ByteBuffer> byteBufferPool, LogFileMetadataRegion logFileMetadataRegion) {
         this.logFileMetadataRegion = logFileMetadataRegion;
-        this.fileOperator = new SyncFileOperator(file, byteBufferPool, logFileMetadataRegion);
+        this.fileOperator = new SyncFileOperator(file, byteBufferPool);
         this.byteBufferPool = byteBufferPool;
     }
 
     @Override
     public long append(Log log) {
-        long offset = fileOperator.size();
+        long offset = logFileMetadataRegion.getFileSize();
         byte[] command = log.getCommand();
         int length = LOG_HEADER_SIZE + command.length;
         ByteBuffer byteBuffer = byteBufferPool.allocate(length);
@@ -41,7 +40,8 @@ public class SyncLogFile implements LogOperation {
             Bits.putInt(log.getType(), byteBuffer);
             Bits.putInt(command.length, byteBuffer);
             byteBuffer.put(command);
-            fileOperator.append(byteBuffer, length);
+            fileOperator.append(offset, byteBuffer, length);
+            logFileMetadataRegion.recordFileSize(offset + length);
         } finally {
             byteBufferPool.recycle(byteBuffer);
         }
@@ -50,8 +50,8 @@ public class SyncLogFile implements LogOperation {
 
     @Override
     public long[] append(List<Log> logs) {
+        long base = logFileMetadataRegion.getFileSize();
         long[] offsets = new long[logs.size()];
-        long base = fileOperator.size();
         long offset = base;
         for (int i = 0; i < logs.size(); i++) {
             offsets[i] = offset;
@@ -68,7 +68,8 @@ public class SyncLogFile implements LogOperation {
                 Bits.putInt(command.length, byteBuffer);
                 byteBuffer.put(command);
             }
-            fileOperator.append(byteBuffer, contentLength);
+            fileOperator.append(base, byteBuffer, contentLength);
+            logFileMetadataRegion.recordFileSize(offset);
         } finally {
             byteBufferPool.recycle(byteBuffer);
         }
@@ -77,7 +78,9 @@ public class SyncLogFile implements LogOperation {
 
     @Override
     public void append(ByteBuffer byteBuffer, int length) {
-        fileOperator.append(byteBuffer, length);
+        long fileSize = logFileMetadataRegion.getFileSize();
+        fileOperator.append(fileSize, byteBuffer, length);
+        logFileMetadataRegion.recordFileSize(fileSize + length);
     }
 
     /**
@@ -89,7 +92,7 @@ public class SyncLogFile implements LogOperation {
      */
     @Override
     public Log getLog(long start, long end) {
-        long size = fileOperator.size();
+        long size = logFileMetadataRegion.getFileSize();
         if (start >= size || start == end) {
             log.debug("can not load a log from offset[{}] to offset[{}].", start, end);
             return null;
@@ -152,7 +155,7 @@ public class SyncLogFile implements LogOperation {
     @Override
     public ByteBuffer[] read() {
         int position = 0;
-        int fileSize = (int) fileOperator.size();
+        int fileSize = (int) logFileMetadataRegion.getFileSize();
         int size = fileSize % MAX_CHUNK_SIZE == 0 ? fileSize / MAX_CHUNK_SIZE : fileSize / MAX_CHUNK_SIZE + 1;
         ByteBuffer[] buffers = new ByteBuffer[size];
         int index = 0;
@@ -168,7 +171,7 @@ public class SyncLogFile implements LogOperation {
 
     @Override
     public void transferTo(long offset, LogOperation dst) {
-        long fileSize = fileOperator.size();
+        long fileSize = logFileMetadataRegion.getFileSize();
         int contentLength = (int) (fileSize - offset);
         ByteBuffer byteBuffer = byteBufferPool.allocate(contentLength);
         try {
@@ -181,18 +184,16 @@ public class SyncLogFile implements LogOperation {
 
     @Override
     public void exchangeLogFileMetadataRegion(LogFileMetadataRegion logFileMetadataRegion) {
-        logFileMetadataRegion.write(this.logFileMetadataRegion.read());
+        logFileMetadataRegion.recordFileSize(this.logFileMetadataRegion.getFileSize());
         this.logFileMetadataRegion.clear();
         this.logFileMetadataRegion = logFileMetadataRegion;
-        fileOperator.changeFileHeaderOperator(logFileMetadataRegion);
     }
 
     @Override
     public void removeAfter(long offset) {
-        if (offset <= 0) {
-            fileOperator.truncate(0);
-        }
+        offset = Math.max(offset, 0);
         fileOperator.truncate(offset);
+        logFileMetadataRegion.recordFileSize(offset);
     }
 
     @Override
@@ -202,11 +203,11 @@ public class SyncLogFile implements LogOperation {
 
     @Override
     public long size() {
-        return fileOperator.size();
+        return logFileMetadataRegion.getFileSize();
     }
 
     @Override
     public boolean isEmpty() {
-        return fileOperator.isEmpty();
+        return logFileMetadataRegion.getFileSize() == 0;
     }
 }

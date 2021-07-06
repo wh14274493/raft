@@ -1,4 +1,4 @@
-package cn.ttplatform.wh.data.log;
+package cn.ttplatform.wh.data.index;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

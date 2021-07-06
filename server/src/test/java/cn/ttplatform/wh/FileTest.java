@@ -285,4 +285,19 @@ public class FileTest {
 //        fileChannel.write(byteBuffer, 8);
 //        fileChannel.truncate(9);
 //    }
+
+    @Test
+    public void testCopy() {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(5);
+        ByteBuffer byteBuffer1 = ByteBuffer.allocate(5);
+        while (byteBuffer.hasRemaining()) {
+            byteBuffer.put((byte) 1);
+        }
+        byteBuffer.position(0);
+        byteBuffer.limit(5);
+        byteBuffer1.position(0);
+        byteBuffer1.limit(5);
+        byteBuffer1.put(byteBuffer);
+        log.info(byteBuffer1.toString());
+    }
 }

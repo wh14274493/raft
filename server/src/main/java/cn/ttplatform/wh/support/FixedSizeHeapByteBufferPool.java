@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
  */
 public class FixedSizeHeapByteBufferPool extends AbstractFixedSizeByteBufferPool {
 
-    protected FixedSizeHeapByteBufferPool(int poolSize, int chunkSize) {
+    public FixedSizeHeapByteBufferPool(int poolSize, int chunkSize) {
         super(poolSize, chunkSize);
     }
 

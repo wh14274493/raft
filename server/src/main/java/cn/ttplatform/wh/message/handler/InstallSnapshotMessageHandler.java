@@ -5,9 +5,12 @@ import cn.ttplatform.wh.message.InstallSnapshotResultMessage;
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.GlobalContext;
 import cn.ttplatform.wh.role.Role;
+import cn.ttplatform.wh.role.RoleType;
 import cn.ttplatform.wh.support.AbstractDistributableHandler;
 import cn.ttplatform.wh.support.Distributable;
 import lombok.extern.slf4j.Slf4j;
+
+import static cn.ttplatform.wh.role.RoleType.LEADER;
 
 /**
  * @author Wang Hao
@@ -37,21 +40,17 @@ public class InstallSnapshotMessageHandler extends AbstractDistributableHandler 
         Role role = context.getNode().getRole();
         int currentTerm = role.getTerm();
         if (currentTerm > term) {
-            return InstallSnapshotResultMessage.builder()
-                .term(currentTerm).success(false)
-                .build();
+            return InstallSnapshotResultMessage.builder().term(currentTerm).success(false).build();
         }
         if (term > currentTerm) {
             return installSnapshot(message);
         }
-        switch (role.getType()) {
-            case LEADER:
-                log.warn("receive install snapshot message from another leader {}, ignore", message.getSourceId());
-                return null;
-            case CANDIDATE:
-            default:
-                return installSnapshot(message);
+        RoleType roleType = role.getType();
+        if (roleType == LEADER) {
+            log.warn("receive install snapshot message from another leader {}, ignore", message.getSourceId());
+            return null;
         }
+        return installSnapshot(message);
     }
 
     private InstallSnapshotResultMessage installSnapshot(InstallSnapshotMessage message) {
@@ -61,21 +60,21 @@ public class InstallSnapshotMessageHandler extends AbstractDistributableHandler 
             installRes = context.getDataManager().installSnapshot(message);
         } catch (UnsupportedOperationException e) {
             // means that maybe message is expired or leader had changed but the offset is incorrect.
-            return null;
+            log.error(e.getMessage());
+            return InstallSnapshotResultMessage.builder().term(message.getTerm()).success(false).build();
         }
         if (!installRes) {
-            return InstallSnapshotResultMessage.builder()
-                .term(message.getTerm()).success(false)
-                .build();
+            return InstallSnapshotResultMessage.builder().term(message.getTerm()).success(false).build();
         }
         if (message.isDone()) {
             log.info("install snapshot task is completed, then apply snapshot");
             context.applySnapshot(message.getLastIncludeIndex());
         }
         return InstallSnapshotResultMessage.builder()
-            .offset(message.getOffset() + message.getChunk().length)
-            .term(message.getTerm()).success(true)
-            .done(message.isDone())
-            .build();
+                .offset(message.getOffset() + message.getChunk().length)
+                .term(message.getTerm())
+                .done(message.isDone())
+                .success(true)
+                .build();
     }
 }

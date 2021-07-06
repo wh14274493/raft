@@ -1,6 +1,5 @@
 package cn.ttplatform.wh.data.snapshot;
 
-import cn.ttplatform.wh.data.support.SnapshotFileMetadataRegion;
 import cn.ttplatform.wh.data.support.SyncFileOperator;
 import cn.ttplatform.wh.support.Pool;
 import lombok.*;
@@ -19,68 +18,49 @@ import java.nio.ByteBuffer;
 public class Snapshot {
 
     private final SyncFileOperator fileOperator;
-    private SnapshotHeader snapshotHeader;
     private final Pool<ByteBuffer> byteBufferPool;
     private final SnapshotFileMetadataRegion snapshotFileMetadataRegion;
 
     public Snapshot(File file, SnapshotFileMetadataRegion snapshotFileMetadataRegion, Pool<ByteBuffer> byteBufferPool) {
         this.snapshotFileMetadataRegion = snapshotFileMetadataRegion;
-        this.fileOperator = new SyncFileOperator(file, byteBufferPool, snapshotFileMetadataRegion);
+        this.fileOperator = new SyncFileOperator(file, byteBufferPool);
         this.byteBufferPool = byteBufferPool;
-        initialize();
-    }
-
-    public void initialize() {
-        if (!fileOperator.isEmpty()) {
-            snapshotHeader = SnapshotHeader.builder()
-                    .fileSize(snapshotFileMetadataRegion.getFileSize())
-                    .lastIncludeIndex(snapshotFileMetadataRegion.getLastIncludeIndex())
-                    .lastIncludeTerm(snapshotFileMetadataRegion.getLastIncludeTerm())
-                    .build();
-        } else {
-            snapshotHeader = new SnapshotHeader();
-        }
     }
 
     public int getLastIncludeIndex() {
-        return snapshotHeader.getLastIncludeIndex();
+        return snapshotFileMetadataRegion.getLastIncludeIndex();
     }
 
     public int getLastIncludeTerm() {
-        return snapshotHeader.getLastIncludeTerm();
+        return snapshotFileMetadataRegion.getLastIncludeTerm();
     }
 
     public byte[] read(long offset, int length) {
-        if (fileOperator.isEmpty()) {
+        if (isEmpty()) {
             log.debug("snapshot file is empty.");
             return new byte[0];
         }
-        long fileSize = fileOperator.size();
+        long fileSize = snapshotFileMetadataRegion.getFileSize();
         if (offset > fileSize) {
-            throw new IllegalStateException("offset[" + offset + "] out of bound[" + fileSize + "]");
+            throw new IllegalStateException(String.format("offset[%d] out of bound[%d].", offset, fileSize));
         }
         length = Math.min(length, (int) (fileSize - offset));
         return fileOperator.readBytes(offset, length);
     }
 
     public ByteBuffer read() {
-        int fileSize = (int) snapshotHeader.getFileSize();
+        int fileSize = (int) snapshotFileMetadataRegion.getFileSize();
         ByteBuffer byteBuffer = byteBufferPool.allocate(fileSize);
         fileOperator.readBytes(0, byteBuffer, fileSize);
         return byteBuffer;
     }
 
     public boolean isEmpty() {
-        return fileOperator.isEmpty();
+        return snapshotFileMetadataRegion.getFileSize() == 0;
     }
 
     public long size() {
-        return fileOperator.size();
-    }
-
-    public void clear() {
-        fileOperator.truncate(SnapshotHeader.BYTES);
-        snapshotHeader.reset();
+        return snapshotFileMetadataRegion.getFileSize();
     }
 
     public void close() {

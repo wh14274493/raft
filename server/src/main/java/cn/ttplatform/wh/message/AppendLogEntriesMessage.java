@@ -2,12 +2,13 @@ package cn.ttplatform.wh.message;
 
 import cn.ttplatform.wh.constant.DistributableType;
 import cn.ttplatform.wh.data.log.Log;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+
+import java.util.List;
 
 /**
  * @author Wang Hao
@@ -21,7 +22,7 @@ import lombok.experimental.SuperBuilder;
 public class AppendLogEntriesMessage extends AbstractMessage {
 
     private int term;
-    private boolean matched;
+    private boolean matchComplete;
     private String leaderId;
     private int preLogIndex;
     private int preLogTerm;
@@ -29,8 +30,7 @@ public class AppendLogEntriesMessage extends AbstractMessage {
     private List<Log> logEntries;
 
     public int getLastIndex() {
-        return logEntries == null || logEntries.isEmpty() ? getPreLogIndex()
-            : logEntries.get(logEntries.size() - 1).getIndex();
+        return logEntries == null || logEntries.isEmpty() ? getPreLogIndex() : logEntries.get(logEntries.size() - 1).getIndex();
     }
 
     @Override
@@ -41,13 +41,13 @@ public class AppendLogEntriesMessage extends AbstractMessage {
     @Override
     public String toString() {
         return "AppendLogEntriesMessage{" +
-            "term=" + term +
-            ", matched=" + matched +
-            ", leaderId='" + leaderId + '\'' +
-            ", preLogIndex=" + preLogIndex +
-            ", preLogTerm=" + preLogTerm +
-            ", leaderCommitIndex=" + leaderCommitIndex +
-            ", logEntries=" + (logEntries == null ? 0 : logEntries.size()) +
-            '}';
+                "term=" + term +
+                ", matchComplete=" + matchComplete +
+                ", leaderId='" + leaderId + '\'' +
+                ", preLogIndex=" + preLogIndex +
+                ", preLogTerm=" + preLogTerm +
+                ", leaderCommitIndex=" + leaderCommitIndex +
+                ", logEntries=" + (logEntries == null ? 0 : logEntries.size()) +
+                '}';
     }
 }

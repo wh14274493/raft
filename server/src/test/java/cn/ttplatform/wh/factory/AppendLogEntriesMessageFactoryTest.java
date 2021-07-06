@@ -38,7 +38,7 @@ public class AppendLogEntriesMessageFactoryTest {
 
     @Test
     public void create() {
-        AppendLogEntriesMessage appendLogEntriesMessage = AppendLogEntriesMessage.builder().matched(true).preLogTerm(1)
+        AppendLogEntriesMessage appendLogEntriesMessage = AppendLogEntriesMessage.builder().matchComplete(true).preLogTerm(1)
             .preLogIndex(1)
             .leaderCommitIndex(1).sourceId("A")
             .leaderId("A").term(1).logEntries(Collections.emptyList()).build();
@@ -50,7 +50,7 @@ public class AppendLogEntriesMessageFactoryTest {
 
     @Test
     public void testCreate() {
-        AppendLogEntriesMessage appendLogEntriesMessage = AppendLogEntriesMessage.builder().matched(true).preLogTerm(1)
+        AppendLogEntriesMessage appendLogEntriesMessage = AppendLogEntriesMessage.builder().matchComplete(true).preLogTerm(1)
             .preLogIndex(1)
             .leaderCommitIndex(1).sourceId("A")
             .leaderId("A").term(1).logEntries(Collections.emptyList()).build();
@@ -68,7 +68,7 @@ public class AppendLogEntriesMessageFactoryTest {
 
     @Test
     public void getBytes() {
-        AppendLogEntriesMessage appendLogEntriesMessage = AppendLogEntriesMessage.builder().matched(true).preLogTerm(1)
+        AppendLogEntriesMessage appendLogEntriesMessage = AppendLogEntriesMessage.builder().matchComplete(true).preLogTerm(1)
             .preLogIndex(1)
             .leaderCommitIndex(1).sourceId("A")
             .leaderId("A").term(1).logEntries(Collections.emptyList()).build();
@@ -79,7 +79,7 @@ public class AppendLogEntriesMessageFactoryTest {
 
     @Test
     public void testGetBytes() {
-        AppendLogEntriesMessage appendLogEntriesMessage = AppendLogEntriesMessage.builder().matched(true).preLogTerm(1)
+        AppendLogEntriesMessage appendLogEntriesMessage = AppendLogEntriesMessage.builder().matchComplete(true).preLogTerm(1)
             .preLogIndex(1)
             .leaderCommitIndex(1).sourceId("A")
             .leaderId("A").term(1).logEntries(Collections.emptyList()).build();

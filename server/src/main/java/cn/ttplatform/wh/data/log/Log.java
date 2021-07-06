@@ -1,5 +1,7 @@
 package cn.ttplatform.wh.data.log;
 
+import cn.ttplatform.wh.data.index.LogIndex;
+
 /**
  * @author Wang Hao
  * @date 2020/7/1 下午10:22

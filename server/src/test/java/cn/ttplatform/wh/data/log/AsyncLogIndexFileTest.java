@@ -1,8 +1,9 @@
 package cn.ttplatform.wh.data.log;
 
 import cn.ttplatform.wh.config.ServerProperties;
-import cn.ttplatform.wh.data.FileConstant;
-import cn.ttplatform.wh.data.support.LogIndexFileMetadataRegion;
+import cn.ttplatform.wh.data.index.AsyncLogIndexFile;
+import cn.ttplatform.wh.data.index.LogIndex;
+import cn.ttplatform.wh.data.index.LogIndexFileMetadataRegion;
 import cn.ttplatform.wh.support.DirectByteBufferPool;
 import cn.ttplatform.wh.support.Pool;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,6 @@ import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.*;

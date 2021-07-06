@@ -1,18 +1,21 @@
-package cn.ttplatform.wh.data.support;
+package cn.ttplatform.wh.data.index;
+
+import cn.ttplatform.wh.data.support.MetadataRegion;
 
 import java.io.File;
-import java.nio.ByteBuffer;
 
-import static cn.ttplatform.wh.data.FileConstant.*;
+import static cn.ttplatform.wh.data.FileConstant.LOG_INDEX_FILE_HEADER_SPACE_POSITION;
+import static cn.ttplatform.wh.data.FileConstant.LOG_INDEX_FILE_HEADER_SPACE_SIZE;
 
 /**
  * @author Wang Hao
  * @date 2021/7/1 14:20
  */
-public class LogIndexFileMetadataRegion implements FileHeaderOperator {
+public class LogIndexFileMetadataRegion{
 
     private static final int RELATIVE_LOG_INDEX_FILE_SIZE_FIELD_POSITION = 0;
     private final MetadataRegion region;
+    private long fileSize;
 
     public LogIndexFileMetadataRegion(File file) {
         this(file, LOG_INDEX_FILE_HEADER_SPACE_POSITION, LOG_INDEX_FILE_HEADER_SPACE_SIZE);
@@ -20,31 +23,24 @@ public class LogIndexFileMetadataRegion implements FileHeaderOperator {
 
     public LogIndexFileMetadataRegion(File file, long position, long regionSize) {
         this.region = new MetadataRegion(file, position, regionSize);
-    }
-
-    public ByteBuffer read() {
-        return region.read();
-    }
-
-    public void write(ByteBuffer byteBuffer) {
-        region.write(byteBuffer);
+        this.fileSize = region.readLong(RELATIVE_LOG_INDEX_FILE_SIZE_FIELD_POSITION);
     }
 
     public void clear() {
         recordFileSize(0L);
     }
 
-    @Override
     public void recordFileSize(long size) {
-        region.writeLong(RELATIVE_LOG_INDEX_FILE_SIZE_FIELD_POSITION, size);
+        if (size != fileSize) {
+            region.writeLong(RELATIVE_LOG_INDEX_FILE_SIZE_FIELD_POSITION, size);
+            fileSize = size;
+        }
     }
 
-    @Override
     public long getFileSize() {
-        return region.readLong(RELATIVE_LOG_INDEX_FILE_SIZE_FIELD_POSITION);
+        return fileSize;
     }
 
-    @Override
     public void force() {
         region.force();
     }

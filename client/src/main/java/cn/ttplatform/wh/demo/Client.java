@@ -94,7 +94,7 @@ public class Client {
 
 //        create1000Connections(client);
 
-//        client.send(clusterChangeCommand());
+        client.send(clusterChangeCommand());
 
 //        client.send(getClusterInfoCommand());
 
@@ -115,7 +115,7 @@ public class Client {
         String id = UUID.randomUUID().toString();
         log.info("start at {}", System.nanoTime());
         //284354  141942
-        IntStream.range(0, 100000).forEach(index -> channel.write(SetCommand.builder().id(id + index).entry(new Entry("test" + index, v + index)).build()));
+        IntStream.range(0, 1500).forEach(index -> channel.write(SetCommand.builder().id(id + index).entry(new Entry("test" + index, v + index)).build()));
 
 //        log.info("start at {}", System.nanoTime());
 //        IntStream.range(0, 100000).forEach(index -> {

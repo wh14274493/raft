@@ -1,6 +1,6 @@
-package cn.ttplatform.wh.data.log;
+package cn.ttplatform.wh.data.index;
 
-import cn.ttplatform.wh.data.support.LogIndexFileMetadataRegion;
+import cn.ttplatform.wh.data.log.Log;
 
 import java.nio.ByteBuffer;
 import java.util.List;

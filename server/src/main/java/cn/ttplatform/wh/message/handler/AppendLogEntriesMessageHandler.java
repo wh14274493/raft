@@ -11,10 +11,12 @@ import cn.ttplatform.wh.message.AppendLogEntriesMessage;
 import cn.ttplatform.wh.message.AppendLogEntriesResultMessage;
 import cn.ttplatform.wh.role.Follower;
 import cn.ttplatform.wh.role.Role;
+import cn.ttplatform.wh.role.RoleType;
 import cn.ttplatform.wh.support.AbstractDistributableHandler;
 import cn.ttplatform.wh.support.Distributable;
-import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Objects;
 
 /**
  * @author Wang Hao
@@ -51,9 +53,9 @@ public class AppendLogEntriesMessageHandler extends AbstractDistributableHandler
         Role role = context.getNode().getRole();
         int currentTerm = role.getTerm();
         AppendLogEntriesResultMessage appendLogEntriesResultMessage = AppendLogEntriesResultMessage.builder()
-            .term(currentTerm)
-            .lastLogIndex(message.getLastIndex())
-            .success(false).build();
+                .term(currentTerm)
+                .lastLogIndex(message.getLastIndex())
+                .success(false).build();
         if (term < currentTerm) {
             return appendLogEntriesResultMessage;
         }
@@ -62,34 +64,32 @@ public class AppendLogEntriesMessageHandler extends AbstractDistributableHandler
             appendLogEntriesResultMessage.setSuccess(appendEntries(message));
             return appendLogEntriesResultMessage;
         }
-        switch (role.getType()) {
-            case LEADER:
-                log.warn("receive append entries message from another leader {}, ignore", message.getLeaderId());
-                return appendLogEntriesResultMessage;
-            case CANDIDATE:
-            default:
-                appendLogEntriesResultMessage.setSuccess(appendEntries(message));
-                return appendLogEntriesResultMessage;
+        RoleType roleType = role.getType();
+        if (roleType == RoleType.LEADER) {
+            log.warn("receive append entries message from another leader {}, ignore", message.getLeaderId());
+            return appendLogEntriesResultMessage;
         }
+        appendLogEntriesResultMessage.setSuccess(appendEntries(message));
+        return appendLogEntriesResultMessage;
     }
 
     private boolean appendEntries(AppendLogEntriesMessage message) {
         Node node = context.getNode();
-        String currentLeaderId = node.isFollower() ? ((Follower) node.getRole()).getLeaderId() : "";
+//        String currentLeaderId = node.isFollower() ? ((Follower) node.getRole()).getLeaderId() : "";
         String newLeaderId = message.getLeaderId();
         node.changeToFollower(message.getTerm(), newLeaderId, null, 0, 0, System.currentTimeMillis());
         DataManager dataManager = context.getDataManager();
         int preLogIndex = message.getPreLogIndex();
-        if (Objects.equals(currentLeaderId, newLeaderId) && message.isMatched() && preLogIndex < dataManager.getNextIndex() - 1) {
-            throw new IncorrectLogIndexNumberException("preLogIndex < log.getNextIndex(), maybe a expired message.");
-        }
+//        if (Objects.equals(currentLeaderId, newLeaderId) && message.isMatchComplete() && preLogIndex < dataManager.getNextIndex() - 1) {
+//            throw new IncorrectLogIndexNumberException("preLogIndex < log.getNextIndex(), maybe a expired message.");
+//        }
 
         boolean checkIndexAndTermIfMatched = dataManager.checkIndexAndTermIfMatched(preLogIndex, message.getPreLogTerm());
-        if (checkIndexAndTermIfMatched && !message.isMatched()) {
+        if (checkIndexAndTermIfMatched && !message.isMatchComplete()) {
             return true;
         }
         if (checkIndexAndTermIfMatched) {
-            AppendLogEntriesMessageHandler.log.debug("checkIndexAndTerm Matched");
+            log.debug("checkIndexAndTerm Matched");
             dataManager.pendingLogs(preLogIndex, message.getLogEntries());
             if (dataManager.advanceCommitIndex(message.getLeaderCommitIndex(), message.getTerm())) {
                 context.advanceLastApplied(message.getLeaderCommitIndex());

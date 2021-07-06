@@ -54,18 +54,28 @@ public class AppendLogEntriesResultMessageHandler extends AbstractDistributableH
         if (node.isLeader()) {
             Endpoint endpoint = context.getCluster().find(message.getSourceId());
             if (endpoint == null) {
-                log.warn("endpoint[{}] is not in cluster.", message.getSourceId());
+                log.warn("node[{}] is not in cluster.", message.getSourceId());
                 return;
             }
-            boolean doReplication = true;
+            boolean doReplication = false;
             if (message.isSuccess()) {
-                doReplication = endpoint.updateReplicationState(message.getLastLogIndex());
+                if (endpoint.isMatchComplete()) {
+                    doReplication = endpoint.updateReplicationState(message.getLastLogIndex());
+                } else {
+                    endpoint.updateMatchHelperState(true);
+                }
+
                 int newCommitIndex = context.getCluster().getNewCommitIndex();
                 if (context.getDataManager().advanceCommitIndex(newCommitIndex, currentTerm)) {
                     context.advanceLastApplied(newCommitIndex);
                 }
             } else {
-                endpoint.quickMatchNextIndex(false);
+                doReplication = true;
+                if (endpoint.isMatchComplete()) {
+                    endpoint.backoffNextIndex();
+                } else {
+                    endpoint.updateMatchHelperState(false);
+                }
                 endpoint.setLastHeartBeat(0L);
             }
             if (doReplication) {
@@ -73,4 +83,5 @@ public class AppendLogEntriesResultMessageHandler extends AbstractDistributableH
             }
         }
     }
+
 }

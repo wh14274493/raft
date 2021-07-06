@@ -2,7 +2,6 @@ package cn.ttplatform.wh.data.log;
 
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.data.support.AsyncFileOperator;
-import cn.ttplatform.wh.data.support.LogFileMetadataRegion;
 import cn.ttplatform.wh.support.Pool;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,34 +22,49 @@ public class AsyncLogFile implements LogOperation {
 
     public AsyncLogFile(File file, ServerProperties properties, Pool<ByteBuffer> byteBufferPool, LogFileMetadataRegion logFileMetadataRegion) {
         this.logFileMetadataRegion = logFileMetadataRegion;
-        this.fileOperator = new AsyncFileOperator(properties, byteBufferPool, file, logFileMetadataRegion);
+        this.fileOperator = new AsyncFileOperator(properties, byteBufferPool, file);
     }
 
     @Override
     public long append(Log log) {
-        long offset = fileOperator.getSize();
-        fileOperator.appendInt(log.getIndex());
-        fileOperator.appendInt(log.getTerm());
-        fileOperator.appendInt(log.getType());
+        long offset = logFileMetadataRegion.getFileSize();
+        long fileSize = append0(offset, log);
+        logFileMetadataRegion.recordFileSize(fileSize);
+        return offset;
+    }
+
+    private long append0(long offset, Log log) {
+        fileOperator.appendInt(offset, log.getIndex());
+        offset += 4;
+        fileOperator.appendInt(offset, log.getTerm());
+        offset += 4;
+        fileOperator.appendInt(offset, log.getType());
+        offset += 4;
         byte[] command = log.getCommand();
-        fileOperator.appendInt(command.length);
-        fileOperator.appendBytes(command);
+        fileOperator.appendInt(offset, command.length);
+        offset += 4;
+        fileOperator.appendBytes(offset, command);
+        offset += command.length;
         return offset;
     }
 
     @Override
     public long[] append(List<Log> logs) {
         long[] offsets = new long[logs.size()];
+        long fileSize = logFileMetadataRegion.getFileSize();
         for (int i = 0; i < logs.size(); i++) {
-            offsets[i] = fileOperator.getSize();
-            append(logs.get(i));
+            offsets[i] = fileSize;
+            fileSize = append0(fileSize, logs.get(i));
         }
+        logFileMetadataRegion.recordFileSize(fileSize);
         return offsets;
     }
 
     @Override
     public void append(ByteBuffer byteBuffer, int length) {
-        fileOperator.appendBlock(byteBuffer);
+        long fileSize = logFileMetadataRegion.getFileSize();
+        fileOperator.appendBlock(fileSize, byteBuffer);
+        logFileMetadataRegion.recordFileSize(fileSize + length);
     }
 
     @Override
@@ -100,26 +114,26 @@ public class AsyncLogFile implements LogOperation {
 
     @Override
     public ByteBuffer[] read() {
-        return fileOperator.readBytes(0L);
+        return fileOperator.readBytes(0L, logFileMetadataRegion.getFileSize());
     }
 
     @Override
     public void transferTo(long offset, LogOperation logOperation) {
-        ByteBuffer[] buffers = fileOperator.readBytes(offset);
+        ByteBuffer[] buffers = fileOperator.readBytes(offset, logFileMetadataRegion.getFileSize());
         Arrays.stream(buffers).forEach(buffer -> logOperation.append(buffer, buffer.limit()));
     }
 
     @Override
     public void exchangeLogFileMetadataRegion(LogFileMetadataRegion logFileMetadataRegion) {
-        logFileMetadataRegion.write(this.logFileMetadataRegion.read());
+        logFileMetadataRegion.recordFileSize(this.logFileMetadataRegion.getFileSize());
         this.logFileMetadataRegion.clear();
         this.logFileMetadataRegion = logFileMetadataRegion;
-        fileOperator.changeFileHeaderOperator(logFileMetadataRegion);
     }
 
     @Override
     public void removeAfter(long offset) {
-        fileOperator.truncate(offset);
+        fileOperator.truncate(offset, logFileMetadataRegion.getFileSize());
+        logFileMetadataRegion.recordFileSize(offset);
     }
 
     @Override
@@ -129,12 +143,12 @@ public class AsyncLogFile implements LogOperation {
 
     @Override
     public long size() {
-        return fileOperator.getSize();
+        return logFileMetadataRegion.getFileSize();
     }
 
     @Override
     public boolean isEmpty() {
-        return fileOperator.isEmpty();
+        return logFileMetadataRegion.getFileSize() <= 0;
     }
 
 

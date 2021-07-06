@@ -266,8 +266,7 @@ public class GlobalContext {
             // Doing so will cause a problem that the results of the slave processing log snapshot messages may not be
             // returned in time, causing the master to resend the last message because it does not receive a reply. If
             // the slave does not handle it, an unknown error will occur.
-            if (!endpoint.isReplicating() || System.currentTimeMillis() - endpoint.getLastHeartBeat() >= properties
-                    .getMinElectionTimeout()) {
+            if (!endpoint.isReplicating() || System.currentTimeMillis() - endpoint.getLastHeartBeat() >= properties.getMinElectionTimeout()) {
                 doLogReplication(endpoint, currentTerm);
             }
         });
@@ -275,12 +274,10 @@ public class GlobalContext {
 
     public void doLogReplication(Endpoint endpoint, int currentTerm) {
 
-        Message message = dataManager
-                .createAppendLogEntriesMessage(node.getSelfId(), currentTerm, endpoint, properties.getMaxTransferLogs());
+        Message message = dataManager.createAppendLogEntriesMessage(node.getSelfId(), currentTerm, endpoint, properties.getMaxTransferLogs());
         if (message == null) {
             // start snapshot replication
-            message = dataManager
-                    .createInstallSnapshotMessage(currentTerm, endpoint.getSnapshotOffset(), properties.getMaxTransferSize());
+            message = dataManager.createInstallSnapshotMessage(currentTerm, endpoint.getSnapshotOffset(), properties.getMaxTransferSize());
         }
         sendMessage(message, endpoint);
         endpoint.setReplicating(true);

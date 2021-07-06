@@ -25,18 +25,20 @@ public abstract class AbstractByteBufferPool implements Pool<ByteBuffer> {
     @Override
     public ByteBuffer allocate(int size) {
         if (!pool.isEmpty()) {
-            Entry<Integer, ByteBuffer> bufferEntry = pool.ceilingEntry(size);
-            if (bufferEntry != null) {
-                ByteBuffer byteBuffer = pool.remove(bufferEntry.getKey());
-                byteBuffer.limit(size);
-                return byteBuffer;
+            synchronized (this) {
+                Entry<Integer, ByteBuffer> bufferEntry = pool.ceilingEntry(size);
+                if (bufferEntry != null) {
+                    ByteBuffer byteBuffer = pool.remove(bufferEntry.getKey());
+                    byteBuffer.limit(size);
+                    return byteBuffer;
+                }
             }
         }
         return doAllocate(size);
     }
 
     @Override
-    public ByteBuffer allocate() {
+    public synchronized ByteBuffer allocate() {
         ByteBuffer byteBuffer = pool.remove(defaultChunkSize);
         if (byteBuffer != null) {
             return byteBuffer;
@@ -56,8 +58,10 @@ public abstract class AbstractByteBufferPool implements Pool<ByteBuffer> {
     public void recycle(ByteBuffer buffer) {
         if (buffer != null) {
             buffer.clear();
-            if (pool.size() < poolSize && buffer.capacity() <= bufferSizeLimit) {
-                pool.put(buffer.capacity(), buffer);
+            synchronized (this) {
+                if (pool.size() < poolSize && buffer.capacity() <= bufferSizeLimit) {
+                    pool.put(buffer.capacity(), buffer);
+                }
             }
         }
     }

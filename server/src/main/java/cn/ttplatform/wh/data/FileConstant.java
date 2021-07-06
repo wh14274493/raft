@@ -1,8 +1,8 @@
 package cn.ttplatform.wh.data;
 
-import cn.ttplatform.wh.data.support.LogFileMetadataRegion;
-import cn.ttplatform.wh.data.support.LogIndexFileMetadataRegion;
-import cn.ttplatform.wh.data.support.SnapshotFileMetadataRegion;
+import cn.ttplatform.wh.data.log.LogFileMetadataRegion;
+import cn.ttplatform.wh.data.index.LogIndexFileMetadataRegion;
+import cn.ttplatform.wh.data.snapshot.SnapshotFileMetadataRegion;
 
 import java.io.File;
 import java.util.Arrays;
@@ -42,16 +42,19 @@ public class FileConstant {
 
     public static final long LOG_FILE_HEADER_SPACE_POSITION = NODE_STATE_SPACE_POSITION + NODE_STATE_SPACE_SIZE;
     public static final int LOG_FILE_HEADER_SPACE_SIZE = 8;
+
     public static final long GENERATING_LOG_FILE_HEADER_SPACE_POSITION = LOG_FILE_HEADER_SPACE_POSITION + LOG_FILE_HEADER_SPACE_SIZE;
     public static final int GENERATING_LOG_FILE_HEADER_SPACE_SIZE = LOG_FILE_HEADER_SPACE_SIZE;
 
     public static final long LOG_INDEX_FILE_HEADER_SPACE_POSITION = GENERATING_LOG_FILE_HEADER_SPACE_POSITION + GENERATING_LOG_FILE_HEADER_SPACE_SIZE;
     public static final int LOG_INDEX_FILE_HEADER_SPACE_SIZE = 8;
+
     public static final long GENERATING_LOG_INDEX_FILE_HEADER_SPACE_POSITION = LOG_INDEX_FILE_HEADER_SPACE_POSITION + LOG_INDEX_FILE_HEADER_SPACE_SIZE;
     public static final int GENERATING_LOG_INDEX_FILE_HEADER_SPACE_SIZE = LOG_INDEX_FILE_HEADER_SPACE_SIZE;
 
     public static final long SNAPSHOT_FILE_HEADER_SPACE_POSITION = GENERATING_LOG_INDEX_FILE_HEADER_SPACE_POSITION + GENERATING_LOG_INDEX_FILE_HEADER_SPACE_SIZE;
     public static final int SNAPSHOT_FILE_HEADER_SPACE_SIZE = 16;
+
     public static final long GENERATING_SNAPSHOT_FILE_HEADER_SPACE_POSITION = SNAPSHOT_FILE_HEADER_SPACE_POSITION + SNAPSHOT_FILE_HEADER_SPACE_SIZE;
     public static final int GENERATING_SNAPSHOT_FILE_HEADER_SPACE_SIZE = SNAPSHOT_FILE_HEADER_SPACE_SIZE;
 
@@ -96,7 +99,9 @@ public class FileConstant {
     }
 
     public static LogFileMetadataRegion getGeneratingLogFileMetadataRegion(File file) {
-        return new LogFileMetadataRegion(file, GENERATING_LOG_FILE_HEADER_SPACE_SIZE, GENERATING_LOG_FILE_HEADER_SPACE_SIZE);
+        LogFileMetadataRegion region = new LogFileMetadataRegion(file, GENERATING_LOG_FILE_HEADER_SPACE_SIZE, GENERATING_LOG_FILE_HEADER_SPACE_SIZE);
+        region.clear();
+        return region;
     }
 
     public static LogIndexFileMetadataRegion getLogIndexFileMetadataRegion(File file) {
@@ -104,7 +109,9 @@ public class FileConstant {
     }
 
     public static LogIndexFileMetadataRegion getGeneratingLogIndexFileMetadataRegion(File file) {
-        return new LogIndexFileMetadataRegion(file, GENERATING_LOG_INDEX_FILE_HEADER_SPACE_POSITION, GENERATING_LOG_FILE_HEADER_SPACE_SIZE);
+        LogIndexFileMetadataRegion region = new LogIndexFileMetadataRegion(file, GENERATING_LOG_INDEX_FILE_HEADER_SPACE_POSITION, GENERATING_LOG_FILE_HEADER_SPACE_SIZE);
+        region.clear();
+        return region;
     }
 
     public static SnapshotFileMetadataRegion getSnapshotFileMetadataRegion(File file) {
@@ -112,6 +119,8 @@ public class FileConstant {
     }
 
     public static SnapshotFileMetadataRegion getGeneratingSnapshotFileMetadataRegion(File file) {
-        return new SnapshotFileMetadataRegion(file, GENERATING_SNAPSHOT_FILE_HEADER_SPACE_POSITION, GENERATING_SNAPSHOT_FILE_HEADER_SPACE_SIZE);
+        SnapshotFileMetadataRegion region = new SnapshotFileMetadataRegion(file, GENERATING_SNAPSHOT_FILE_HEADER_SPACE_POSITION, GENERATING_SNAPSHOT_FILE_HEADER_SPACE_SIZE);
+        region.clear();
+        return region;
     }
 }

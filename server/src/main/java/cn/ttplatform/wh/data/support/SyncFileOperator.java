@@ -21,61 +21,41 @@ public class SyncFileOperator {
 
     private final FileChannel fileChannel;
     private final Pool<ByteBuffer> bufferPool;
-    private FileHeaderOperator headerOperator;
-    private long fileSize;
 
-    public SyncFileOperator(File file, Pool<ByteBuffer> bufferPool, FileHeaderOperator headerOperator) {
+    public SyncFileOperator(File file, Pool<ByteBuffer> bufferPool) {
         try {
             this.bufferPool = bufferPool;
             // Requires that every update to the file's content be written synchronously to the underlying storage device.
             this.fileChannel = FileChannel.open(file.toPath(), READ, WRITE, CREATE);
-            this.headerOperator = headerOperator;
-            this.fileSize = headerOperator.getFileSize();
-            log.info("open the file[{}], and the file size is {}.", file, fileSize);
         } catch (IOException e) {
             throw new OperateFileException("failed to open file channel.", e);
         }
     }
 
-    public void changeFileHeaderOperator(FileHeaderOperator headerOperator) {
-        this.headerOperator = headerOperator;
-        this.fileSize = headerOperator.getFileSize();
-    }
-
-    public void updateFileSize(int increment) {
-        fileSize += increment;
-        headerOperator.recordFileSize(fileSize);
-    }
-
-    public void append(byte[] bytes, int length) {
+    public void append(long position, byte[] bytes, int length) {
         ByteBuffer byteBuffer = bufferPool.allocate(bytes.length);
         byteBuffer.put(bytes, 0, length);
         byteBuffer.flip();
         try {
-            fileChannel.write(byteBuffer, fileSize);
+            fileChannel.write(byteBuffer, position);
         } catch (IOException e) {
-            throw new OperateFileException(String.format("failed to write %d bytes into file at position[%d].", length, fileSize), e);
+            throw new OperateFileException(String.format("failed to write %d bytes into file at position[%d].", length, position), e);
         } finally {
             bufferPool.recycle(byteBuffer);
         }
-        updateFileSize(length);
     }
 
-    public void append(ByteBuffer byteBuffer, int length) {
+    public void append(long position, ByteBuffer byteBuffer, int length) {
         byteBuffer.limit(length);
         byteBuffer.position(0);
         try {
-            fileChannel.write(byteBuffer, fileSize);
+            fileChannel.write(byteBuffer, position);
         } catch (IOException e) {
-            throw new OperateFileException(String.format("failed to write %d bytes into file at position[%d].", length, fileSize), e);
+            throw new OperateFileException(String.format("failed to write %d bytes into file at position[%d].", length, position), e);
         }
-        updateFileSize(length);
     }
 
     public byte[] readBytes(long position, int length) {
-        if (position < 0 || fileSize - position < length) {
-            throw new OperateFileException(READ_FAILED);
-        }
         ByteBuffer byteBuffer = bufferPool.allocate(length);
         try {
             readBytes(position, byteBuffer, length);
@@ -88,9 +68,6 @@ public class SyncFileOperator {
     }
 
     public void readBytes(long position, ByteBuffer byteBuffer, int length) {
-        if (position < 0 || fileSize - position < length) {
-            throw new OperateFileException(READ_FAILED);
-        }
         byteBuffer.limit(length);
         int read;
         try {
@@ -105,30 +82,16 @@ public class SyncFileOperator {
     }
 
     public void truncate(long position) {
-        if (position > fileSize) {
-            log.warn("truncate position can not be greater than file size.");
-            return;
-        }
         try {
             position = Math.max(0, position);
             fileChannel.truncate(position);
-            updateFileSize((int) (position - fileSize));
         } catch (IOException e) {
             throw new OperateFileException(String.format("failed to truncate a file at position[%d].", position), e);
         }
     }
 
-    public boolean isEmpty() {
-        return fileSize <= 0;
-    }
-
-    public long size() {
-        return fileSize;
-    }
-
     public void close() {
         try {
-            headerOperator.force();
             if (fileChannel.isOpen()) {
                 fileChannel.force(true);
                 fileChannel.close();

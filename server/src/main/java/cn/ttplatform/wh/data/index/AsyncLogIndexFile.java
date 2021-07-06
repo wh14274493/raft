@@ -1,9 +1,9 @@
-package cn.ttplatform.wh.data.log;
+package cn.ttplatform.wh.data.index;
 
 import cn.ttplatform.wh.config.ServerProperties;
-import cn.ttplatform.wh.data.log.SyncLogIndexFile.LogIndexCache;
+import cn.ttplatform.wh.data.index.SyncLogIndexFile.LogIndexCache;
+import cn.ttplatform.wh.data.log.Log;
 import cn.ttplatform.wh.data.support.AsyncFileOperator;
-import cn.ttplatform.wh.data.support.LogIndexFileMetadataRegion;
 import cn.ttplatform.wh.exception.IncorrectLogIndexNumberException;
 import cn.ttplatform.wh.support.Pool;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +30,7 @@ public class AsyncLogIndexFile implements LogIndexOperation {
     public AsyncLogIndexFile(File file, ServerProperties properties, Pool<ByteBuffer> byteBufferPool, int lastIncludeIndex, LogIndexFileMetadataRegion logIndexFileMetadataRegion) {
         this.logIndexFileMetadataRegion = logIndexFileMetadataRegion;
         this.logIndexCache = new LogIndexCache(properties.getLogIndexCacheSize());
-        this.fileOperator = new AsyncFileOperator(properties, byteBufferPool, file, logIndexFileMetadataRegion);
+        this.fileOperator = new AsyncFileOperator(properties, byteBufferPool, file);
         this.lastIncludeIndex = lastIncludeIndex;
         this.minIndex = lastIncludeIndex;
         this.maxIndex = lastIncludeIndex;
@@ -43,7 +43,7 @@ public class AsyncLogIndexFile implements LogIndexOperation {
             long position = 0;
             LogIndex logIndex = loadLogIndex(position);
             this.minIndex = logIndex.getIndex();
-            position = fileOperator.getSize() - LogIndex.BYTES;
+            position = logIndexFileMetadataRegion.getFileSize() - LogIndex.BYTES;
             logIndex = loadLogIndex(position);
             this.maxIndex = logIndex.getIndex();
         }
@@ -113,11 +113,22 @@ public class AsyncLogIndexFile implements LogIndexOperation {
         AsyncLogIndexFile.log.debug("update maxLogIndex to {}.", maxIndex);
         LogIndex logIndex = log.getMetadata();
         logIndex.setOffset(offset);
-        fileOperator.appendInt(logIndex.getIndex());
-        fileOperator.appendInt(logIndex.getTerm());
-        fileOperator.appendInt(logIndex.getType());
-        fileOperator.appendLong(logIndex.getOffset());
+        long fileSize = logIndexFileMetadataRegion.getFileSize();
+        fileSize = append0(fileSize, logIndex);
+        logIndexFileMetadataRegion.recordFileSize(fileSize);
+    }
+
+    private long append0(long position, LogIndex logIndex) {
+        fileOperator.appendInt(position, logIndex.getIndex());
+        position += 4;
+        fileOperator.appendInt(position, logIndex.getTerm());
+        position += 4;
+        fileOperator.appendInt(position, logIndex.getType());
+        position += 4;
+        fileOperator.appendLong(position, logIndex.getOffset());
+        position += 8;
         logIndexCache.put(logIndex.getIndex(), logIndex);
+        return position;
     }
 
     @Override
@@ -131,53 +142,56 @@ public class AsyncLogIndexFile implements LogIndexOperation {
         }
         maxIndex = logs.get(logs.size() - 1).getIndex();
         log.debug("update maxLogIndex to {}.", maxIndex);
+        long fileSize = logIndexFileMetadataRegion.getFileSize();
         for (int i = 0; i < logs.size(); i++) {
             LogIndex logIndex = logs.get(i).getMetadata();
             logIndex.setOffset(offsets[i]);
-            fileOperator.appendInt(logIndex.getIndex());
-            fileOperator.appendInt(logIndex.getTerm());
-            fileOperator.appendInt(logIndex.getType());
-            fileOperator.appendLong(logIndex.getOffset());
-            logIndexCache.put(logIndex.getIndex(), logIndex);
+            fileSize = append0(fileSize, logIndex);
         }
+        logIndexFileMetadataRegion.recordFileSize(fileSize);
     }
 
     @Override
     public void append(ByteBuffer byteBuffer) {
-        fileOperator.appendBytes(byteBuffer);
+        long fileSize = logIndexFileMetadataRegion.getFileSize();
+        int limit = byteBuffer.limit();
+        fileOperator.appendBytes(fileSize, byteBuffer);
+        logIndexFileMetadataRegion.recordFileSize(fileSize + limit);
     }
 
     @Override
     public void removeAfter(int index) {
+        long fileSize = logIndexFileMetadataRegion.getFileSize();
         if (index < minIndex) {
-            fileOperator.truncate(0);
+            fileOperator.truncate(0, fileSize);
             logIndexCache.clear();
             minIndex = lastIncludeIndex;
             maxIndex = lastIncludeIndex;
+            logIndexFileMetadataRegion.recordFileSize(0);
         } else if (index < maxIndex) {
             long position = (long) (index - minIndex + 1) * LogIndex.BYTES;
-            fileOperator.truncate(position);
+            fileOperator.truncate(position, fileSize);
             logIndexCache.removeAfter(index);
             maxIndex = index;
+            logIndexFileMetadataRegion.recordFileSize(position);
         }
     }
 
     @Override
     public void exchangeLogFileMetadataRegion(LogIndexFileMetadataRegion logIndexFileMetadataRegion) {
-        logIndexFileMetadataRegion.write(this.logIndexFileMetadataRegion.read());
+        logIndexFileMetadataRegion.recordFileSize(this.logIndexFileMetadataRegion.getFileSize());
         this.logIndexFileMetadataRegion.clear();
         this.logIndexFileMetadataRegion = logIndexFileMetadataRegion;
-        fileOperator.changeFileHeaderOperator(logIndexFileMetadataRegion);
     }
 
     @Override
     public long size() {
-        return fileOperator.getSize();
+        return logIndexFileMetadataRegion.getFileSize();
     }
 
     @Override
     public boolean isEmpty() {
-        return fileOperator.isEmpty();
+        return logIndexFileMetadataRegion.getFileSize() <= 0;
     }
 
     @Override
