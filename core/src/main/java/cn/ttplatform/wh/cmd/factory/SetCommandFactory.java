@@ -15,7 +15,6 @@ import io.protostuff.runtime.RuntimeSchema;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 /**
  * @author Wang Hao
@@ -38,23 +37,17 @@ public class SetCommandFactory extends AbstractDistributableFactory {
     public Distributable create(byte[] content, int length) {
         SetCommand command = new SetCommand();
         ProtostuffIOUtil.mergeFrom(content, 0, length, command, schema);
-        command.setCmd(Arrays.copyOfRange(content, 0, length));
         return command;
     }
 
     @Override
     public Distributable create(ByteBuffer byteBuffer) {
-        byte[] content = new byte[byteBuffer.limit()];
-        int position = byteBuffer.position();
         SetCommand cmd = new SetCommand();
         try {
             schema.mergeFrom(new ByteBufferInput(byteBuffer, true), cmd);
-            byteBuffer.position(position);
-            byteBuffer.get(content, 0, content.length);
         } catch (IOException e) {
             throw new MessageParseException(ErrorMessage.MESSAGE_PARSE_ERROR);
         }
-        cmd.setCmd(content);
         return cmd;
     }
 

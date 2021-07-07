@@ -24,8 +24,9 @@ public class FixedSizeLinkedBufferPool implements Pool<LinkedBuffer> {
         LinkedBuffer buffer = null;
         try {
             buffer = bufferQueue.poll(100L, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
             log.warn("failed to poll LinkedBuffer.");
+            Thread.currentThread().interrupt();
         }
         return buffer == null ? LinkedBuffer.allocate() : buffer;
     }
@@ -35,9 +36,12 @@ public class FixedSizeLinkedBufferPool implements Pool<LinkedBuffer> {
     public void recycle(LinkedBuffer buffer) {
         buffer.clear();
         try {
-            bufferQueue.offer(buffer, 100L, TimeUnit.MILLISECONDS);
+            if (bufferQueue.offer(buffer, 100L, TimeUnit.MILLISECONDS)) {
+                log.trace("offer LinkedBuffer in 100ms.");
+            }
         } catch (InterruptedException e) {
             log.warn("offer LinkedBuffer timeout.");
+            Thread.currentThread().interrupt();
         }
     }
 

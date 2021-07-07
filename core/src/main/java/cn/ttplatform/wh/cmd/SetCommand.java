@@ -1,12 +1,10 @@
 package cn.ttplatform.wh.cmd;
 
 import cn.ttplatform.wh.constant.DistributableType;
-import io.protostuff.Exclude;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -20,26 +18,19 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class SetCommand extends AbstractCommand {
 
-    private String key;
-    private String value;
-    @Exclude
-    private byte[] cmd;
+    private KeyValuePair keyValuePair;
 
     @Override
     public int getType() {
         return DistributableType.SET_COMMAND;
     }
 
-    public byte[] getCmd() {
-        return cmd;
-    }
-
     @Override
     public String toString() {
         return "SetCommand{" +
             "id='" + id + '\'' +
-            ", key='" + key + '\'' +
-            ", value='" + value + '\'' +
+            ", key='" + keyValuePair.getKey() + '\'' +
+            ", value='" + keyValuePair.getValue() + '\'' +
             '}';
     }
 }

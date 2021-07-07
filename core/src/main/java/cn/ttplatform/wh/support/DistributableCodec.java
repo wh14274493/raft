@@ -16,16 +16,15 @@ public class DistributableCodec extends ByteToMessageCodec<Distributable> {
 
     private static final int FIXED_MESSAGE_HEADER_LENGTH = Integer.BYTES + Integer.BYTES;
 
-    private final DistributableFactoryManager factoryManager;
+    private final DistributableFactoryRegistry factoryManager;
     private RequestFailedCommand requestFailedCommand;
 
-    public DistributableCodec(DistributableFactoryManager factoryManager) {
+    public DistributableCodec(DistributableFactoryRegistry factoryManager) {
         this.factoryManager = factoryManager;
     }
 
     @Override
     protected void encode(ChannelHandlerContext ctx, Distributable msg, ByteBuf out) {
-        log.debug("encode a message[{}]", msg);
         DistributableFactory factory = factoryManager.getFactory(msg.getType());
         factory.getBytes(msg, out);
     }
@@ -50,7 +49,7 @@ public class DistributableCodec extends ByteToMessageCodec<Distributable> {
             out.add(distributable);
         } catch (Exception e) {
             log.error(e.getMessage());
-            ctx.channel().write(failedCommand(e.getMessage()));
+            ctx.channel().writeAndFlush(failedCommand(e.getMessage()));
         } finally {
             in.readerIndex(newReaderIndex);
         }

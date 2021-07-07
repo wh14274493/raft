@@ -1,0 +1,26 @@
+[2021-07-07 11:29:35,127] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:68)]: receive 1 times resp cost 0 ns.
+[2021-07-07 11:29:36,565] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:68)]: receive 100000 times resp cost 0 ns.
+[2021-07-07 11:29:46,915] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:68)]: receive 100 times resp cost 0 ns.
+[2021-07-07 11:29:48,124] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:68)]: receive 100000 times resp cost 0 ns.
+[2021-07-07 11:29:57,307] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:37)]: channelInactive
+[2021-07-07 11:30:18,560] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:68)]: receive 1000 times resp cost 0 ns.
+[2021-07-07 11:30:19,715] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:68)]: receive 100000 times resp cost 0 ns.
+[2021-07-07 11:30:28,984] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:37)]: channelInactive
+[2021-07-07 11:31:37,994] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 10000 times resp cost 154826073136600 ns.
+[2021-07-07 11:31:39,203] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 154827283421300 ns.
+[2021-07-07 11:31:48,348] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:37)]: channelInactive
+[2021-07-07 11:32:31,194] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 10000 times resp cost 422478700 ns.
+[2021-07-07 11:32:32,359] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 1162058100 ns.
+[2021-07-07 11:32:41,533] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:37)]: channelInactive
+[2021-07-07 11:33:00,541] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 1870746500 ns.
+[2021-07-07 11:33:01,761] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 1218148500 ns.
+[2021-07-07 11:33:10,787] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:37)]: channelInactive
+[2021-07-07 12:07:59,631] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 3527814700 ns.
+[2021-07-07 12:08:00,978] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 1343935800 ns.
+[2021-07-07 12:08:00,979] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:37)]: channelInactive
+[2021-07-07 12:23:43,068] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 3510217700 ns.
+[2021-07-07 12:23:44,234] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 1163396900 ns.
+[2021-07-07 12:23:44,235] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:37)]: channelInactive
+[2021-07-07 12:24:58,059] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 2596177600 ns.
+[2021-07-07 12:24:59,283] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 1222870800 ns.
+[2021-07-07 12:24:59,285] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:37)]: channelInactive
