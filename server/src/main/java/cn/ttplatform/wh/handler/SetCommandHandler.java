@@ -21,7 +21,7 @@ public class SetCommandHandler extends AbstractDistributableHandler {
     public void doHandleInSingleMode(Distributable distributable) {
         SetCommand setCommand = (SetCommand) distributable;
         int currentTerm = context.getNode().getTerm();
-        int index = context.pendingLog(Log.SET, context.getEntryFactory().getBytes(setCommand.getEntry()));
+        int index = context.pendingLog(Log.SET, context.getEntryFactory().getBytes(setCommand.getKeyValuePair()));
         context.addPendingCommand(index, setCommand);
         if (context.getDataManager().advanceCommitIndex(index, currentTerm)) {
             context.advanceLastApplied(index);
@@ -31,7 +31,7 @@ public class SetCommandHandler extends AbstractDistributableHandler {
     @Override
     public void doHandleInClusterMode(Distributable distributable) {
         SetCommand setCommand = (SetCommand) distributable;
-        int index = context.pendingLog(Log.SET, context.getEntryFactory().getBytes(setCommand.getEntry()));
+        int index = context.pendingLog(Log.SET, context.getEntryFactory().getBytes(setCommand.getKeyValuePair()));
         context.addPendingCommand(index, setCommand);
     }
 

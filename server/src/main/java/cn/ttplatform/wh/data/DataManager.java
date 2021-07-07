@@ -227,8 +227,7 @@ public class DataManager {
                 }
                 if (!pending.isEmpty() && log.getIndex() != pending.lastEntry().getKey() + 1) {
                     // maybe received an expired message
-                    throw new IncorrectLogIndexNumberException(
-                            "The index[" + log.getIndex() + "] number of the log is incorrect.");
+                    throw new IncorrectLogIndexNumberException("The index[" + log.getIndex() + "] number of the log is incorrect.");
                 }
                 pending.put(log.getIndex(), log);
             }
@@ -241,10 +240,12 @@ public class DataManager {
         if (isEmpty() || index >= getIndexOfLastLog()) {
             return;
         }
+        logger.warn("remove logs that index > {}.", index);
         int maxLogIndex = logIndexOperation.getMaxIndex();
         if (index <= maxLogIndex) {
             pending.clear();
-            logOperation.removeAfter(logIndexOperation.getLogOffset(index + 1));
+            long logOffset = logIndexOperation.getLogOffset(index + 1);
+            logOperation.removeAfter(logOffset);
             logIndexOperation.removeAfter(index);
         } else {
             while (!pending.isEmpty() && pending.lastEntry().getKey() > index) {

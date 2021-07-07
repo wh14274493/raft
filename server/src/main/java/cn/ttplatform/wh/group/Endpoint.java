@@ -73,9 +73,9 @@ public class Endpoint implements Comparable<Endpoint> {
 
     public boolean updateReplicationState(int matchIndex) {
         matchComplete = true;
+        this.nextIndex = matchIndex + 1;
         if (this.matchIndex != matchIndex) {
             this.matchIndex = matchIndex;
-            this.nextIndex = matchIndex + 1;
             log.debug("update {} replicationState[matchIndex={},nextIndex={}]", metaData.getNodeId(), matchIndex, nextIndex);
             replicating = true;
             return true;

@@ -18,7 +18,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class SetCommand extends AbstractCommand {
 
-    private Entry entry;
+    private KeyValuePair keyValuePair;
 
     @Override
     public int getType() {
@@ -29,8 +29,8 @@ public class SetCommand extends AbstractCommand {
     public String toString() {
         return "SetCommand{" +
             "id='" + id + '\'' +
-            ", key='" + entry.getKey() + '\'' +
-            ", value='" + entry.getValue() + '\'' +
+            ", key='" + keyValuePair.getKey() + '\'' +
+            ", value='" + keyValuePair.getValue() + '\'' +
             '}';
     }
 }

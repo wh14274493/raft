@@ -1,6 +1,6 @@
 package cn.ttplatform.wh.cmd.factory;
 
-import cn.ttplatform.wh.cmd.Entry;
+import cn.ttplatform.wh.cmd.KeyValuePair;
 import cn.ttplatform.wh.support.Factory;
 import cn.ttplatform.wh.support.Pool;
 import io.netty.buffer.ByteBuf;
@@ -14,10 +14,10 @@ import java.nio.ByteBuffer;
  * @author Wang Hao
  * @date 2021/5/19 21:54
  */
-public class EntryFactory implements Factory<Entry> {
+public class EntryFactory implements Factory<KeyValuePair> {
 
 
-    private final Schema<Entry> schema = RuntimeSchema.getSchema(Entry.class);
+    private final Schema<KeyValuePair> schema = RuntimeSchema.getSchema(KeyValuePair.class);
     private final Pool<LinkedBuffer> pool;
 
     public EntryFactory(Pool<LinkedBuffer> pool) {
@@ -25,19 +25,19 @@ public class EntryFactory implements Factory<Entry> {
     }
 
     @Override
-    public Entry create(byte[] content, int contentLength) {
-        Entry entry = new Entry();
-        ProtostuffIOUtil.mergeFrom(content, 0, contentLength, entry, schema);
-        return entry;
+    public KeyValuePair create(byte[] content, int contentLength) {
+        KeyValuePair keyValuePair = new KeyValuePair();
+        ProtostuffIOUtil.mergeFrom(content, 0, contentLength, keyValuePair, schema);
+        return keyValuePair;
     }
 
     @Override
-    public Entry create(ByteBuffer byteBuffer, int contentLength) {
+    public KeyValuePair create(ByteBuffer byteBuffer, int contentLength) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public byte[] getBytes(Entry obj) {
+    public byte[] getBytes(KeyValuePair obj) {
         LinkedBuffer buffer = pool.allocate();
         try {
             return ProtostuffIOUtil.toByteArray(obj, schema, buffer);
@@ -49,7 +49,7 @@ public class EntryFactory implements Factory<Entry> {
     }
 
     @Override
-    public void getBytes(Entry obj, ByteBuf byteBuffer) {
+    public void getBytes(KeyValuePair obj, ByteBuf byteBuffer) {
         throw new UnsupportedOperationException();
     }
 }

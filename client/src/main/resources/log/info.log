@@ -1,59 +1,26 @@
-[2021-07-06 13:27:36,280] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 75384005188300
-[2021-07-06 13:27:46,512] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 13:35:41,270] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 75868993336100
-[2021-07-06 13:35:47,780] [nioEventLoopGroup-2-1] [WARN ] [io.netty.channel.DefaultChannelPipeline.onUnhandledInboundException(DefaultChannelPipeline.java:1152)]: An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
-java.io.IOException: 远程主机强迫关闭了一个现有的连接。
-	at sun.nio.ch.SocketDispatcher.read0(Native Method)
-	at sun.nio.ch.SocketDispatcher.read(SocketDispatcher.java:43)
-	at sun.nio.ch.IOUtil.readIntoNativeBuffer(IOUtil.java:223)
-	at sun.nio.ch.IOUtil.read(IOUtil.java:192)
-	at sun.nio.ch.SocketChannelImpl.read(SocketChannelImpl.java:378)
-	at io.netty.buffer.PooledByteBuf.setBytes(PooledByteBuf.java:253)
-	at io.netty.buffer.AbstractByteBuf.writeBytes(AbstractByteBuf.java:1133)
-	at io.netty.channel.socket.nio.NioSocketChannel.doReadBytes(NioSocketChannel.java:350)
-	at io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:148)
-	at io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:714)
-	at io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:650)
-	at io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:576)
-	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:493)
-	at io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:989)
-	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
-	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
-	at java.lang.Thread.run(Thread.java:748)
-[2021-07-06 13:35:47,780] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 13:36:45,931] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 75933653545400
-[2021-07-06 13:53:28,697] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 76936421257600
-[2021-07-06 13:53:51,897] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 76959619390500
-[2021-07-06 13:54:01,767] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 13:54:01,976] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 14:04:14,390] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 77582112234300
-[2021-07-06 14:04:24,620] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 14:04:54,577] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 77622300304000
-[2021-07-06 14:05:04,455] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 14:05:04,647] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 14:12:17,710] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 78065431648600
-[2021-07-06 14:13:48,594] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 14:14:40,680] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 78208406777900
-[2021-07-06 14:15:04,964] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 14:16:11,475] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 21:16:32,526] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 103520605983000
-[2021-07-06 21:16:42,752] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 21:22:49,590] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 103897669333000
-[2021-07-06 21:22:59,826] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 21:30:28,975] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 104357057304700
-[2021-07-06 21:30:39,196] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 21:33:09,050] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 104517129637200
-[2021-07-06 21:33:19,251] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 21:34:32,560] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 21:58:05,076] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 106013155367000
-[2021-07-06 23:25:44,729] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 111272808057300
-[2021-07-06 23:25:54,753] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 23:25:54,914] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 23:30:20,534] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 111548612880400
-[2021-07-06 23:30:30,565] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 23:30:30,719] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 23:41:45,726] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 112233805671400
-[2021-07-06 23:41:55,933] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 23:42:36,257] [main] [INFO ] [cn.ttplatform.wh.demo.Client.main(Client.java:116)]: start at 112284336008200
-[2021-07-06 23:42:46,280] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
-[2021-07-06 23:42:46,430] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:30)]: channelInactive
+[2021-07-07 11:29:35,127] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:68)]: receive 1 times resp cost 0 ns.
+[2021-07-07 11:29:36,565] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:68)]: receive 100000 times resp cost 0 ns.
+[2021-07-07 11:29:46,915] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:68)]: receive 100 times resp cost 0 ns.
+[2021-07-07 11:29:48,124] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:68)]: receive 100000 times resp cost 0 ns.
+[2021-07-07 11:29:57,307] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:37)]: channelInactive
+[2021-07-07 11:30:18,560] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:68)]: receive 1000 times resp cost 0 ns.
+[2021-07-07 11:30:19,715] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:68)]: receive 100000 times resp cost 0 ns.
+[2021-07-07 11:30:28,984] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:37)]: channelInactive
+[2021-07-07 11:31:37,994] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 10000 times resp cost 154826073136600 ns.
+[2021-07-07 11:31:39,203] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 154827283421300 ns.
+[2021-07-07 11:31:48,348] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:37)]: channelInactive
+[2021-07-07 11:32:31,194] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 10000 times resp cost 422478700 ns.
+[2021-07-07 11:32:32,359] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 1162058100 ns.
+[2021-07-07 11:32:41,533] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:37)]: channelInactive
+[2021-07-07 11:33:00,541] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 1870746500 ns.
+[2021-07-07 11:33:01,761] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 1218148500 ns.
+[2021-07-07 11:33:10,787] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:37)]: channelInactive
+[2021-07-07 12:07:59,631] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 3527814700 ns.
+[2021-07-07 12:08:00,978] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 1343935800 ns.
+[2021-07-07 12:08:00,979] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:37)]: channelInactive
+[2021-07-07 12:23:43,068] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 3510217700 ns.
+[2021-07-07 12:23:44,234] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 1163396900 ns.
+[2021-07-07 12:23:44,235] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:37)]: channelInactive
+[2021-07-07 12:24:58,059] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 2596177600 ns.
+[2021-07-07 12:24:59,283] [main] [INFO ] [cn.ttplatform.wh.demo.Client$Watcher.waitResult(Client.java:69)]: receive 100000 times resp cost 1222870800 ns.
+[2021-07-07 12:24:59,285] [nioEventLoopGroup-2-1] [INFO ] [cn.ttplatform.wh.demo.ClientDuplexChannelHandler.channelInactive(ClientDuplexChannelHandler.java:37)]: channelInactive

@@ -1,33 +1,13 @@
 package cn.ttplatform.wh;
 
-import cn.ttplatform.wh.cmd.ClusterChangeCommand;
-import cn.ttplatform.wh.cmd.ClusterChangeResultCommand;
-import cn.ttplatform.wh.cmd.Entry;
-import cn.ttplatform.wh.cmd.GetClusterInfoResultCommand;
-import cn.ttplatform.wh.cmd.GetCommand;
-import cn.ttplatform.wh.cmd.GetResultCommand;
-import cn.ttplatform.wh.cmd.SetCommand;
-import cn.ttplatform.wh.cmd.SetResultCommand;
-import cn.ttplatform.wh.cmd.factory.ClusterChangeCommandFactory;
-import cn.ttplatform.wh.cmd.factory.ClusterChangeResultCommandFactory;
-import cn.ttplatform.wh.cmd.factory.EntryFactory;
-import cn.ttplatform.wh.cmd.factory.GetClusterInfoCommandFactory;
-import cn.ttplatform.wh.cmd.factory.GetClusterInfoResultCommandFactory;
-import cn.ttplatform.wh.cmd.factory.GetCommandFactory;
-import cn.ttplatform.wh.cmd.factory.GetResultCommandFactory;
-import cn.ttplatform.wh.cmd.factory.RedirectCommandFactory;
-import cn.ttplatform.wh.cmd.factory.RequestFailedCommandFactory;
-import cn.ttplatform.wh.cmd.factory.SetCommandFactory;
-import cn.ttplatform.wh.cmd.factory.SetResultCommandFactory;
+import cn.ttplatform.wh.cmd.*;
+import cn.ttplatform.wh.cmd.factory.*;
 import cn.ttplatform.wh.config.RunMode;
 import cn.ttplatform.wh.config.ServerProperties;
-import cn.ttplatform.wh.constant.ReadWriteFileStrategy;
 import cn.ttplatform.wh.data.DataManager;
 import cn.ttplatform.wh.data.log.Log;
 import cn.ttplatform.wh.data.log.LogFactory;
 import cn.ttplatform.wh.data.snapshot.GenerateSnapshotTask;
-import cn.ttplatform.wh.support.DirectByteBufferPool;
-import cn.ttplatform.wh.support.HeapByteBufferPool;
 import cn.ttplatform.wh.group.Cluster;
 import cn.ttplatform.wh.group.Endpoint;
 import cn.ttplatform.wh.handler.ClusterChangeCommandHandler;
@@ -36,56 +16,24 @@ import cn.ttplatform.wh.handler.GetCommandHandler;
 import cn.ttplatform.wh.handler.SetCommandHandler;
 import cn.ttplatform.wh.message.PreVoteMessage;
 import cn.ttplatform.wh.message.RequestVoteMessage;
-import cn.ttplatform.wh.message.factory.AppendLogEntriesMessageFactory;
-import cn.ttplatform.wh.message.factory.AppendLogEntriesResultMessageFactory;
-import cn.ttplatform.wh.message.factory.InstallSnapshotMessageFactory;
-import cn.ttplatform.wh.message.factory.InstallSnapshotResultMessageFactory;
-import cn.ttplatform.wh.message.factory.PreVoteMessageFactory;
-import cn.ttplatform.wh.message.factory.PreVoteResultMessageFactory;
-import cn.ttplatform.wh.message.factory.RequestVoteMessageFactory;
-import cn.ttplatform.wh.message.factory.RequestVoteResultMessageFactory;
-import cn.ttplatform.wh.message.factory.SyncingMessageFactory;
-import cn.ttplatform.wh.message.handler.AppendLogEntriesMessageHandler;
-import cn.ttplatform.wh.message.handler.AppendLogEntriesResultMessageHandler;
-import cn.ttplatform.wh.message.handler.InstallSnapshotMessageHandler;
-import cn.ttplatform.wh.message.handler.InstallSnapshotResultMessageHandler;
-import cn.ttplatform.wh.message.handler.PreVoteMessageHandler;
-import cn.ttplatform.wh.message.handler.PreVoteResultMessageHandler;
-import cn.ttplatform.wh.message.handler.RequestVoteMessageHandler;
-import cn.ttplatform.wh.message.handler.RequestVoteResultMessageHandler;
-import cn.ttplatform.wh.message.handler.SyncingMessageHandler;
+import cn.ttplatform.wh.message.factory.*;
+import cn.ttplatform.wh.message.handler.*;
 import cn.ttplatform.wh.scheduler.Scheduler;
 import cn.ttplatform.wh.scheduler.SingleThreadScheduler;
-import cn.ttplatform.wh.support.ChannelPool;
-import cn.ttplatform.wh.support.CommonDistributor;
-import cn.ttplatform.wh.support.DistributableFactoryRegistry;
-import cn.ttplatform.wh.support.FixedSizeLinkedBufferPool;
-import cn.ttplatform.wh.support.Message;
-import cn.ttplatform.wh.support.NamedThreadFactory;
-import cn.ttplatform.wh.support.Pool;
+import cn.ttplatform.wh.support.*;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.protostuff.LinkedBuffer;
-
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * @author Wang Hao
@@ -123,7 +71,7 @@ public class GlobalContext {
         this.node = node;
         this.properties = node.getProperties();
         this.linkedBufferPool = new FixedSizeLinkedBufferPool(properties.getLinkedBuffPollSize());
-        if (ReadWriteFileStrategy.DIRECT.equals(properties.getReadWriteFileStrategy())) {
+        if (properties.isUseDirectByteBuffer()) {
             logger.debug("use DirectBufferAllocator");
             this.byteBufferPool = new DirectByteBufferPool(properties.getByteBufferPoolSize(),
                     properties.getBlockSize(), properties.getByteBufferSizeLimit());
@@ -376,14 +324,14 @@ public class GlobalContext {
 
     private void replySetResult(Log log) {
         SetCommand setCmd = pendingSetCommandMap.remove(log.getIndex());
-        Entry entry;
+        KeyValuePair keyValuePair;
         if (setCmd == null) {
             byte[] command = log.getCommand();
-            entry = entryFactory.create(command, command.length);
-            stateMachine.set(entry.getKey(), entry.getValue());
+            keyValuePair = entryFactory.create(command, command.length);
+            stateMachine.set(keyValuePair.getKey(), keyValuePair.getValue());
         } else {
-            entry = setCmd.getEntry();
-            stateMachine.set(entry.getKey(), entry.getValue());
+            keyValuePair = setCmd.getKeyValuePair();
+            stateMachine.set(keyValuePair.getKey(), keyValuePair.getValue());
             String requestId = setCmd.getId();
             if (requestId != null) {
                 ChannelFuture channelFuture = channelPool

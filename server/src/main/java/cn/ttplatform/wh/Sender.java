@@ -10,7 +10,9 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+
 import java.net.InetSocketAddress;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
@@ -36,9 +38,9 @@ public class Sender {
 
     public Bootstrap newBootstrap(EventLoopGroup worker) {
         return new Bootstrap().group(worker)
-            .channel(NioSocketChannel.class)
-            .option(ChannelOption.TCP_NODELAY, Boolean.TRUE)
-            .handler(new CoreChannelInitializer(context));
+                .channel(NioSocketChannel.class)
+                .option(ChannelOption.TCP_NODELAY, Boolean.TRUE)
+                .handler(new CoreChannelInitializer(context));
     }
 
     public Channel connect(EndpointMetaData metaData) {
@@ -58,7 +60,7 @@ public class Sender {
             });
             return channel;
         } catch (Exception e) {
-            log.error("connect to [{},{}] failed", remoteId,socketAddress);
+            log.error("connect to [{},{}] failed", remoteId, socketAddress);
             Thread.currentThread().interrupt();
             return null;
         }

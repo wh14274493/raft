@@ -4,8 +4,10 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
+
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -17,6 +19,11 @@ import lombok.extern.slf4j.Slf4j;
 public class ClientDuplexChannelHandler extends ChannelDuplexHandler {
 
     AtomicInteger index = new AtomicInteger();
+    Client.Watcher watcher;
+
+    public ClientDuplexChannelHandler(Client.Watcher watcher) {
+        this.watcher = watcher;
+    }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -32,22 +39,11 @@ public class ClientDuplexChannelHandler extends ChannelDuplexHandler {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-//        if (index == 1) {
-//            log.info(System.nanoTime() + "");
-//            log.info(msg.toString());
+//        int i = index.incrementAndGet();
+//        if (i % 10000 == 0) {
+//            log.info("time = {}, count = {}, msg = {}", System.nanoTime(), i, msg);
 //        }
-//        if (index % 10000 == 0) {
-//            log.info(System.nanoTime() + "");
-//            log.info(msg.toString());
-//        }
-//                            log.info("{}: {} ", index, msg.toString());
-//        index++;
-
-        int i = index.incrementAndGet();
-        if (i % 10000 == 0) {
-            log.info("time = {}, count = {}, msg = {}", System.nanoTime(), i, msg);
-        }
-
+        watcher.increment();
 //        log.info(msg.toString());
     }
 

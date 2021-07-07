@@ -2,6 +2,10 @@ package cn.ttplatform.wh.config;
 
 import cn.ttplatform.wh.exception.OperateFileException;
 import io.netty.channel.EventLoopGroup;
+import lombok.Data;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.helpers.Loader;
+import org.apache.log4j.helpers.OptionConverter;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,11 +13,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Properties;
 import java.util.UUID;
-
-import lombok.Data;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.helpers.Loader;
-import org.apache.log4j.helpers.OptionConverter;
 
 /**
  * @author Wang Hao
@@ -110,12 +109,8 @@ public class ServerProperties {
     /**
      * random access / direct access / indirect access
      */
-    private String readWriteFileStrategy;
+    private boolean useDirectByteBuffer;
 
-    /**
-     * only used when readWriteFileStrategy is direct access / indirect access. see {@link
-     * cn.ttplatform.wh.constant.ReadWriteFileStrategy}
-     */
     private int byteBufferPoolSize;
 
     /**
@@ -191,7 +186,7 @@ public class ServerProperties {
         readIdleTimeout = Integer.parseInt(properties.getProperty("readIdleTimeout", "10"));
         writeIdleTimeout = Integer.parseInt(properties.getProperty("writeIdleTimeout", "10"));
         allIdleTimeout = Integer.parseInt(properties.getProperty("allIdleTimeout", "10"));
-        readWriteFileStrategy = properties.getProperty("readWriteFileStrategy", "direct access");
+        useDirectByteBuffer = Boolean.parseBoolean(properties.getProperty("useDirectByteBuffer", "true"));
         byteBufferPoolSize = Integer.parseInt(properties.getProperty("byteBufferPoolSize", "10"));
         byteBufferSizeLimit = Integer.parseInt(properties.getProperty("byteBufferSizeLimit", String.valueOf(1024 * 1024 * 10)));
         synLogFlush = Boolean.parseBoolean(properties.getProperty("synLogFlush", "false"));
