@@ -27,7 +27,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>cn.ttplatform.wh.Server</mainClass>
+              <mainClass>cn.ttplatform.wh.ServerLauncher</mainClass>
             </manifest>
           </archive>
           <descriptorRefs>

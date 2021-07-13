@@ -9,6 +9,7 @@ import cn.ttplatform.wh.data.log.Log;
 import cn.ttplatform.wh.data.log.LogFactory;
 import cn.ttplatform.wh.data.snapshot.GenerateSnapshotTask;
 import cn.ttplatform.wh.group.Cluster;
+import cn.ttplatform.wh.group.Connector;
 import cn.ttplatform.wh.group.Endpoint;
 import cn.ttplatform.wh.handler.ClusterChangeCommandHandler;
 import cn.ttplatform.wh.handler.GetClusterInfoCommandHandler;
@@ -34,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.IntStream;
 
 /**
  * @author Wang Hao
@@ -64,7 +66,7 @@ public class GlobalContext {
     private Node node;
     private Scheduler scheduler;
     private Cluster cluster;
-    private Sender sender;
+    private Connector connector;
     private ClusterChangeCommand clusterChangeCommand;
 
     public GlobalContext(Node node) {
@@ -152,7 +154,7 @@ public class GlobalContext {
         node.setMode(RunMode.CLUSTER);
         this.cluster = new Cluster(this);
         this.scheduler = new SingleThreadScheduler(properties);
-        this.sender = new Sender(this);
+        this.connector = new Connector(this);
     }
 
     public ScheduledFuture<?> electionTimeoutTask() {
@@ -238,7 +240,7 @@ public class GlobalContext {
 
     public void sendMessage(Message message, Endpoint endpoint) {
         message.setSourceId(properties.getNodeId());
-        sender.send(message, endpoint.getMetaData());
+        connector.send(message, endpoint.getMetaData());
     }
 
     public void sendMessage(Message message, String nodeId) {
@@ -246,7 +248,7 @@ public class GlobalContext {
             return;
         }
         message.setSourceId(properties.getNodeId());
-        sender.send(message, nodeId);
+        connector.send(message, nodeId);
     }
 
     public void advanceLastApplied(int newCommitIndex) {
@@ -334,8 +336,7 @@ public class GlobalContext {
             stateMachine.set(keyValuePair.getKey(), keyValuePair.getValue());
             String requestId = setCmd.getId();
             if (requestId != null) {
-                ChannelFuture channelFuture = channelPool
-                        .reply(requestId, SetResultCommand.builder().id(requestId).result(true).build());
+                ChannelFuture channelFuture = channelPool.reply(requestId, SetResultCommand.builder().id(requestId).result(true).build());
                 if (channelFuture != null) {
                     channelFuture.addListener(future -> {
                         if (future.isSuccess()) {
@@ -350,8 +351,7 @@ public class GlobalContext {
     private void replyGetResult(int index) {
         Optional.ofNullable(pendingGetCommandMap.remove(index))
                 .orElse(Collections.emptyList())
-                .forEach(cmd -> channelPool
-                        .reply(cmd.getId(), GetResultCommand.builder().id(cmd.getId()).value(stateMachine.get(cmd.getKey())).build()));
+                .forEach(cmd -> channelPool.reply(cmd.getId(), GetResultCommand.builder().id(cmd.getId()).value(stateMachine.get(cmd.getKey())).build()));
     }
 
     public void replyGetResult(GetCommand cmd) {
@@ -379,8 +379,7 @@ public class GlobalContext {
             List<GetCommand> getCommands = pendingGetCommandMap.computeIfAbsent(index, k -> new ArrayList<>());
             getCommands.add(cmd);
         } else {
-            channelPool
-                    .reply(cmd.getId(), GetResultCommand.builder().id(cmd.getId()).value(stateMachine.get(cmd.getKey())).build());
+            channelPool.reply(cmd.getId(), GetResultCommand.builder().id(cmd.getId()).value(stateMachine.get(cmd.getKey())).build());
         }
     }
 
@@ -415,6 +414,21 @@ public class GlobalContext {
         if (scheduler != null) {
             scheduler.close();
         }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        HashMap<Object, Object> map = new HashMap<>();
+        Scanner scanner = new Scanner(System.in);
+        scanner.nextLine();
+        System.out.println("11111111111111");
+        IntStream.range(0, 500000).forEach(index -> map.put(index, new Object()));
+        scanner.nextLine();
+        System.out.println("11111111111111");
+        IntStream.range(0, 500000).forEach(map::remove);
+        scanner.nextLine();
+        System.out.println("11111111111111");
+        System.gc();
+        Thread.sleep(9999999);
     }
 
 }

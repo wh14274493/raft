@@ -1,22 +1,20 @@
 package cn.ttplatform.wh.support;
 
 import cn.ttplatform.wh.GlobalContext;
-import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 
 /**
- * @author : Wang Hao
- * @date :  2020/8/16 18:22
- **/
-@Sharable
-public class CoreChannelInitializer extends ChannelInitializer<SocketChannel> {
+ * @author Wang Hao
+ * @date 2021/7/12 13:21
+ */
+public abstract class AbstractChannelInitializer extends ChannelInitializer<SocketChannel> {
 
-    private final GlobalContext context;
+    protected final GlobalContext context;
 
-    public CoreChannelInitializer(GlobalContext context) {
+    protected AbstractChannelInitializer(GlobalContext context) {
         this.context = context;
     }
 
@@ -28,6 +26,8 @@ public class CoreChannelInitializer extends ChannelInitializer<SocketChannel> {
         int allIdleTimeout = context.getProperties().getAllIdleTimeout();
         pipeline.addLast(new IdleStateHandler(readIdleTimeout, writeIdleTimeout, allIdleTimeout));
         pipeline.addLast(new DistributableCodec(context.getFactoryManager()));
-        pipeline.addLast(new CoreDuplexChannelHandler(context));
+        pipeline.addLast(new ServerDuplexChannelHandler(context));
     }
+
+    protected abstract void custom(ChannelPipeline pipeline);
 }

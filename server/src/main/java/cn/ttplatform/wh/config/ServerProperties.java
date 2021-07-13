@@ -38,6 +38,10 @@ public class ServerProperties {
      */
     private int port;
 
+    private String connectorHost;
+
+    private int connectorPort;
+
     /**
      * the number of thread used in server side {@link EventLoopGroup}
      */
@@ -135,6 +139,9 @@ public class ServerProperties {
 
     private int logIndexCacheSize;
 
+    private long lazyFlushInterval;
+    private double lazyFlushThreshold;
+
 
     public ServerProperties(String configPath) {
         Properties properties = new Properties();
@@ -169,8 +176,10 @@ public class ServerProperties {
             mode = RunMode.CLUSTER;
             clusterInfo = properties.getProperty("clusterInfo");
         }
-        host = properties.getProperty("host", "localhost");
+        host = properties.getProperty("host", "127.0.0.1");
         port = Integer.parseInt(properties.getProperty("port", "8190"));
+        connectorHost = properties.getProperty("connectorHost", "127.0.0.1");
+        connectorPort = Integer.parseInt(properties.getProperty("port", "1013"));
         bossThreads = Integer.parseInt(properties.getProperty("bossThreads", "1"));
         workerThreads = Integer.parseInt(properties.getProperty("workerThreads", "1"));
         minElectionTimeout = Integer.parseInt(properties.getProperty("minElectionTimeout", "3000"));
@@ -194,6 +203,8 @@ public class ServerProperties {
         blockSize = Integer.parseInt(properties.getProperty("blockCacheSize", String.valueOf(1024 * 1024)));
         blockFlushInterval = Long.parseLong(properties.getProperty("blockFlushInterval", "1000"));
         logIndexCacheSize = Integer.parseInt(properties.getProperty("logIndexCacheSize", "100"));
+        lazyFlushInterval = Long.parseLong(properties.getProperty("lazyFlushInterval", "100"));
+        lazyFlushThreshold = Double.parseDouble(properties.getProperty("lazyFlushThreshold", String.valueOf((double) 1 / 1000)));
     }
 
 }

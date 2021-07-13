@@ -39,10 +39,10 @@ public class ClientDuplexChannelHandler extends ChannelDuplexHandler {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-//        int i = index.incrementAndGet();
-//        if (i % 10000 == 0) {
-//            log.info("time = {}, count = {}, msg = {}", System.nanoTime(), i, msg);
-//        }
+        int i = index.incrementAndGet();
+        if (i % 10000 == 0) {
+            log.info("time = {}, count = {}, msg = {}", System.nanoTime(), i, msg);
+        }
         watcher.increment();
 //        log.info(msg.toString());
     }

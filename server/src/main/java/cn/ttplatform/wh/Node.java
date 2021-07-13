@@ -5,6 +5,7 @@ import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.data.log.Log;
 import cn.ttplatform.wh.exception.OperateFileException;
 import cn.ttplatform.wh.group.Cluster;
+import cn.ttplatform.wh.group.Connector;
 import cn.ttplatform.wh.role.*;
 import cn.ttplatform.wh.scheduler.SingleThreadScheduler;
 import lombok.Getter;
@@ -37,7 +38,7 @@ public class Node {
     private final GlobalContext context;
     private final NodeState nodeState;
     private boolean start;
-    private final Receiver receiver;
+    private final Server server;
 
     public Node(ServerProperties properties) {
         this.properties = properties;
@@ -46,7 +47,7 @@ public class Node {
         this.roleCache = new RoleCache();
         this.context = new GlobalContext(this);
         this.nodeState = new NodeState();
-        this.receiver = new Receiver(context);
+        this.server = new Server(context);
     }
 
     public synchronized void start() {
@@ -63,7 +64,7 @@ public class Node {
     public synchronized void stop() {
         if (start) {
             nodeState.close();
-            receiver.stop();
+            server.stop();
             context.close();
         }
     }
@@ -75,11 +76,11 @@ public class Node {
         if (context.getDataManager().advanceCommitIndex(index, term)) {
             context.advanceLastApplied(index);
         }
-        this.receiver.listen();
+        this.server.listen();
     }
 
     private void startInClusterMode() {
-        context.setSender(new Sender(context));
+        context.setConnector(new Connector(context));
         context.setScheduler(new SingleThreadScheduler(properties));
         context.setCluster(new Cluster(context));
         this.role = Follower.builder()
@@ -88,7 +89,7 @@ public class Node {
                 .voteTo(nodeState.getVoteTo())
                 .preVoteCounts(1)
                 .build();
-        this.receiver.listen();
+        this.server.listen();
     }
 
     public int getTerm() {

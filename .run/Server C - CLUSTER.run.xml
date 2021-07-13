@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Server C - CLUSTER" type="Application" factoryName="Application">
-    <option name="MAIN_CLASS_NAME" value="cn.ttplatform.wh.Server" />
+    <option name="MAIN_CLASS_NAME" value="cn.ttplatform.wh.ServerLauncher" />
     <module name="server" />
     <option name="PROGRAM_PARAMETERS" value="-c D:\workspace\java\raft\server\src\main\resources\config\C\server.properties" />
     <option name="VM_PARAMETERS" value="-Xmx2G -Xms2G" />

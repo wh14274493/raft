@@ -107,7 +107,7 @@ public class Client {
     }
 
     public Channel connect() throws InterruptedException {
-        return bootstrap.connect("localhost", 6666).sync().channel();
+        return bootstrap.connect("127.0.0.1", 6666).sync().channel();
     }
 
     public void close() {
@@ -122,14 +122,14 @@ public class Client {
         int target = 100000;
         watcher.reset(target);
         watcher.startWatch();
-        log.debug("test {} times SetCommand.", target);
+        log.info("test {} times SetCommand.", target);
         testSet(connection, target, 128);
         watcher.waitResult();
 
         target = 100000;
         watcher.reset(target);
         watcher.startWatch();
-        log.debug("test {} times GetCommand.", target);
+        log.info("test {} times GetCommand.", target);
         testGet(connection, target);
         watcher.waitResult();
 
@@ -153,12 +153,13 @@ public class Client {
         }
         String v = value.substring(0, bodySize);
         String id = UUID.randomUUID().toString();
-        IntStream.range(0, times).forEach(index -> channel.write(SetCommand.builder().id(id + index).keyValuePair(new KeyValuePair("test" + index, v + index)).build()));
+        IntStream.range(0, times).forEach(index -> channel.write(SetCommand.builder().id(id + index).keyValuePair(new KeyValuePair("1test" + index, v + index)).build()));
     }
 
     private static void testGet(Channel channel, int times) {
+        String id = UUID.randomUUID().toString();
         IntStream.range(0, times).forEach(index -> {
-            GetCommand getCommand = GetCommand.builder().id(index + "").key("test" + index).build();
+            GetCommand getCommand = GetCommand.builder().id(id + index).key("1test" + index).build();
             channel.write(getCommand);
         });
     }
