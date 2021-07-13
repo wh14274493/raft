@@ -27,12 +27,6 @@ public abstract class AbstractDuplexChannelHandler extends ChannelDuplexHandler 
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) {
-//        Channel channel = ctx.channel();
-//        channel.eventLoop().scheduleAtFixedRate(channel::flush, 100, 100, TimeUnit.MILLISECONDS);
-    }
-
-    @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         log.error(cause.toString());
     }

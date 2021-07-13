@@ -416,19 +416,4 @@ public class GlobalContext {
         }
     }
 
-    public static void main(String[] args) throws InterruptedException {
-        HashMap<Object, Object> map = new HashMap<>();
-        Scanner scanner = new Scanner(System.in);
-        scanner.nextLine();
-        System.out.println("11111111111111");
-        IntStream.range(0, 500000).forEach(index -> map.put(index, new Object()));
-        scanner.nextLine();
-        System.out.println("11111111111111");
-        IntStream.range(0, 500000).forEach(map::remove);
-        scanner.nextLine();
-        System.out.println("11111111111111");
-        System.gc();
-        Thread.sleep(9999999);
-    }
-
 }

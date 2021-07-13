@@ -5,20 +5,14 @@ import cn.ttplatform.wh.exception.MessageParseException;
 import cn.ttplatform.wh.support.Factory;
 import cn.ttplatform.wh.support.Pool;
 import io.netty.buffer.ByteBuf;
-import io.protostuff.ByteBufferInput;
-import io.protostuff.LinkedBuffer;
-import io.protostuff.MessageMapSchema;
-import io.protostuff.ProtostuffIOUtil;
-import io.protostuff.Schema;
+import io.protostuff.*;
 import io.protostuff.runtime.RuntimeSchema;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Wang Hao
@@ -27,8 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class StateMachine {
 
-    private Map<String, String> data = new ConcurrentHashMap<>();
-    private final Map<String, String> tempBuffer = new HashMap<>();
+    private Map<String, String> data = new HashMap<>(512);
+    private final Map<String, String> tempBuffer = new HashMap<>(128);
     private final DataFactory dataFactory;
     private volatile boolean generating;
     private volatile int applied;
@@ -120,7 +114,7 @@ public class StateMachine {
 
         @Override
         public Map<String, String> create(byte[] content, int length) {
-            Map<String, String> data = new HashMap<>();
+            Map<String, String> data = new HashMap<>(512);
             ProtostuffIOUtil.mergeFrom(content, 0, length, data, mapSchema);
             return data;
         }
@@ -131,7 +125,7 @@ public class StateMachine {
             try {
                 int position = byteBuffer.position();
                 byteBuffer.limit(position + contentLength);
-                Map<String, String> data = new HashMap<>();
+                Map<String, String> data = new HashMap<>(512);
                 try {
                     mapSchema.mergeFrom(new ByteBufferInput(byteBuffer, true), data);
                 } catch (IOException e) {

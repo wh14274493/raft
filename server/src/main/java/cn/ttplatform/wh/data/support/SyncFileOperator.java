@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-import static cn.ttplatform.wh.constant.ErrorMessage.READ_FAILED;
 import static java.nio.file.StandardOpenOption.*;
 
 /**
