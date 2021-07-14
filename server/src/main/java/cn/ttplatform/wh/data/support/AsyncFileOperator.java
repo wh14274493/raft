@@ -224,10 +224,10 @@ public class AsyncFileOperator {
         long startOffset;
         long endOffset;
         /**
-         * use a byte record state info
-         * valid
-         * exist
-         * dirty
+         * use a byte record state.
+         * --------------------valid
+         * ------------------------exist
+         * ---------------------------dirty
          * 0    0   0   0   0   0   0   0
          */
         volatile byte state;
@@ -239,8 +239,10 @@ public class AsyncFileOperator {
             this.byteBuffer = byteBufferPool.allocate();
             if (load) {
                 load();
+                this.state = 0x06;
+            } else {
+                this.state = 0x07;
             }
-            this.state = 0x07;
             log.debug("create a block[{},{}] for {}.", startOffset, endOffset, file);
         }
 
@@ -264,15 +266,15 @@ public class AsyncFileOperator {
 
         public void flush() {
             try {
-                if (valid()) {
+                if (valid() && dirty()) {
                     synchronized (this) {
                         byteBuffer.position(0);
                         byteBuffer.limit(byteBuffer.capacity());
                         fileChannel.write(byteBuffer, startOffset);
                         state = (byte) (state >>> 1 << 1);
+                        log.info("flush a dirty block[{}] into {}.", this, file);
                     }
 //                    fileChannel.force(true);
-                    log.info("flush a dirty block[{}] into {}.", this, file);
                 }
             } catch (IOException e) {
                 throw new OperateFileException(String.format("failed to write %d bytes into file at offset[%d].", byteBuffer.limit(), startOffset), e);

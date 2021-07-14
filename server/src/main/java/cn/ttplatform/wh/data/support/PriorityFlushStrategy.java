@@ -32,9 +32,7 @@ public class PriorityFlushStrategy implements FlushStrategy {
             if (block == null) {
                 return;
             }
-            if (block.dirty()) {
-                block.flush();
-            }
+            block.flush();
         }, interval, interval, TimeUnit.MILLISECONDS);
     }
 
@@ -55,7 +53,7 @@ public class PriorityFlushStrategy implements FlushStrategy {
             synchronized (blocks) {
                 block = blocks.pollFirst();
             }
-            if (block != null && block.dirty()) {
+            if (block != null) {
                 block.flush();
             }
         }
