@@ -15,6 +15,7 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
@@ -300,4 +301,15 @@ public class FileTest {
         byteBuffer1.put(byteBuffer);
         log.info(byteBuffer1.toString());
     }
+
+//    @Test
+//    public void testTruncate() throws IOException {
+//        FileChannel fileChannel = FileChannel.open(new File("C:\\Users\\14274\\Desktop\\temp.txt").toPath(), READ, WRITE, CREATE);
+//        MappedByteBuffer map = fileChannel.map(MapMode.READ_WRITE, 0, 4 * 10);
+//        fileChannel.close();
+//        map.position(0);
+//        IntStream.range(0, 3 * 10).forEach(index -> map.put((byte) 1));
+//        map.limit(3 * 10);
+//        map.force();
+//    }
 }

@@ -82,7 +82,7 @@ public class DataManagerTest {
     @Test
     public void createAppendLogEntriesMessage() {
         pendingLogs();
-        Endpoint endpoint = new Endpoint("b,localhost,1111");
+        Endpoint endpoint = new Endpoint("b,localhost,1111,2222");
         Message message = dataManager.createAppendLogEntriesMessage("a", 1, endpoint, 100);
         Assert.assertNull(message);
         endpoint.setNextIndex(1);

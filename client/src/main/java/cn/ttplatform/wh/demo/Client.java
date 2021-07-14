@@ -90,7 +90,7 @@ public class Client {
         bootstrap = new Bootstrap()
                 .group(worker)
                 .channel(NioSocketChannel.class)
-                .option(ChannelOption.TCP_NODELAY, Boolean.TRUE)
+                .option(ChannelOption.TCP_NODELAY, Boolean.FALSE)
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
@@ -148,13 +148,13 @@ public class Client {
         }
         String v = value.substring(0, bodySize);
         String id = UUID.randomUUID().toString();
-        IntStream.range(0, times).forEach(index -> channel.write(SetCommand.builder().id(id + index).keyValuePair(new KeyValuePair("1test" + index, v + index)).build()));
+        IntStream.range(0, times).forEach(index -> channel.write(SetCommand.builder().id(id + index).keyValuePair(new KeyValuePair("test" + index, v + index)).build()));
     }
 
     private static void testGet(Channel channel, int times) {
         String id = UUID.randomUUID().toString();
         IntStream.range(0, times).forEach(index -> {
-            GetCommand getCommand = GetCommand.builder().id(id + index).key("1test" + index).build();
+            GetCommand getCommand = GetCommand.builder().id(id + index).key("test" + index).build();
             channel.write(getCommand);
         });
     }

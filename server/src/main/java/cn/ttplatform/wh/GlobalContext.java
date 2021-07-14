@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.IntStream;
 
 /**
  * @author Wang Hao
@@ -99,8 +98,8 @@ public class GlobalContext {
                 new ArrayBlockingQueue<>(2),
                 new NamedThreadFactory("subTask-"),
                 (r, e) -> logger.error("There is currently an executing task, reject this operation."));
-        this.boss = new NioEventLoopGroup(properties.getBossThreads());
-        this.worker = new NioEventLoopGroup(properties.getWorkerThreads());
+        this.boss = new NioEventLoopGroup(properties.getBossThreads(), new NamedThreadFactory("boss-"));
+        this.worker = new NioEventLoopGroup(properties.getWorkerThreads(), new NamedThreadFactory("worker-"));
         this.stateMachine = new StateMachine(this);
         this.dataManager = new DataManager(this);
         this.entryFactory = new EntryFactory(this.linkedBufferPool);
