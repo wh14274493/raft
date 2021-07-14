@@ -101,11 +101,6 @@ public class Client {
                 });
     }
 
-    public void send(Command command) throws InterruptedException {
-        Channel channel = connect();
-        channel.writeAndFlush(command);
-    }
-
     public Channel connect() throws InterruptedException {
         return bootstrap.connect("127.0.0.1", 6666).sync().channel();
     }
@@ -201,9 +196,7 @@ public class Client {
             }
         });
         log.info("start at {}", System.nanoTime());
-        channels
-                .forEach(
-                        channel -> channel.writeAndFlush(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao1").build()));
+        channels.forEach(channel -> channel.writeAndFlush(GetCommand.builder().id(UUID.randomUUID().toString()).key("wanghao1").build()));
         TimeUnit.MILLISECONDS.sleep(10);
     }
 }

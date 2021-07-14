@@ -8,6 +8,7 @@ import cn.ttplatform.wh.data.log.Log;
 import cn.ttplatform.wh.message.SyncingMessage;
 import cn.ttplatform.wh.support.Pool;
 import io.protostuff.LinkedBuffer;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -20,6 +21,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -134,7 +136,7 @@ public class Cluster {
     public int getNewCommitIndex() {
         if (phase == Phase.OLD_NEW) {
             int oldConfigCommitIndex =
-                endpointMap.size() <= 1 ? context.getDataManager().getNextIndex() - 1 : getNewCommitIndexFrom(endpointMap);
+                    endpointMap.size() <= 1 ? context.getDataManager().getNextIndex() - 1 : getNewCommitIndexFrom(endpointMap);
             int newConfigCommitIndex = getNewCommitIndexFrom(newConfigMap);
             log.debug("oldConfigCommitIndex is {}.", oldConfigCommitIndex);
             log.debug("newConfigCommitIndex is {}.", newConfigCommitIndex);
@@ -146,7 +148,7 @@ public class Cluster {
             return newConfigCommitIndex;
         }
         int oldConfigCommitIndex =
-            endpointMap.size() <= 1 ? context.getDataManager().getNextIndex() - 1 : getNewCommitIndexFrom(endpointMap);
+                endpointMap.size() <= 1 ? context.getDataManager().getNextIndex() - 1 : getNewCommitIndexFrom(endpointMap);
         log.debug("oldConfigCommitIndex is {}.", oldConfigCommitIndex);
         return oldConfigCommitIndex;
     }
@@ -303,8 +305,7 @@ public class Cluster {
     public void applyNewConfig(byte[] config) {
         NewConfig newConfig = newConfigFactory.create(config, config.length);
         newConfigMap.clear();
-        newConfig.getNewConfigs().forEach(
-            endpointMetaData -> newConfigMap.put(endpointMetaData.getNodeId(), new Endpoint(endpointMetaData)));
+        newConfig.getNewConfigs().forEach(endpointMetaData -> newConfigMap.put(endpointMetaData.getNodeId(), new Endpoint(endpointMetaData)));
         log.debug("apply new config, newConfigMap is {}", newConfigMap);
     }
 

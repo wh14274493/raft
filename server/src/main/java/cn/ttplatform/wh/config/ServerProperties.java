@@ -179,7 +179,7 @@ public class ServerProperties {
         host = properties.getProperty("host", "127.0.0.1");
         port = Integer.parseInt(properties.getProperty("port", "8190"));
         connectorHost = properties.getProperty("connectorHost", "127.0.0.1");
-        connectorPort = Integer.parseInt(properties.getProperty("port", "1013"));
+        connectorPort = Integer.parseInt(properties.getProperty("connectorPort", "1013"));
         bossThreads = Integer.parseInt(properties.getProperty("bossThreads", "1"));
         workerThreads = Integer.parseInt(properties.getProperty("workerThreads", "1"));
         minElectionTimeout = Integer.parseInt(properties.getProperty("minElectionTimeout", "3000"));

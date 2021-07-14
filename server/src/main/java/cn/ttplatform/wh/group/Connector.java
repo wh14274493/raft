@@ -3,7 +3,6 @@ package cn.ttplatform.wh.group;
 import cn.ttplatform.wh.GlobalContext;
 import cn.ttplatform.wh.config.ServerProperties;
 import cn.ttplatform.wh.support.ChannelPool;
-import cn.ttplatform.wh.support.ServerChannelInitializer;
 import cn.ttplatform.wh.support.Message;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -49,14 +48,14 @@ public class Connector {
         return new Bootstrap().group(worker)
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.TCP_NODELAY, Boolean.TRUE)
-                .handler(new ServerChannelInitializer(context));
+                .handler(new CoreChannelInitializer(context));
     }
 
     public void listen(String host, int port) {
         ServerBootstrap serverBootstrap = new ServerBootstrap().group(boss, worker)
                 .channel(NioServerSocketChannel.class)
                 .childOption(ChannelOption.TCP_NODELAY, Boolean.TRUE)
-                .childHandler(new ServerChannelInitializer(context));
+                .childHandler(new CoreChannelInitializer(context));
         try {
             serverBootstrap.bind(host, port).addListener(future -> {
                 if (future.isSuccess()) {
